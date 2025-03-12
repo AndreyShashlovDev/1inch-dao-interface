@@ -47,6 +47,7 @@
     "@walletconnect/modal": "^2.7.0",
     "@walletconnect/universal-provider": "^2.19.0",
     "dexie": "^4.0.11",
+    "eventemitter3": "^5.0.1",
     "lit": "^3.2.1",
     "rxjs": "^7.8.2",
     "ts-lit-plugin": "^2.0.2",
