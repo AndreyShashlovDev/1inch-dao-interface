@@ -1,6 +1,6 @@
 {
   "name": "@1inch-community/models",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "homepage": "https://github.com/1inch-community/interface",
   "author": {
@@ -29,7 +29,7 @@
   "scripts": {
     "build": "tsc -b",
     "watch": "tsc -b -w",
-    "publish": "pnpm publish"
+    "publish": "pnpm publish --no-git-checks"
   },
   "peerDependencies": {
     "@1inch/fusion-sdk": "2.1.8-rc.1",

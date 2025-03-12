@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
     ? path.join(path.dirname(__dirname), 'electron-dapp', 'out', 'render')
     : path.join('dist', 'dapp')
 
-  const baseHref = (process.env['BASE_HREF'] ?? electronBundle) ? './' : '/'
+  const baseHref = process.env['BASE_HREF'] ?? (electronBundle ? './' : '/')
 
   console.log('mode is ', isProduction ? 'production' : 'development')
   console.log('dApp version ', version)
