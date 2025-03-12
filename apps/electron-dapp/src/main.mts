@@ -1,9 +1,9 @@
-import { app, BrowserWindow, shell } from 'electron'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import path from 'node:path'
-import { initUpdater } from './updater.mjs'
-import { settings, logger, __dirname } from './libs.mjs'
 import dotenv from 'dotenv'
+import { app, BrowserWindow, shell } from 'electron'
+import path from 'node:path'
+import { __dirname, logger, settings } from './libs.mjs'
+import { initUpdater } from './updater.mjs'
 dotenv.config()
 
 type WindowBounds = {

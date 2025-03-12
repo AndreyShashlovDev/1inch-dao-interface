@@ -1,10 +1,10 @@
-import type { AppUpdater } from 'electron-updater'
 import type { LogFunctions } from 'electron-log'
 import type settingsType from 'electron-settings'
+import type { AppUpdater } from 'electron-updater'
 
 import { createRequire } from 'node:module'
-import { fileURLToPath } from 'url'
 import path from 'node:path'
+import { fileURLToPath } from 'url'
 const require = createRequire(import.meta.url)
 
 export const settings = require('electron-settings') as typeof settingsType

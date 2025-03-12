@@ -1,11 +1,11 @@
 import dotenv from 'dotenv'
+import * as process from 'node:process'
 import path from 'path'
 import { defineConfig, UserConfig } from 'vite'
-import { VitePWA } from 'vite-plugin-pwa'
 import preload from 'vite-plugin-preload'
+import { VitePWA } from 'vite-plugin-pwa'
 import { version } from '../../package.json'
-import vitePwaConfig from "./vite-pwa.config";
-import * as process from "node:process";
+import vitePwaConfig from './vite-pwa.config'
 
 const envPath = path.dirname(path.dirname(__dirname))
 dotenv.config({
@@ -13,19 +13,18 @@ dotenv.config({
 })
 
 export default defineConfig(({ mode }) => {
-
   const isProduction = process.env['DAPP_IS_PRODUCTION']
-      ? Boolean(process.env['DAPP_IS_PRODUCTION'])
-      : mode === 'production'
+    ? Boolean(process.env['DAPP_IS_PRODUCTION'])
+    : mode === 'production'
 
   // const electronBundle = process.env['ELECTRON_BUNDLE'] === 'true'
   const electronBundle = true
   const outDir = electronBundle
-      ? path.join(path.dirname(__dirname), 'electron-dapp', 'out', 'render')
-      : path.join('dist', 'dapp')
+    ? path.join(path.dirname(__dirname), 'electron-dapp', 'out', 'render')
+    : path.join('dist', 'dapp')
 
-  const baseHref = process.env['BASE_HREF'] ?? electronBundle ? './' : '/'
-  const baseVite = process.env['BASE_VITE'] ?? electronBundle ? './' : '/'
+  const baseHref = (process.env['BASE_HREF'] ?? electronBundle) ? './' : '/'
+  const baseVite = (process.env['BASE_VITE'] ?? electronBundle) ? './' : '/'
 
   console.log('mode is ', isProduction ? 'production' : 'development')
   console.log('dApp version ', version)
@@ -66,7 +65,7 @@ export default defineConfig(({ mode }) => {
 
     plugins: [
       electronBundle ? undefined : VitePWA(vitePwaConfig(baseHref, isProduction)),
-      electronBundle ? undefined : preload({mode: 'prefetch'}),
+      electronBundle ? undefined : preload({ mode: 'prefetch' }),
     ].filter(Boolean),
 
     build: {

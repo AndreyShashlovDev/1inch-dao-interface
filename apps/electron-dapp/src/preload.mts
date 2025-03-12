@@ -1,5 +1,5 @@
-import { contextBridge } from 'electron'
 import { ElectronAPI, electronAPI } from '@electron-toolkit/preload'
+import { contextBridge } from 'electron'
 
 declare global {
   interface Window {
