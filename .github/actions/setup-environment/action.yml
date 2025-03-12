@@ -31,7 +31,3 @@ runs:
     - name: Install dependencies
       run: pnpm install --ignore-scripts --frozen-lockfile
       shell: bash
-
-    - name: Install NX globally
-      run: pnpm add -g nx
-      shell: bash
