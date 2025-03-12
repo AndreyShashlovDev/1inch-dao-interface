@@ -1,6 +1,6 @@
 {
   "name": "1inch-community",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "homepage": "https://github.com/1inch-community/interface",
   "author": {
@@ -29,7 +29,7 @@
     "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist",
     "reset": "pnpm run clear:all && pnpm install",
     "postinstall": "pnpm run build:libs:all",
-    "update-version": "ts-node scripts/update-version.ts",
+    "update-version": "ts-node scripts/update-version.mts",
     "// Code Style and Tests": "",
     "prettier:check": "prettier -c .",
     "prettier:write": "prettier -w .",
