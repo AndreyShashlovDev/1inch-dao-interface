@@ -1,6 +1,6 @@
 {
   "name": "1inch-community",
-  "version": "1.0.0-alpha.1",
+  "version": "1.1.1",
   "license": "MIT",
   "homepage": "https://github.com/1inch-community/interface",
   "author": {
@@ -16,7 +16,6 @@
     "type": "git",
     "url": "https://github.com/1inch-community/interface.git"
   },
-  "type": "module",
   "scripts": {
     "start": "pnpm run build:libs:all && pnpm run serve:dapp",
     "serve:dapp": "pnpm --filter \"./apps/dapp\" run dev",
@@ -29,7 +28,7 @@
     "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist",
     "reset": "pnpm run clear:all && pnpm install",
     "postinstall": "pnpm run build:libs:all",
-    "update-version": "ts-node --esm --project ./tsconfig.json ./scripts/update-version.ts",
+    "update-version": "ts-node --project ./scripts/tsconfig.json ./scripts/update-version.ts 1.1.1",
     "// Code Style and Tests": "",
     "prettier:check": "prettier -c .",
     "prettier:write": "prettier -w .",
