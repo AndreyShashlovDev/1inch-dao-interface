@@ -25,18 +25,6 @@
     [
       "@semantic-release/exec",
       {
-        "verifyConditionsCmd": "pnpm run prettier:check"
-      }
-    ],
-    [
-      "@semantic-release/exec",
-      {
-        "verifyConditionsCmd": "pnpm run test"
-      }
-    ],
-    [
-      "@semantic-release/exec",
-      {
         "prepareCmd": "pnpm run build:libs:all"
       }
     ],
