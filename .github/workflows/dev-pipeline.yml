@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - new-project-structure
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
