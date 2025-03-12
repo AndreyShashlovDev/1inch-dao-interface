@@ -21,7 +21,7 @@
     "serve:dapp": "pnpm --filter \"./apps/dapp\" run dev",
     "build:dapp": "pnpm --filter \"./apps/dapp\" run build",
     "build:libs:all": "pnpm --filter \"./libs/*\" run build",
-    "publish": "pnpm --filter \"./libs/*\" run publish",
+    "publish:libs:all": "pnpm --filter \"./libs/*\" run publish",
     "watch:libs:all": "pnpm run build:libs:all && pnpm --filter \"./libs/*\" --parallel run watch",
     "clear:all:node_modules": "find . -type d -name node_modules -exec rm -rf {} +",
     "clear:all:dist": "find . -type d -name dist -exec rm -rf {} +",
