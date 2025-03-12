@@ -1,0 +1,5 @@
+export function isUserRejectError(error) {
+  const { code, message } = error
+  return code === 4001 || message?.toLowerCase().includes('user rejected')
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoid2FsbGV0LWVycm9ycy5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIndhbGxldC1lcnJvcnMudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBSUEsTUFBTSxVQUFVLGlCQUFpQixDQUFDLEtBQWtCO0lBQ2xELE1BQU0sRUFBRSxJQUFJLEVBQUUsT0FBTyxFQUFFLEdBQUcsS0FBSyxDQUFBO0lBQy9CLE9BQU8sSUFBSSxLQUFLLElBQUksSUFBSSxPQUFPLEVBQUUsV0FBVyxFQUFFLENBQUMsUUFBUSxDQUFDLGVBQWUsQ0FBQyxDQUFBO0FBQzFFLENBQUMifQ==

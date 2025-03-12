@@ -1,0 +1,64 @@
+{
+  "name": "1inch-community",
+  "version": "1.0.0",
+  "license": "MIT",
+  "homepage": "https://github.com/1inch-community/interface",
+  "author": {
+    "name": "Denis Kotsyuba",
+    "email": "kocubads96@gmail.com",
+    "url": "https://www.linkedin.com/in/denis-k-03a09419b/"
+  },
+  "bugs": {
+    "url": "https://github.com/1inch-community/interface/issues",
+    "email": "kocubads96@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1inch-community/interface.git"
+  },
+  "scripts": {
+    "start": "pnpm run build:libs:all && pnpm run serve:dapp",
+    "serve:dapp": "pnpm --filter \"./apps/dapp\" run dev",
+    "build:libs:all": "pnpm --filter \"./libs/*\" run build",
+    "watch:libs:all": "pnpm run build:libs:all && pnpm --filter \"./libs/*\" --parallel run watch",
+    "clear:all:node_modules": "find . -type d -name node_modules -exec rm -rf {} +",
+    "clear:all:dist": "find . -type d -name dist -exec rm -rf {} +",
+    "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist",
+    "reset": "pnpm run clear:all && pnpm install",
+    "// Code Style": "",
+    "prettier:check": "prettier -c .",
+    "prettier:write": "prettier -w ."
+  },
+  "dependencies": {
+    "@1inch/cross-chain-sdk": "^0.1.12",
+    "@1inch/fusion-sdk": "2.1.8-rc.1",
+    "@lit-labs/virtualizer": "^2.1.0",
+    "@lit/context": "^1.1.4",
+    "@lit/task": "1.0.1",
+    "@maskito/core": "^2.5.0",
+    "@maskito/kit": "^2.5.0",
+    "@sentry/browser": "^9.5.0",
+    "@walletconnect/ethereum-provider": "^2.19.0",
+    "@walletconnect/modal": "^2.7.0",
+    "@walletconnect/universal-provider": "^2.19.0",
+    "dexie": "^4.0.11",
+    "lit": "^3.2.1",
+    "rxjs": "^7.8.2",
+    "ts-lit-plugin": "^2.0.2",
+    "tslib": "^2.8.1",
+    "viem": "^2.23.9"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.7",
+    "prettier": "^3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.1",
+    "vite-plugin-dts": "^4.5.3"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@10.6.0"
+}

@@ -1,0 +1,47 @@
+{
+  "name": "@1inch-community/widgets",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -b -w"
+  },
+  "peerDependencies": {
+    "@1inch-community/models": "workspace:*",
+    "@1inch-community/core": "workspace:*",
+    "@1inch-community/sdk": "workspace:*",
+    "@1inch-community/ui-components": "workspace:*",
+    "@lit/task": "1.0.1",
+    "@maskito/core": "^2.5.0",
+    "@maskito/kit": "^2.5.0",
+    "rxjs": "^7.8.2",
+    "lit": "^3.2.1",
+    "tslib": "^2.8.1"
+  },
+  "exports": {
+    "./notifications": {
+      "types": "./dist/notifications/index.d.ts",
+      "import": "./dist/notifications/index.js"
+    },
+    "./select-token": {
+      "types": "./dist/select-token/index.d.ts",
+      "import": "./dist/select-token/index.js"
+    },
+    "./swap-form": {
+      "types": "./dist/swap-form/index.d.ts",
+      "import": "./dist/swap-form/index.js"
+    },
+    "./token-icon": {
+      "types": "./dist/token-icon/index.d.ts",
+      "import": "./dist/token-icon/index.js"
+    },
+    "./wallet-manage": {
+      "types": "./dist/wallet-manage/index.d.ts",
+      "import": "./dist/wallet-manage/index.js"
+    }
+  }
+}
