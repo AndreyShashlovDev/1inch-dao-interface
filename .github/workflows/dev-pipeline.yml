@@ -1,0 +1,100 @@
+name: 'Dev Pipeline'
+
+on:
+  push:
+    branches:
+      - dev
+
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  WALLET_CONNECT_PROJECT_ID: ${{ secrets.WALLET_CONNECT_PROJECT_ID }}
+  ONE_INCH_DEV_PORTAL_HOST: ${{ vars.ONE_INCH_DEV_PORTAL_HOST }}
+  DAPP_IS_PRODUCTION: true
+
+jobs:
+  build-libs:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Clean nx cache
+        run: nx reset
+
+      - name: Run building all libs
+        run: nx run one-inch-community:build-all-libs
+
+      - name: Save libs folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: libs
+          path: dist/libs
+
+  check:
+    runs-on: macos-latest
+    needs: build-libs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Clean nx cache
+        run: nx reset
+
+      - name: Run link check
+        run: npx nx run-many --target=lint --all
+
+      - name: Download libs folder
+        uses: actions/download-artifact@v4
+        with:
+          name: libs
+          path: dist/libs
+
+      - name: Run tests for all projects
+        run: npx nx run-many --target=test --all
+
+  release:
+    runs-on: macos-latest
+    needs: check
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Download libs folder
+        uses: actions/download-artifact@v4
+        with:
+          name: libs
+          path: dist/libs
+
+      - name: Cache and Install Electron Dependencies
+        uses: ./.github/actions/cache-electron-deps
+        with:
+          working-directory: apps/electron-dapp
+
+      - name: Release
+        run: npx semantic-release
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          publish_dir: ./dist/apps/dapp

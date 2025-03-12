@@ -1,0 +1,29 @@
+name: 'Cache Electron Dependencies'
+description: 'Caches Electron dependencies and Electron binaries to speed up builds'
+
+inputs:
+  working-directory:
+    description: 'Path to the Electron app directory'
+    required: false
+    default: 'apps/electron-dapp'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache dependencies and Electron binaries
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.pnpm-store
+          ~/.cache/electron
+          ~/.cache/electron-builder
+          ${{ inputs.working-directory }}/node_modules
+        key: ${{ runner.os }}-pnpm-electron-${{ hashFiles(format('{0}/pnpm-lock.yaml', inputs.working-directory)) }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-electron-
+
+    - name: Install Electron dependencies
+      shell: bash
+      run: |
+        cd ${{ inputs.working-directory }}
+        pnpm install --frozen-lockfile
