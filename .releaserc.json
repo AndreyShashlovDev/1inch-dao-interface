@@ -5,6 +5,11 @@
       "name": "dev",
       "prerelease": true,
       "channel": "beta"
+    },
+    {
+      "name": "new-project-structure",
+      "prerelease": false,
+      "channel": "alpha"
     }
   ],
   "plugins": [
@@ -53,7 +58,12 @@
         "prepareCmd": "pnpm --dir apps/electron-dapp run release"
       }
     ],
-    [],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "pnpm run publish"
+      }
+    ],
     [
       "@semantic-release/github",
       {
