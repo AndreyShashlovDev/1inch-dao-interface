@@ -8,7 +8,7 @@
     },
     {
       "name": "new-project-structure",
-      "prerelease": false,
+      "prerelease": "alpha",
       "channel": "alpha"
     }
   ],
