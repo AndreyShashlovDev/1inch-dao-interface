@@ -2,6 +2,7 @@
 
 # compiled output
 dist
+out
 dev-cert
 dev-dist
 tmp

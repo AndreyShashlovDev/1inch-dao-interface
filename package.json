@@ -19,12 +19,14 @@
   "scripts": {
     "start": "pnpm run build:libs:all && pnpm run serve:dapp",
     "serve:dapp": "pnpm --filter \"./apps/dapp\" run dev",
+    "build:dapp": "pnpm --filter \"./apps/dapp\" run build",
     "build:libs:all": "pnpm --filter \"./libs/*\" run build",
     "watch:libs:all": "pnpm run build:libs:all && pnpm --filter \"./libs/*\" --parallel run watch",
     "clear:all:node_modules": "find . -type d -name node_modules -exec rm -rf {} +",
     "clear:all:dist": "find . -type d -name dist -exec rm -rf {} +",
     "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist",
     "reset": "pnpm run clear:all && pnpm install",
+    "postinstall": "pnpm run build:libs:all",
     "// Code Style": "",
     "prettier:check": "prettier -c .",
     "prettier:write": "prettier -w ."
@@ -46,7 +48,9 @@
     "rxjs": "^7.8.2",
     "ts-lit-plugin": "^2.0.2",
     "tslib": "^2.8.1",
-    "viem": "^2.23.9"
+    "viem": "^2.23.9",
+    "workbox-build": "^7.3.0",
+    "workbox-window": "^7.3.0"
   },
   "devDependencies": {
     "dotenv": "^16.4.7",
@@ -54,7 +58,9 @@
     "prettier-plugin-organize-imports": "^4.1.0",
     "typescript": "^5.8.2",
     "vite": "^6.2.1",
-    "vite-plugin-dts": "^4.5.3"
+    "vite-plugin-dts": "^4.5.3",
+    "vite-plugin-preload": "^0.4.2",
+    "vite-plugin-pwa": "^0.21.1"
   },
   "engines": {
     "node": ">=22",
