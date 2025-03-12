@@ -19,7 +19,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node --loader ts-node/esm ./scripts/update-version.ts ${nextRelease.version}"
+        "prepareCmd": "pnpm run update-version ${nextRelease.version}"
       }
     ],
     [
