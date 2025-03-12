@@ -29,7 +29,7 @@
     "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist",
     "reset": "pnpm run clear:all && pnpm install",
     "postinstall": "pnpm run build:libs:all",
-    "update-version": "ts-node ./scripts/update-version.mts",
+    "update-version": "ts-node ./scripts/update-version.ts",
     "// Code Style and Tests": "",
     "prettier:check": "prettier -c .",
     "prettier:write": "prettier -w .",
