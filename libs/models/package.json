@@ -1,7 +1,24 @@
 {
   "name": "@1inch-community/models",
-  "version": "0.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "license": "MIT",
+  "homepage": "https://github.com/1inch-community/interface",
+  "author": {
+    "name": "Denis Kotsyuba",
+    "email": "kocubads96@gmail.com",
+    "url": "https://www.linkedin.com/in/denis-k-03a09419b/"
+  },
+  "bugs": {
+    "url": "https://github.com/1inch-community/interface/issues",
+    "email": "kocubads96@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1inch-community/interface.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -11,7 +28,8 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "watch": "tsc -b -w"
+    "watch": "tsc -b -w",
+    "publish": "pnpm publish"
   },
   "peerDependencies": {
     "@1inch/fusion-sdk": "2.1.8-rc.1",

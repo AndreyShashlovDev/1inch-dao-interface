@@ -1,13 +1,14 @@
 {
   "name": "@1inch-community/electron-dapp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "out/main.mjs",
   "type": "module",
   "scripts": {
     "dev": "pnpm run build && electron .",
     "build": "tsc",
-    "build:electron": "electron-builder -c ./electron-builder.yml build -mwl --publish never"
+    "build:electron": "electron-builder -c ./electron-builder.yml build -mwl --publish never",
+    "release": "pnpm run build && pnpm run build:electron"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

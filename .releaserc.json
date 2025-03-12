@@ -14,33 +14,46 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node tools/scripts/update-versions.js ${nextRelease.version}"
+        "prepareCmd": "pnpm run update-version ${nextRelease.version}"
       }
     ],
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "nx run dapp:build:ci"
+        "verifyConditionsCmd": "pnpm run prettier:check"
       }
     ],
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "npx nx reset"
+        "verifyConditionsCmd": "pnpm run test"
       }
     ],
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "nx run dapp:build:ci:electron"
+        "prepareCmd": "pnpm run build:libs:all"
       }
     ],
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "nx run electron-dapp:build:ci"
+        "prepareCmd": "BASE_HREF=/interface/ pnpm run build:dapp"
       }
     ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "ELECTRON_BUNDLE=true pnpm run build:dapp"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "pnpm --dir apps/electron-dapp run release"
+      }
+    ],
+    [],
     [
       "@semantic-release/github",
       {
@@ -69,7 +82,19 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["CHANGELOG.md", "package.json", "apps/electron-dapp/package.json"],
+        "assets": [
+          "CHANGELOG.md",
+          "package.json",
+          "apps/electron-dapp/package.json",
+          "apps/dapp/package.json",
+          "apps/electron-dapp/package.json",
+          "libs/core/package.json",
+          "libs/models/package.json",
+          "libs/sdk/package.json",
+          "libs/integration-layer/package.json",
+          "libs/ui-components/package.json",
+          "libs/widgets/package.json"
+        ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ]
