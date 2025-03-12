@@ -12,13 +12,13 @@ bootstrapApplication(() => import('./app.element'), {
   cloudflareTurnstileSiteKey: __CLOUDFLARE_TURNSTILE_SITE_KEY__,
 }).catch(console.error)
 
-// import('virtual:pwa-register').then(({ registerSW }) => {
-//   registerSW({
-//     onRegisteredSW: async (_, worker: ServiceWorkerRegistration) => {
-//       console.log('worker updated')
-//       await worker.update()
-//     },
-//     onNeedRefresh: () => console.log('update ready'),
-//     onOfflineReady: () => console.log('offline ready'),
-//   })
-// })
+import('virtual:pwa-register').then(({ registerSW }) => {
+  registerSW({
+    onRegisteredSW: (_: string, registration: ServiceWorkerRegistration | undefined): void => {
+      console.log('worker updated')
+      registration?.update()
+    },
+    onNeedRefresh: () => console.log('update ready'),
+    onOfflineReady: () => console.log('offline ready'),
+  })
+})

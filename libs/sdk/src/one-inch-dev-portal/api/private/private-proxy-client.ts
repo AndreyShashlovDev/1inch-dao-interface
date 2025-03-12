@@ -67,7 +67,6 @@ export class PrivateProxyClient implements IProxyClient {
       turnstileToken = this.context.value.turnstile.getToken()
     }
     if (turnstileToken === null) return
-    debugger
     const response = await fetch(`${this.host}/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

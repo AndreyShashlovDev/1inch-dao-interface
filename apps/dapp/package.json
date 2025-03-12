@@ -14,21 +14,6 @@
     "@1inch-community/integration-layer": "workspace:*",
     "@1inch-community/sdk": "workspace:*",
     "@1inch-community/widgets": "workspace:*",
-    "@1inch-community/ui-components": "workspace:*",
-    "@1inch/cross-chain-sdk": "^0.1.12",
-    "@1inch/fusion-sdk": "2.1.8-rc.1",
-    "@lit-labs/virtualizer": "^2.1.0",
-    "@lit/context": "^1.1.4",
-    "@lit/task": "1.0.1",
-    "@maskito/core": "^2.5.0",
-    "@maskito/kit": "^2.5.0",
-    "@sentry/browser": "^9.5.0",
-    "@walletconnect/ethereum-provider": "^2.19.0",
-    "@walletconnect/modal": "^2.7.0",
-    "@walletconnect/universal-provider": "^2.19.0",
-    "dexie": "^4.0.11",
-    "lit": "^3.2.1",
-    "rxjs": "^7.8.2",
-    "viem": "^2.23.9"
+    "@1inch-community/ui-components": "workspace:*"
   }
 }
