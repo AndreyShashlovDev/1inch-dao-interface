@@ -1,3 +1,10 @@
+# [1.0.0-alpha.3](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.2...v1.0.0-alpha.3) (2025-03-13)
+
+
+### Bug Fixes
+
+* **package.json:** remove hardcoded version in update-version script ([5c708da](https://github.com/1inch-community/interface/commit/5c708da3ee0e831367b4f13578126ace5edab036))
+
 # [1.0.0-alpha.2](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2025-03-13)
 
 
