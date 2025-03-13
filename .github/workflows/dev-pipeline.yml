@@ -30,10 +30,18 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Build
-        run: pnpm run build:libs:all
+      - name: Cache and Install Electron Dependencies
+        uses: ./.github/actions/cache-electron-deps
+        with:
+          working-directory: apps/electron-dapp
 
       - name: Release
-        run: pnpm run publish
+        run: npx semantic-release
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist/apps/dapp
