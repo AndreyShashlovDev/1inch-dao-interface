@@ -1,3 +1,10 @@
+# [1.0.0-alpha.4](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.3...v1.0.0-alpha.4) (2025-03-13)
+
+
+### Features
+
+* **libs:** add README documentation for core libraries ([c644fe5](https://github.com/1inch-community/interface/commit/c644fe5da8a7ab90c341390d0620cc0813ee2e31))
+
 # [1.0.0-alpha.3](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.2...v1.0.0-alpha.3) (2025-03-13)
 
 
