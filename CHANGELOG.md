@@ -1,3 +1,10 @@
+# [1.0.0-alpha.2](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2025-03-13)
+
+
+### Bug Fixes
+
+* **workflows:** update dev-pipeline permissions to include issues ([a741f27](https://github.com/1inch-community/interface/commit/a741f27456b975821ed67e8a1a4fc749c4675366))
+
 # 1.0.0-alpha.1 (2025-03-13)
 
 
