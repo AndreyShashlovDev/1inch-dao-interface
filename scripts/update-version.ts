@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
 const updateVersion = (filePath: string, version: string): void => {
   const file = path.resolve(filePath)
