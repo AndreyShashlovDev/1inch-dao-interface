@@ -40,7 +40,7 @@ export class OneInchDevPortalCrossChainPrivateProxyAdapter
         chain_ids: chainIds.map((chainId) => chainId.toString()),
         addresses: walletAddresses,
       })
-    } catch (e) {
+    } catch {
       return await this.fallBackAdapter.getBalances(chainIds, walletAddresses)
     }
   }
@@ -92,7 +92,7 @@ export class OneInchDevPortalCrossChainPrivateProxyAdapter
     return this.sdkFacade.cancelOrder(orderHash)
   }
 
-  getGasPrice(chainId: ChainId): Promise<GasPriceDto | null> {
+  getGasPrice(): Promise<GasPriceDto | null> {
     throw new Error('Method not implemented.')
   }
 

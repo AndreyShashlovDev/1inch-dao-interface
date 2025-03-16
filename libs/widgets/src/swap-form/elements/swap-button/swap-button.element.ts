@@ -419,7 +419,7 @@ export class SwapButtonElement extends LitElement {
         this.buttonState = SwapButtonState.readyToSwap
         this.updateView$.next()
       }
-    } catch (error) {
+    } catch {
       this.buttonState = stateState
     }
   }

@@ -11,15 +11,12 @@ import {
 import { liveQuery } from 'dexie'
 import { defer } from 'rxjs'
 import { Address, formatUnits } from 'viem'
-import { averageBlockTime } from '../chain/average-block-time'
-import { parseChainId } from '../chain/is-chain-id'
+import { averageBlockTime, parseChainId } from '../chain'
 import { TokenSchema } from './token.schema'
 
 const tokenDatabaseUpdateTTLKey = 'token-database-update-ttl-v' + TokenSchema.databaseVersion
 const allBalanceDatabaseUpdateTTLKey =
   'all-balance-database-update-ttl-v' + TokenSchema.databaseVersion
-const tokenBalanceDatabaseUpdateTTLKey =
-  'token-balance-database-update-ttl-v' + TokenSchema.databaseVersion
 
 const tokenDatabaseTTL = 6.048e8 as const // week
 
@@ -99,12 +96,12 @@ export class TokenController implements ITokenStorage {
     return [...result.notZero, ...result.zero]
   }
 
-  isSupportedTokenPermit(chainId: ChainId, tokenAddress: Address): Promise<boolean> {
+  isSupportedTokenPermit(): Promise<boolean> {
     throw new Error('Method not implemented.')
   }
 
-  async getTokenAddressListOrderByChainId(chainIds: ChainId[]) {
-    return await this.schema.getTokenAddressListOrderByChainId(chainIds)
+  async getTokenAddressListOrderByChainId() {
+    return await this.schema.getTokenAddressListOrderByChainId()
   }
 
   async getToken(chainId: ChainId, address: Address) {

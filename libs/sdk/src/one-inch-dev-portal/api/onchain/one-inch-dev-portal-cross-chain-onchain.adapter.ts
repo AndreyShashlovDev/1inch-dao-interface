@@ -86,7 +86,7 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     return mergeProxyResultBalance(result.flat())
   }
 
-  getGasPrice(chainId: ChainId): Promise<GasPriceDto | null> {
+  getGasPrice(): Promise<GasPriceDto | null> {
     throw new Error('Method not implemented.')
   }
 
@@ -106,11 +106,11 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getQuote call')
   }
 
-  getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null> {
+  getOrderStatus(): Promise<OrderStatusResult | null> {
     throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getOrderStatus call')
   }
 
-  cancelOrder(orderHash: Hash): Promise<Hash | null> {
+  cancelOrder(): Promise<Hash | null> {
     throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported cancelOrder call')
   }
 

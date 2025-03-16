@@ -109,8 +109,8 @@ export class ConfirmSwapElement extends LitElement {
           { pinned: true }
         )
       }
-    } catch (error: any) {
-      const errorText = parseError(error)
+    } catch (error) {
+      const errorText = parseError(error as Error)
       await this.applicationContext.notifications.error(html`${translate(errorText)}`)
       console.error(error)
     }

@@ -13,7 +13,6 @@ import {
   SettingsValue,
   SwapSettings,
   SwapSnapshot,
-  TokenSnapshot,
   TokenType,
 } from '@1inch-community/models'
 import {
@@ -91,7 +90,7 @@ export class SwapContext implements ISwapContext {
   private readonly dataSnapshot$: Observable<ISwapContextStrategyDataSnapshot | null> =
     this.dataUpdateEmitter$.pipe(
       withLatestFrom(this.connectedWalletAddress$),
-      switchMap(([_, address]) => {
+      switchMap(([, address]) => {
         this.loading$.next(true)
         return this.getDataSnapshot(address === null)
       }),
@@ -177,7 +176,7 @@ export class SwapContext implements ISwapContext {
     )
   }
 
-  wrapNativeToken(amount: bigint): Promise<void> {
+  wrapNativeToken(): Promise<void> {
     throw new Error('Method not implemented.')
   }
 
@@ -347,20 +346,14 @@ export class SwapContext implements ISwapContext {
     if (!useOnChainStrategy) {
       try {
         return await this.contextStrategy.fusion.getDataSnapshot()
-      } catch (error) {
+      } catch {
         return this.getDataSnapshot(true)
       }
     }
     try {
       return await this.contextStrategy.onChain.getDataSnapshot()
-    } catch (error) {
+    } catch {
       return null
     }
   }
-}
-
-function isTokenSnapshotNotNullable(
-  snapshot: NullableValue<TokenSnapshot>
-): snapshot is TokenSnapshot {
-  return snapshot.token !== null && snapshot.amount !== null
 }

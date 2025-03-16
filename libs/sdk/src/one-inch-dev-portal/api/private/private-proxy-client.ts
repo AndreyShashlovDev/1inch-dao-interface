@@ -10,7 +10,7 @@ type AuthData = {
 export class PrivateProxyClient implements IProxyClient {
   private token: string | null = null
   private expirationTime: number | null = null
-  private context = lazyAppContext(this)
+  private context = lazyAppContext('PrivateProxyClient')
 
   get isAuth() {
     return !!this.expirationTime && this.expirationTime > Date.now()

@@ -73,7 +73,7 @@ export class TokenSchema {
         'amount',
       ].join(', '),
     })
-    this.database = db as any as TokenSchemaDatabase
+    this.database = db as unknown as TokenSchemaDatabase
   }
 
   async getToken(chainId: ChainId, address: Address): Promise<ITokenRecord | null> {
@@ -270,7 +270,7 @@ export class TokenSchema {
         }
         priority[record.address] = record.priority
         zero.push(record.address)
-        record.isFavorite && favoriteTokenSet.add(record.address)
+        record.isFavorite && void favoriteTokenSet.add(record.address)
       })
 
     return {
@@ -311,9 +311,7 @@ export class TokenSchema {
     await this.tokens.update(recordId, { eip2612: state })
   }
 
-  async getTokenAddressListOrderByChainId(
-    chainIds: ChainId[]
-  ): Promise<Record<ChainId, Address[]>> {
+  async getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>> {
     const result: Record<ChainId, Address[]> = {} as Record<ChainId, Address[]>
 
     await this.tokens.each((record) => {

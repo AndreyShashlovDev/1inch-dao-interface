@@ -29,7 +29,7 @@ async function buildSDK(walletController: IWallet, proxyClient: IProxyClient) {
         }
         return await walletController.signTypedData(typedData as any)
       },
-      ethCall: async (contractAddress: string, callData: string): Promise<string> => {
+      ethCall: async (): Promise<string> => {
         return ''
       },
     },
@@ -98,7 +98,7 @@ export class CrossChainSDKFacade implements ICrossChainSDKFacade {
     const sdk = await this.buildSDK()
     if (!sdk) return null
     const callData = await sdk.buildCancelOrderCallData(orderHash)
-    return null
+    return callData as Hash
   }
 
   private async buildSDK() {

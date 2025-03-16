@@ -137,7 +137,7 @@ export class FusionSwapInfoAuctionTimeElement extends LitElement {
     if (!this.settings || this.settings.value === null) return this.segments[0]
     const [value, type] = this.settings.value
     if (type === 'custom') {
-      if (isNaN(parseFloat(value as any))) return this.segments[0]
+      if (isNaN(parseFloat(value.toString()))) return this.segments[0]
       this.customAuctionTimeInput.value = `${value}s`
       return this.segmentsCustom
     }

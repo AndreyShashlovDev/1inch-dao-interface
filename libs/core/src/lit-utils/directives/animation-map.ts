@@ -5,9 +5,9 @@ import { appendStyle } from '../append-style'
 export type AnimationMapDirection = 'horizontal' | 'vertical'
 export interface AnimationMapController<
   Value,
-  RenderState = void,
-  RemoveState = void,
-  MoveState = void,
+  RenderState = unknown,
+  RemoveState = unknown,
+  MoveState = unknown,
 > {
   readonly direction: AnimationMapDirection
   onKeyExtractor(value: Value, index: number): string
@@ -118,7 +118,7 @@ export class AnimationMap<Value> extends Directive {
 
     await controller.onAnimationStart?.()
 
-    const [_, renderResultState, removeResultState, moveResultState] = await Promise.all([
+    const [, renderResultState, removeResultState, moveResultState] = await Promise.all([
       controller.onBeforeAnimation?.(
         this.view,
         renderCandidateNodeIndexMap,
@@ -183,9 +183,9 @@ export class AnimationMap<Value> extends Directive {
 
   private async executeHandlerAndReturnResultMap(
     nodes: [string, HTMLElement][],
-    handler: (node: HTMLElement, key: string) => Promise<void>
-  ): Promise<Map<string, void>> {
-    const results = new Map<string, void>()
+    handler: (node: HTMLElement, key: string) => Promise<unknown>
+  ): Promise<Map<string, unknown>> {
+    const results = new Map<string, unknown>()
     await Promise.all(
       nodes.map(async ([key, node]) => {
         const result = await handler(node, key)

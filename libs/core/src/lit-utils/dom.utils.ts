@@ -35,7 +35,7 @@ export function dispatchEvent<V>(ctx: HTMLElement, type: string, value: V, event
 export function vibrate(pattern: VibratePattern = 40) {
   try {
     navigator.vibrate(pattern)
-  } catch (error) {
+  } catch {
     //
   }
 }

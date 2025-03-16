@@ -24,7 +24,7 @@ export class TimerElement extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.timer && clearTimeout(this.timer)
+    this.timer && void clearTimeout(this.timer)
   }
 
   protected render() {
@@ -33,7 +33,7 @@ export class TimerElement extends LitElement {
 
   private viewUpdater() {
     this.requestUpdate()
-    this.timer = setTimeout(() => this.viewUpdater(), 500) as any as number
+    this.timer = setTimeout(() => this.viewUpdater(), 500) as unknown as number
   }
 
   private calculateTimeView() {

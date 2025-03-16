@@ -168,7 +168,7 @@ async function benchMartTransport(transportHolder: TransportHolder): Promise<voi
   let end: number
   try {
     transportHolder.success = await _transport.request({ method: 'net_listening' })
-  } catch (err) {
+  } catch {
     transportHolder.success = false
   } finally {
     end = Date.now()

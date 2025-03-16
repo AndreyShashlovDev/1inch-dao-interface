@@ -376,7 +376,7 @@ export class OverlayMobileController implements IOverlayController {
   }
 
   private changeBrowserMetaColor(halfView: boolean, isBack: boolean) {
-    setBrowserMetaColorFilter((color: string, isDarkTheme: boolean) => {
+    setBrowserMetaColorFilter((color: string) => {
       if (halfView && !isBack) {
         return applyColorBrightness(color, parseFloat(this.brightnessHalfView))
       }

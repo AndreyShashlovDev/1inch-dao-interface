@@ -11,11 +11,12 @@ import {
   SwapSnapshot,
 } from '@1inch-community/models'
 import type { OrderParams } from '@1inch/fusion-sdk'
+import { PresetEnum } from '@1inch/fusion-sdk/dist/types/src/api/quoter/types'
 import { Hash } from 'viem'
 import { getWrapperNativeToken, isNativeToken } from '../chain'
 import { PairHolder } from './pair-holder'
 
-const RATE_BUMP_DENOMINATOR = 10_000_000n // 100%
+// const RATE_BUMP_DENOMINATOR = 10_000_000n // 100%
 
 export class SwapContextFusionStrategy
   implements ISwapContextStrategy<FusionQuoteReceiveDto | null>
@@ -30,7 +31,6 @@ export class SwapContextFusionStrategy
 
   async swap(swapSnapshot: SwapSnapshot<FusionQuoteReceiveDto | null>): Promise<Hash> {
     const {
-      chainId,
       sourceToken,
       destinationToken,
       sourceTokenAmount,
@@ -78,15 +78,15 @@ export class SwapContextFusionStrategy
           : preset.auctionDuration
       const auctionStartAmount = preset.auctionStartAmount
 
-      const getToTokenAmount = (coefficient: number) => {
-        let rate = coefficient - preset.gasCost.gasBumpEstimate
-        if (rate < 0) rate = 0
-        return (auctionEndAmount * (BigInt(rate) + RATE_BUMP_DENOMINATOR)) / RATE_BUMP_DENOMINATOR
-      }
-      const getDelay = (delay: number) => {
-        if (auctionTimeType === 'auto') return delay
-        return (delay * auctionTimeValue!) / preset.auctionDuration
-      }
+      // const getToTokenAmount = (coefficient: number) => {
+      //   let rate = coefficient - preset.gasCost.gasBumpEstimate
+      //   if (rate < 0) rate = 0
+      //   return (auctionEndAmount * (BigInt(rate) + RATE_BUMP_DENOMINATOR)) / RATE_BUMP_DENOMINATOR
+      // }
+      // const getDelay = (delay: number) => {
+      //   if (auctionTimeType === 'auto') return delay
+      //   return (delay * auctionTimeValue!) / preset.auctionDuration
+      // }
       orderParams.customPreset = {
         auctionDuration,
         auctionStartAmount: BigInt(auctionStartAmount).toString(),
@@ -98,7 +98,7 @@ export class SwapContextFusionStrategy
         //   }))
         // ]
       }
-      orderParams.preset = 'custom' as any
+      orderParams.preset = PresetEnum.custom
     }
     // const createOrderResponse = await fusionSDK.createOrder(orderParams)
     // const info = await fusionSDK.submitOrder(createOrderResponse.order, createOrderResponse.quoteId)

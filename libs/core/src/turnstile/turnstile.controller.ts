@@ -1,4 +1,4 @@
-import { IApplicationContext, ITurnstileController } from '@1inch-community/models'
+import { ITurnstileController } from '@1inch-community/models'
 import { firstValueFrom, Subject } from 'rxjs'
 import { getEnvironmentValue } from '../environment'
 import { appendStyle } from '../lit-utils'
@@ -56,7 +56,7 @@ export class TurnstileController implements ITurnstileController {
   private verificationInProgress = false
   private isInit = false
 
-  async init(context: IApplicationContext): Promise<void> {
+  async init(): Promise<void> {
     appendStyle(this.element, {
       position: 'absolute',
       zIndex: '-1',

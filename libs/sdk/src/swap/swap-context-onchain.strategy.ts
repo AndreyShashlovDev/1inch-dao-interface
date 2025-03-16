@@ -4,7 +4,6 @@ import {
   ISwapContextStrategyDataSnapshot,
   ITokenRateProvider,
   IWallet,
-  SwapSnapshot,
 } from '@1inch-community/models'
 import { Hash } from 'viem'
 import { PairHolder } from './pair-holder'
@@ -16,7 +15,7 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
     private readonly rateProvider: ITokenRateProvider
   ) {}
 
-  swap(swapSnapshot: SwapSnapshot<unknown>): Promise<Hash> {
+  swap(): Promise<Hash> {
     throw new Error('OnChain strategy not support swap')
   }
 

@@ -131,7 +131,7 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
     return this.sdkFacade.cancelOrder(orderHash)
   }
 
-  getGasPrice(chainId: ChainId): Promise<GasPriceDto | null> {
+  getGasPrice(): Promise<GasPriceDto | null> {
     throw new Error('Method not implemented.')
   }
 

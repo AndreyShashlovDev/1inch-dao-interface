@@ -8,12 +8,7 @@ import {
   IWalletInternal,
 } from '@1inch-community/models'
 import { Subject } from 'rxjs'
-import {
-  Address,
-  SignTypedDataParameters,
-  WriteContractParameters,
-  WriteContractReturnType,
-} from 'viem'
+import { SignTypedDataParameters, WriteContractParameters, WriteContractReturnType } from 'viem'
 import { adapterId } from './adapter-id'
 import { UniversalBrowserExtensionAdapter } from './adapters/universal-browser-extension-adapter'
 import { GlobalDataAdapter } from './global-data-adapter'
@@ -70,11 +65,11 @@ export class ConnectWalletEmbeddedController implements IWallet, IWalletInternal
     this.data.setChainIds(chainIds)
   }
 
-  connect(info: EIP6963ProviderInfo): Promise<boolean> {
+  connect(): Promise<boolean> {
     throw new Error('Method not implemented.')
   }
 
-  addConnection(info: EIP6963ProviderInfo): Promise<boolean> {
+  addConnection(): Promise<boolean> {
     throw new Error('Method not implemented.')
   }
 
@@ -82,11 +77,11 @@ export class ConnectWalletEmbeddedController implements IWallet, IWalletInternal
     throw new Error('Method not implemented.')
   }
 
-  getDataAdapter(info: EIP6963ProviderInfo): IDataAdapter {
+  getDataAdapter(): IDataAdapter {
     throw new Error('Method not implemented.')
   }
 
-  setActiveAddress(info: EIP6963ProviderInfo, address: Address): Promise<void> {
+  setActiveAddress(): Promise<void> {
     throw new Error('Method not implemented.')
   }
 }

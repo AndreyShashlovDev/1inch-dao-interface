@@ -142,7 +142,7 @@ export class TokenListItemElement extends LitElement {
     this.preRenderTemplate = html`
       <div
         class="${classMap(classes)}"
-        @click="${(event: UIEvent) => {
+        @click="${() => {
           this.context?.onSelectToken(token)
           dispatchEvent(this, 'backCard', null)
         }}"
@@ -186,10 +186,10 @@ export class TokenListItemElement extends LitElement {
   private getTokenUpdateEmitter() {
     if (!this.context) throw new Error('')
     return (this.context.changeFavoriteTokenState$ as Observable<[ChainId, Address]>).pipe(
-      filter((([chainId, address]: [ChainId, Address]) => {
+      filter(([chainId, address]: [ChainId, Address]) => {
         const token = this.task?.value?.[0] ?? null
-        return token && token.chainId === chainId && isAddressEqual(token.address, address)
-      }) as any)
+        return !!token && token.chainId === chainId && isAddressEqual(token.address, address)
+      })
     )
   }
 

@@ -89,7 +89,7 @@ export class NotificationsMobileContainerElement extends NotificationsBaseContai
           <inch-notifications-mobile-info></inch-notifications-mobile-info>
         </div>
         <div ${ref(this.contentContainerRef)} class="content-view">
-          ${animationMap(this.getSortedNotifications(), this.animationController as any)}
+          ${animationMap(this.getSortedNotifications(), this.animationController)}
         </div>
       </div>
     `
@@ -379,7 +379,7 @@ function interpolateTo(fromValue: number, toValue: number, duration: number) {
     timer = requestAnimationFrame(handler)
 
     return () => {
-      timer && cancelAnimationFrame(timer)
+      return timer && cancelAnimationFrame(timer)
     }
   })
 }

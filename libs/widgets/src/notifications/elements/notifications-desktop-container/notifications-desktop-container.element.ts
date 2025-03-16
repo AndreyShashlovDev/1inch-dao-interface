@@ -144,7 +144,7 @@ export class NotificationsDesktopContainerElement extends NotificationsBaseConta
           <inch-icon icon="xCircle16"></inch-icon>
         </inch-button>
       </div>
-      ${animationMap(this.getSortedNotifications(), this.animationController as any)}
+      ${animationMap(this.getSortedNotifications(), this.animationController)}
     `
   }
 

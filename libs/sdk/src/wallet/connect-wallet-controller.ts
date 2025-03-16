@@ -1,6 +1,7 @@
 import { lazyAppContext } from '@1inch-community/core/utils'
 import {
   ChainId,
+  EIP1193Provider,
   EIP6963ProviderDetail,
   EIP6963ProviderInfo,
   IApplicationContext,
@@ -122,7 +123,7 @@ export class WalletController implements IWallet, IWalletInternal {
     let connectState: boolean
     try {
       connectState = await adapter.connect(chainId)
-    } catch (error) {
+    } catch {
       connectState = false
     }
 
@@ -203,7 +204,7 @@ export class WalletController implements IWallet, IWalletInternal {
     if (!this.activeAdapters.has(walletId) || retry) {
       try {
         connectState = await adapter.connect(chainId)
-      } catch (error) {
+      } catch {
         connectState = false
       }
       connectState && this.activeAdapters.set(walletId, adapter)
@@ -229,7 +230,7 @@ export class WalletController implements IWallet, IWalletInternal {
     if (!this.activeAdapters.has(walletId)) {
       try {
         connectState = await adapter.restoreConnect(chainId, force)
-      } catch (error) {
+      } catch {
         connectState = false
       }
       connectState && this.activeAdapters.set(walletId, adapter)
@@ -343,7 +344,7 @@ export class WalletController implements IWallet, IWalletInternal {
   }
 }
 
-function isEqualsProviders(provider1: any, provider2: any): boolean {
+function isEqualsProviders(provider1: EIP1193Provider, provider2: EIP1193Provider): boolean {
   if (provider1 === provider2) return true
   const keys1 = Object.keys(provider1 ?? {})
   const keys2 = Object.keys(provider2 ?? {})

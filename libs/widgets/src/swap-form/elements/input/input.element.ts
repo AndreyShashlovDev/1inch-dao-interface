@@ -106,7 +106,8 @@ export class InputElement extends LitElement {
     this.input.placeholder = this.tokenType === 'source' ? '0' : ''
     this.input.onfocus = () => this.onFocus()
     this.input.onblur = () => this.onBlur()
-    this.input.oninput = ((event: InputEvent) => this.onInput(event)) as any
+    this.input.oninput = ((event: InputEvent) =>
+      this.onInput(event)) as GlobalEventHandlers['oninput']
 
     const updateMask$ = this.token$.pipe(
       tap((token) => {

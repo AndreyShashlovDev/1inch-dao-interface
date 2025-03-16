@@ -179,7 +179,7 @@ async function loadFromRepository(
   try {
     const repository = await repositoryLoader()
     return await repository(data)
-  } catch (error) {
+  } catch {
     return await loadFromRepository(data, index + 1)
   }
 }

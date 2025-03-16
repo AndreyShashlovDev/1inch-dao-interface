@@ -106,7 +106,7 @@ function getDefaultLocaleCode(): Locale {
     const code = userLocale.slice(0, 2)
     if (!(code in Locale)) return Locale.en
     return code as Locale
-  } catch (error) {
+  } catch {
     return Locale.en
   }
 }

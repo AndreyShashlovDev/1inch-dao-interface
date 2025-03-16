@@ -90,7 +90,7 @@ export class FavoriteTokensElement extends LitElement {
       return html`
         <div ${ref(this.scrollContainerRef)} class="favorite-container-scroll">
           <div class="favorite-container">
-            ${animationMap(tokens, this.favoriteTokensAnimationMapController as any)}
+            ${animationMap(tokens, this.favoriteTokensAnimationMapController)}
           </div>
         </div>
       `
@@ -104,7 +104,7 @@ export class FavoriteTokensElement extends LitElement {
       [
         this.editAllMode$.pipe(
           tap((state) => {
-            state
+            return state
               ? this.classList.add('remove-favorite-token-show')
               : this.classList.remove('remove-favorite-token-show')
           })

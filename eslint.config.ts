@@ -1,6 +1,24 @@
 import eslint from '@eslint/js'
-import tsEslint from 'typescript-eslint'
+import prettier from 'eslint-config-prettier'
+import { globalIgnores } from 'eslint/config'
+import tsEslint, { ConfigArray } from 'typescript-eslint'
 
-export default tsEslint.config(eslint.configs.recommended, tsEslint.configs.recommended, {
-  ignores: ['node_modules/', 'dist/', 'build/', 'scripts/', '**/*.min.js'],
-}) as any
+export default tsEslint.config(
+  globalIgnores([
+    '**/node_modules/**',
+    '**/dist/**',
+    '**/out/**',
+    'build/',
+    '**/scripts/**',
+    '**/*.min.js',
+  ]),
+  eslint.configs.recommended,
+  tsEslint.configs.recommended,
+  prettier,
+  {
+    rules: {
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  }
+) as ConfigArray

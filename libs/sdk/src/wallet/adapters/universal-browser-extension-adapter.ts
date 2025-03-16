@@ -93,7 +93,7 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
         ...typeData,
         account: address,
       })
-    } catch (error: any) {
+    } catch (error) {
       if (isUserRejectError(error as WalletError)) {
         throw error
       }

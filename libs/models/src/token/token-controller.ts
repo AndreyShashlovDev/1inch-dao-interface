@@ -6,7 +6,7 @@ import { IBalancesTokenRecord } from '../database'
 import { IToken } from './token'
 
 export interface ITokenStorage extends InitializingEntity {
-  getTokenAddressListOrderByChainId(chainIds: ChainId[]): Promise<Record<ChainId, Address[]>>
+  getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
   getSortedByPriorityAndBalanceTokenAddresses(
     chainId: ChainId,
     filterPattern: string,

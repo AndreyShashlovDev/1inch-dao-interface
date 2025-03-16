@@ -68,8 +68,8 @@ export class TokenListElement extends LitElement {
       <inch-scroll-view-virtualizer-consumer
         .header="${this.header}"
         .items=${observe(this.addressList$, this.getStubAddresses())}
-        .keyFunction="${((address: Address) =>
-          [this.chainId, this.walletAddress, address].join(':')) as any}"
+        .keyFunction="${(address: Address) =>
+          [this.chainId, this.walletAddress, address].join(':')}"
         .renderItem=${(address: Address) =>
           html` <inch-token-list-item
             tokenAddress="${address}"
