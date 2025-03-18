@@ -40,9 +40,6 @@ export class HeaderElement extends LitElement {
           <inch-icon icon="logoFull"></inch-icon>
         </div>
         <div class="right-content">
-          <inch-chain-selector
-            .controller="${this.applicationContext.wallet}"
-          ></inch-chain-selector>
           <inch-connect-wallet-view
             .controller="${this.applicationContext.wallet}"
           ></inch-connect-wallet-view>
