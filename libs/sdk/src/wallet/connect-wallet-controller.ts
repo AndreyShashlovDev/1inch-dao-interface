@@ -1,7 +1,6 @@
-import { lazyAppContext } from '@1inch-community/core/utils'
+import { lazyAppContext, objectsEqual } from '@1inch-community/core/utils'
 import {
   ChainId,
-  EIP1193Provider,
   EIP6963ProviderDetail,
   EIP6963ProviderInfo,
   IApplicationContext,
@@ -292,7 +291,7 @@ export class WalletController implements IWallet, IWalletInternal {
       fromEvent<CustomEvent<EIP6963ProviderDetail>>(window, 'eip6963:announceProvider')
         .pipe(
           tap((event) => {
-            skipInjectedProvider = isEqualsProviders(window.ethereum, event.detail.provider)
+            skipInjectedProvider = objectsEqual(window.ethereum, event.detail.provider)
             const id = adapterId(event.detail.info)
             if (!this.adapters.has(id)) {
               this.adapters.set(id, new UniversalBrowserExtensionAdapter(event.detail))
@@ -342,17 +341,4 @@ export class WalletController implements IWallet, IWalletInternal {
       }
     }
   }
-}
-
-function isEqualsProviders(provider1: EIP1193Provider, provider2: EIP1193Provider): boolean {
-  if (provider1 === provider2) return true
-  const keys1 = Object.keys(provider1 ?? {})
-  const keys2 = Object.keys(provider2 ?? {})
-  if (keys1.length !== keys2.length) return false
-  for (const key of keys1) {
-    if (provider1[key] !== provider2[key]) {
-      return false
-    }
-  }
-  return true
 }

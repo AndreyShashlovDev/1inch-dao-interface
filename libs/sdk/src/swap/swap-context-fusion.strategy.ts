@@ -10,8 +10,7 @@ import {
   SwapSettings,
   SwapSnapshot,
 } from '@1inch-community/models'
-import type { OrderParams } from '@1inch/fusion-sdk'
-import { PresetEnum } from '@1inch/fusion-sdk/dist/types/src/api/quoter/types'
+import { OrderParams, PresetEnum } from '@1inch/fusion-sdk'
 import { Hash } from 'viem'
 import { getWrapperNativeToken, isNativeToken } from '../chain'
 import { PairHolder } from './pair-holder'

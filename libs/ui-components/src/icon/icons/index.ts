@@ -1,8 +1,10 @@
 import { TemplateResult } from 'lit'
 import { IconContext } from './icon-context'
 
+type IconLoader = (context: IconContext) => TemplateResult
+
 export type IconsRecord = {
-  loader: () => Promise<TemplateResult | ((context: IconContext) => TemplateResult)>
+  loader: () => Promise<TemplateResult | IconLoader>
   width: string
   height: string
 }
@@ -21,7 +23,7 @@ export const icons: Record<string, IconsRecord> = {
   startDefault16: {
     width: '16px',
     height: '16px',
-    loader: () => import('./start-default_16.svg').then((m) => m.startDefault16Svg),
+    loader: () => import('./start-default_16.svg').then((m) => m.startDefault16Svg as IconLoader),
   },
   connect16: {
     width: '16px',

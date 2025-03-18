@@ -66,7 +66,7 @@ export class OneInchDevPortalCrossChainOnChainAdapter
   @CacheActivePromise()
   async getBalances(chainIds: ChainId[], walletAddresses: Address[]): Promise<ProxyResultBalance> {
     if (!this.context) return []
-    const tokenIdMap = await this.context.tokenStorage.getTokenAddressListOrderByChainId(chainIds)
+    const tokenIdMap = await this.context.tokenStorage.getTokenAddressListOrderByChainId()
     const pending: Promise<ProxyResultBalance>[] = []
     for (const chainId of chainIds) {
       const client = await this.context.onChain.getClient(chainId)

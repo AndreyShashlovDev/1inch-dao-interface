@@ -33,7 +33,11 @@
     "@1inch-community/sdk": "workspace:*",
     "@1inch-community/ui-components": "workspace:*",
     "@1inch-community/widgets": "workspace:*",
-    "tslib": "^2.8.1"
+    "@lit/context": "^1.1.4",
+    "lit": "^3.2.1",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1",
+    "viem": "^2.23.9"
   },
   "exports": {
     "./application": {

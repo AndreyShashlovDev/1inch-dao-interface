@@ -40,15 +40,24 @@ export default defineConfig(({ mode }) => {
 
     define: {
       global: {},
+      'process.env': JSON.stringify({}),
       __APP_VERSION__: JSON.stringify(version),
       __DEV_PORTAL_HOST__: JSON.stringify(process.env.ONE_INCH_DEV_PORTAL_HOST),
       __WALLET_CONNECT_PROJECT_ID__: JSON.stringify(process.env.WALLET_CONNECT_PROJECT_ID),
       __CLOUDFLARE_TURNSTILE_SITE_KEY__: JSON.stringify(process.env.CLOUDFLARE_TURNSTILE_SITE_KEY),
     },
 
+    resolve: {
+      alias: {
+        assert: 'assert',
+        util: 'util',
+        process: 'process',
+      },
+    },
+
     server: {
       port: 4200,
-      host: '0.0.0.0',
+      host: '127.0.0.1',
     },
 
     preview: {
