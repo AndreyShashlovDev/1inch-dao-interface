@@ -1,6 +1,6 @@
 export * from './average-block-time'
 export * from './block-time-cache'
-export * from './chain.controller'
+export * from './chain.manager'
 export * from './contracts'
 export * from './is-chain-id'
 export * from './is-native-token'
