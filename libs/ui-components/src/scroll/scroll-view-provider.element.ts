@@ -19,6 +19,8 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
 
   @property({ type: Number, attribute: false }) maxHeight?: number
 
+  @property({ type: Boolean, attribute: false }) setMaxHeight?: boolean
+
   private readonly context = new ContextProvider(this, { context: scrollContext })
 
   setScrollTopFromConsumer(state: number): void {

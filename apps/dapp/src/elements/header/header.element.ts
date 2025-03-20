@@ -1,5 +1,5 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import { getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
+import { getMobileMatchMediaAndSubscribe, subscribe } from '@1inch-community/core/lit-utils'
 import { IApplicationContext } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/notifications'
@@ -8,6 +8,7 @@ import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
+import { when } from 'lit/directives/when.js'
 import { getHeaderHeight } from '../../platform/sizes'
 import { headerStyle } from './header.style'
 
@@ -21,6 +22,10 @@ export class HeaderElement extends LitElement {
   applicationContext!: IApplicationContext
 
   private mobileMedia = getMobileMatchMediaAndSubscribe(this)
+
+  protected firstUpdated() {
+    subscribe(this, [this.applicationContext.wallet.data.isConnected$])
+  }
 
   protected render() {
     if (this.mobileMedia.matches) {
@@ -39,12 +44,17 @@ export class HeaderElement extends LitElement {
         <div class="left-content">
           <inch-icon icon="logoFull"></inch-icon>
         </div>
-        <div class="right-content">
-          <inch-connect-wallet-view
-            .controller="${this.applicationContext.wallet}"
-          ></inch-connect-wallet-view>
-          <inch-notifications-open-button></inch-notifications-open-button>
-        </div>
+        ${when(
+          this.applicationContext.wallet.isConnected,
+          () => html`
+            <div class="right-content">
+              <inch-connect-wallet-view
+                .controller="${this.applicationContext.wallet}"
+              ></inch-connect-wallet-view>
+              <inch-notifications-open-button></inch-notifications-open-button>
+            </div>
+          `
+        )}
       </div>
     `
   }

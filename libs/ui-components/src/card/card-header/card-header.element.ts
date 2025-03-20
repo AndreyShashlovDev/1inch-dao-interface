@@ -2,8 +2,8 @@ import { dispatchEvent } from '@1inch-community/core/lit-utils'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
-import '../button'
-import '../icon'
+import '../../button'
+import '../../icon'
 import { cardHeaderStyle } from './card-header.style'
 
 @customElement(CardHeaderElement.tahName)

@@ -1,6 +1,10 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { formatHex } from '@1inch-community/core/formatters'
-import { getMobileMatchMediaAndSubscribe, observe } from '@1inch-community/core/lit-utils'
+import {
+  getMobileMatchMediaAndSubscribe,
+  getShadowDomElement,
+  observe,
+} from '@1inch-community/core/lit-utils'
 import { IWallet } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
@@ -23,7 +27,9 @@ export class ConnectWalletViewElement extends LitElement {
 
   private readonly mobileMatchMedia = getMobileMatchMediaAndSubscribe(this)
 
-  private readonly overlay = new OverlayController('#app-root', this)
+  private readonly overlay = new OverlayController('#app-root', () =>
+    getShadowDomElement('swap-form')
+  )
 
   private overlayId: number | null = null
 
@@ -84,7 +90,7 @@ export class ConnectWalletViewElement extends LitElement {
       >
         ${when(
           this.mobileMatchMedia.matches,
-          () => html`<inch-icon icon="wallet24"></inch-icon>`,
+          () => html` <inch-icon icon="wallet24"></inch-icon>`,
           () => html`<span>Connect wallet</span>`
         )}
       </inch-button>

@@ -2,11 +2,17 @@ import { css } from 'lit'
 
 export const cardStyle = css`
   :host {
+    position: relative;
     background-color: var(--color-background-bg-primary);
     border-radius: 24px;
     width: fit-content;
     height: fit-content;
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(0, auto) 1fr;
+    grid-template-rows: minmax(0, auto) 1fr;
+    grid-template-areas:
+      'overlay-close header'
+      'overlay-close content';
   }
 
   :host(.shadow) {
@@ -15,15 +21,16 @@ export const cardStyle = css`
       0 6px 12px 0 var(--primary-12);
   }
 
-  :host(.mobile) {
+  :host(.overlay) {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    width: 100vw;
+    width: 100%;
     height: fit-content;
     box-shadow: none;
   }
 
   .card-content {
+    grid-area: content;
     padding: 8px;
     display: flex;
     width: 100%;

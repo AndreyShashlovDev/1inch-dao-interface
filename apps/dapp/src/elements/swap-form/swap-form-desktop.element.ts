@@ -16,7 +16,11 @@ import { classMap } from 'lit/directives/class-map.js'
 import { when } from 'lit/directives/when.js'
 import { swapFormStyle } from './swap-form.style'
 
-import { subscribe } from '@1inch-community/core/lit-utils'
+import {
+  registerShadowDomElement,
+  subscribe,
+  unregisterShadowDomElement,
+} from '@1inch-community/core/lit-utils'
 import { getThemeChange } from '@1inch-community/core/theme'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
@@ -47,7 +51,9 @@ export class SwapFormDesktopElement extends LitElement {
 
   private swapSnapshot: SwapSnapshot | null = null
 
-  private readonly overlay = new OverlayController('app-root', 'center')
+  private readonly overlay = new OverlayController('app-root', () => this)
+
+  private connectWalletViewId: number | null = null
 
   private readonly desktopScene = new SceneController('swapForm', {
     swapForm: { minWidth: 556, maxWidth: 556, maxHeight: 625, lazyRender: true },
@@ -55,6 +61,16 @@ export class SwapFormDesktopElement extends LitElement {
     confirmSwap: { minWidth: 556, maxWidth: 556, maxHeight: 680 },
     settings: { minWidth: 556, maxWidth: 556, maxHeight: 900, lazyRender: true },
   })
+
+  connectedCallback() {
+    super.connectedCallback()
+    registerShadowDomElement('swap-form', this)
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    unregisterShadowDomElement('swap-form')
+  }
 
   protected firstUpdated() {
     subscribe(
@@ -146,10 +162,18 @@ export class SwapFormDesktopElement extends LitElement {
   }
 
   private async onOpenConnectWalletView() {
-    const id = await this.overlay.open(html`
+    const close = () => {
+      if (!this.connectWalletViewId) return
+      this.overlay.close(this.connectWalletViewId)
+      this.connectWalletViewId = null
+    }
+    if (this.connectWalletViewId && this.overlay.isOpenOverlay(this.connectWalletViewId)) {
+      close()
+      return
+    }
+    this.connectWalletViewId = await this.overlay.open(html`
       <inch-wallet-manage
-        showShadow
-        @closeCard="${() => this.overlay.close(id)}"
+        @closeCard="${close}"
         .controller="${this.applicationContext.wallet}"
       ></inch-wallet-manage>
     `)

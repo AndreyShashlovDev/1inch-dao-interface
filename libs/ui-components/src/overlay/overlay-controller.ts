@@ -17,9 +17,9 @@ export class OverlayController implements IOverlayController {
     return this.desktopOverlay.isOpen
   }
 
-  constructor(rootNodeName: string, target: HTMLElement | 'center') {
+  constructor(rootNodeName: string, targetFactory: () => HTMLElement | null) {
     this.mobileOverlay = new OverlayMobileController(rootNodeName)
-    this.desktopOverlay = new OverlayDesktopController(target, rootNodeName)
+    this.desktopOverlay = new OverlayDesktopController(targetFactory, rootNodeName)
   }
 
   isOpenOverlay(overlayId: number): boolean {

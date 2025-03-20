@@ -1,5 +1,5 @@
 import { resizeObserver, subscribe } from '@1inch-community/core/lit-utils'
-import { scrollbarStyle } from '@1inch-community/core/theme'
+import { getScrollbarStyle } from '@1inch-community/core/theme'
 import { consume } from '@lit/context'
 import { css, html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -12,12 +12,14 @@ export class ScrollViewConsumerElement extends LitElement {
   static tagName = 'inch-scroll-view-consumer' as const
 
   static override styles = [
-    scrollbarStyle,
+    getScrollbarStyle('.scroll-container'),
     css`
       .scroll-container {
         display: block;
         flex-direction: column;
         transition: height 0.1s;
+        margin-right: -7px;
+        padding-right: 7px;
       }
       .overflow {
         overflow: auto;
@@ -48,9 +50,7 @@ export class ScrollViewConsumerElement extends LitElement {
   private globalOffsetY = 0
 
   protected override firstUpdated() {
-    if (!this.context)
-      throw new Error('inch-scroll-view-consumer must be used inside inch-scroll-view-provider')
-    this.globalOffsetY = this.context.clientHeight - this.clientHeight
+    this.updateGlobalOffsetY()
     subscribe(
       this,
       [
@@ -77,8 +77,15 @@ export class ScrollViewConsumerElement extends LitElement {
     `
   }
 
+  private updateGlobalOffsetY() {
+    if (!this.context)
+      throw new Error('inch-scroll-view-consumer must be used inside inch-scroll-view-provider')
+    const scrollContainerRect = this.scrollContainer.getBoundingClientRect()
+    this.globalOffsetY = scrollContainerRect.top
+  }
+
   private updateView() {
-    if (this.contentHeight > (this.context.maxHeight ?? 0)) {
+    if (this.contentHeight > (this.context.maxHeight ?? 0) || this.context.setMaxHeight) {
       this.scrollContainer.style.height = `${(this.context.maxHeight ?? 0) - this.globalOffsetY}px`
       !this.scrollContainer.classList.contains('overflow') &&
         this.scrollContainer.classList.add('overflow')

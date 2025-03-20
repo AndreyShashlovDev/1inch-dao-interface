@@ -22,7 +22,7 @@ export class ChainSelectorElement extends LitElement {
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
-  private readonly overlay = new OverlayController('#app-root', this)
+  private readonly overlay = new OverlayController('#app-root', () => this)
   private overlayId: number | null = null
 
   private readonly chainId$ = defer(() => this.getController().data.chainId$)

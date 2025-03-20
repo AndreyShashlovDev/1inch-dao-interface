@@ -96,7 +96,7 @@ export class SwapFormMobileElement extends LitElement {
   private async onOpenMobileConfirmSwap(event: CustomEvent) {
     const swapSnapshot = event.detail.value
     const id = await this.mobileOverlay.open(html`
-      <inch-card forMobileView style="width: 100%; height: 100%; display: flex;">
+      <inch-card overlayView style="width: 100%; height: 100%; display: flex;">
         <inch-confirm-swap
           .swapContext="${this.swapContext}"
           .swapSnapshot="${swapSnapshot}"
@@ -111,7 +111,7 @@ export class SwapFormMobileElement extends LitElement {
   private async onOpenMobileSelectToken(event: CustomEvent) {
     this.targetSelectToken = event.detail.value
     const id = await this.mobileOverlay.open(html`
-      <inch-card forMobileView style="width: 100%; height: 100%; display: flex;">
+      <inch-card overlayView style="width: 100%; height: 100%; display: flex;">
         <inch-select-token
           .swapContext="${this.swapContext}"
           tokenType="${this.targetSelectToken!}"

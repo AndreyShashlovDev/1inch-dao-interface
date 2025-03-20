@@ -145,6 +145,11 @@ export const icons: Record<string, IconsRecord> = {
     height: '24px',
     loader: () => import('./settings_24.svg').then((m) => m.settings24Svg),
   },
+  hideSidebar24: {
+    width: '24px',
+    height: '24px',
+    loader: () => import('./hide-sidebar_24.svg').then((m) => m.hideSidebar24Svg),
+  },
   fusion24: {
     width: '24px',
     height: '24px',

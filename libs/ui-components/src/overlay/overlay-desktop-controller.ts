@@ -1,4 +1,4 @@
-import { appendStyle, isRTLCurrentLocale } from '@1inch-community/core/lit-utils'
+import { appendStyle } from '@1inch-community/core/lit-utils'
 import { html, render, TemplateResult } from 'lit'
 import { fromEvent, Subscription } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
@@ -16,8 +16,16 @@ export class OverlayDesktopController implements IOverlayController {
 
   private readonly container = getContainer()
 
+  private readonly overlayWidth = 540
+  private readonly overlayPadding = 8
+  private readonly overlayStartPositionPercent = 105
+
+  private get target() {
+    return this.targetFactory()
+  }
+
   constructor(
-    private readonly target: HTMLElement | 'center',
+    private readonly targetFactory: () => HTMLElement | null,
     private readonly rootNodeName: string
   ) {}
 
@@ -26,30 +34,9 @@ export class OverlayDesktopController implements IOverlayController {
   }
 
   async open(openTarget: TemplateResult | HTMLElement): Promise<number> {
-    const position = await this.getPosition(openTarget)
     const overlayContainer = this.createOverlayContainer(openTarget)
-    overlayContainer.maxHeight = position[2]
-    if (this.target === 'center') {
-      appendStyle(overlayContainer, {
-        top: `0px`,
-        left: `0px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        height: '100%',
-      })
-    } else {
-      appendStyle(overlayContainer, {
-        top: `${position[1]}px`,
-        left: `${position[0]}px`,
-        borderRadius: '24px',
-        boxShadow: `0 -3px 4px 0 var(--primary-12), 0 6px 12px 0 var(--primary-12)`,
-      })
-    }
-
-    await this.animateEnter(overlayContainer, position[3])
-
+    const targetOffset = this.calculateTargetOffset()
+    await this.transition(overlayContainer, targetOffset)
     const id = getOverlayId()
     this.activeOverlayMap.set(id, overlayContainer)
     this.subscribe(id)
@@ -61,54 +48,94 @@ export class OverlayDesktopController implements IOverlayController {
       return
     }
     const overlayContainer = this.activeOverlayMap.get(overlayId)!
-
-    await this.animateLeave(overlayContainer)
+    await this.transition(overlayContainer, 0, true)
 
     this.unsubscribe(overlayId)
     overlayContainer.remove()
     this.activeOverlayMap.delete(overlayId)
   }
 
-  private async getPosition(
-    openTarget: TemplateResult | HTMLElement
-  ): Promise<[number, number, number, DOMRect | null]> {
-    const offset = 8
-    if (this.target === 'center') {
-      return [0, 0, window.innerHeight - offset * 2, null]
+  private calculateTargetOffset(): number {
+    if (!this.target) return 0
+    const targetRect = this.target.getBoundingClientRect()
+    const windowWidth = window.innerWidth
+    const overlayWidth = this.overlayWidth
+    const overlap = windowWidth - overlayWidth
+    const result = targetRect.right - overlap + this.overlayPadding * 3
+    if (targetRect.width + result > windowWidth || result < 0) {
+      return 0
     }
-    const rect = this.target.getBoundingClientRect()
-    const rectContent = await this.getRect(openTarget)
-    let left = rect.right - rectContent.width
-    if (left <= 0) {
-      left = rect.left
-    }
-    const top = rect.top + rect.height + offset
-    const maxHeight = window.innerHeight - top - offset
-    return [left, top, maxHeight, rect]
+    return result
   }
 
-  private async getRect(openTarget: TemplateResult | HTMLElement) {
-    const el = this.createOverlayContainer(openTarget)
-    appendStyle(el, {
-      visibility: 'hidden',
+  private getDefaultAnimationOptions() {
+    return {
+      duration: 500,
+      easing: 'cubic-bezier(.2, .8, .2, 1)',
+    }
+  }
+
+  private async transition(
+    overlayContainer: HTMLElement,
+    targetOffset: number,
+    isBack: boolean = false
+  ): Promise<void> {
+    const transitionOverlayContainerStart = () => ({
+      transform: `translate3d(${isBack ? this.overlayStartPositionPercent : 0}%, 0, 0)`,
     })
-    document.body.appendChild(el)
-    await new Promise((resolve) => requestAnimationFrame(resolve))
-    const rect = el.getBoundingClientRect()
-    el.remove()
-    return rect
+    const transitionTargetStart = () => ({
+      transform: `translate3d(${isBack ? 0 : -targetOffset}px, 0, 0)`,
+    })
+
+    const animateTarget = async () => {
+      if (!this.target) return
+      if (targetOffset === 0 && !isBack) return
+      return this.target.animate([transitionTargetStart()], this.getDefaultAnimationOptions())
+        .finished
+    }
+
+    await Promise.all([
+      overlayContainer.animate(
+        [transitionOverlayContainerStart()],
+        this.getDefaultAnimationOptions()
+      ).finished,
+      animateTarget(),
+    ])
+    appendStyle(overlayContainer, {
+      transform: '',
+    })
+    if (targetOffset !== 0 && this.target) {
+      appendStyle(this.target, {
+        ...transitionTargetStart(),
+      })
+    }
+    if (isBack && this.target) {
+      appendStyle(this.target, {
+        transform: '',
+      })
+    }
   }
 
   private createOverlayContainer(openTarget: TemplateResult | HTMLElement) {
     const overlayContainer = document.createElement(ScrollViewProviderElement.tagName)
+    const overlayIndex = this.activeOverlayMap.size + 1
+    const padding = this.overlayPadding
+    overlayContainer.maxHeight = window.innerHeight - padding * 2
+    overlayContainer.setMaxHeight = true
+    overlayContainer.setAttribute('overlay-index', overlayIndex.toString())
     appendStyle(overlayContainer, {
-      position: 'absolute',
+      position: 'fixed',
       display: 'flex',
+      width: `${this.overlayWidth}px`,
       overflow: 'hidden',
       alignItems: 'flex-end',
-      width: 'fit-content',
-      height: 'fit-content',
+      top: `${padding}px`,
+      right: `${padding}px`,
       zIndex: '2000',
+      borderRadius: '24px',
+      boxSizing: 'border-box',
+      boxShadow: '0px 4px 4px -2px rgba(24, 39, 75, 0.08), 0px 2px 4px -2px rgba(24, 39, 75, 0.12)',
+      transform: `translate3d(${this.overlayStartPositionPercent}%, 0, 0)`,
     })
     render(html`${openTarget}`, overlayContainer)
     this.container.appendChild(overlayContainer)
@@ -119,29 +146,7 @@ export class OverlayDesktopController implements IOverlayController {
     const subscription = new Subscription()
     const overlayContainer = this.activeOverlayMap.get(overlayId)
     if (!overlayContainer) return
-    if (this.target === 'center') {
-      subscription.add(
-        fromEvent(overlayContainer, 'click').subscribe((event) => {
-          if (event.target !== overlayContainer) return
-          this.close(overlayId).catch()
-        })
-      )
-      return
-    }
     subscription.add(fromEvent(window, 'resize').subscribe(() => this.close(overlayId).catch()))
-    const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-    subscription.add(fromEvent(rootNode, 'scroll').subscribe(() => this.updatePosition(overlayId)))
-    subscription.add(
-      fromEvent(overlayContainer, 'click').subscribe((event) => {
-        event.stopPropagation()
-        event.preventDefault()
-      })
-    )
-    subscription.add(
-      fromEvent(document, 'click').subscribe(() => {
-        this.close(overlayId).catch()
-      })
-    )
     this.subscriptions.set(overlayId, subscription)
   }
 
@@ -150,15 +155,15 @@ export class OverlayDesktopController implements IOverlayController {
     const subscription = this.subscriptions.get(overlayId)!
     if (subscription.closed) return
     subscription.unsubscribe()
+    this.subscriptions.delete(overlayId)
   }
 
   private updatePosition(overlayId: number) {
-    if (this.target === 'center') return
     if (!this.activeOverlayMap.has(overlayId)) {
       return
     }
     const overlayContainer = this.activeOverlayMap.get(overlayId)!
-    const rect = this.target.getBoundingClientRect()
+    const rect = this.target!.getBoundingClientRect()
     const rectContent = overlayContainer.getBoundingClientRect()
     const top = rect.top + rect.height + 8
     const left = rect.right - rectContent.width
@@ -166,76 +171,5 @@ export class OverlayDesktopController implements IOverlayController {
       top: `${top}px`,
       left: `${left}px`,
     })
-  }
-
-  private async animateEnter(overlayContainer: HTMLElement, targetRect: DOMRect | null) {
-    const options = {
-      duration: 500,
-      easing: 'cubic-bezier(.2, .8, .2, 1)',
-    }
-    if (this.target === 'center') {
-      const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-      await Promise.all([
-        rootNode.animate([{ filter: 'blur(0)' }, { filter: 'blur(3px)' }], options).finished,
-        overlayContainer.animate(
-          [
-            { transform: 'scale(.3)', opacity: 0.3 },
-            { transform: 'scale(1)', opacity: 1 },
-          ],
-          options
-        ).finished,
-      ])
-      appendStyle(rootNode, {
-        filter: 'blur(3px)',
-      })
-      return
-    }
-
-    if (!targetRect) {
-      throw new Error('')
-    }
-
-    await overlayContainer.animate(
-      [
-        { transform: `translate3d(${isRTLCurrentLocale() ? -5 : 5}%, -5%, 0)`, opacity: 0.3 },
-        { transform: 'translate3d(0, 0, 0)', opacity: 1 },
-      ],
-      options
-    ).finished
-  }
-
-  private async animateLeave(overlayContainer: HTMLElement) {
-    const options = {
-      duration: 500,
-      easing: 'cubic-bezier(.2, .8, .2, 1)',
-    }
-    if (this.target === 'center') {
-      const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-      await Promise.all([
-        rootNode.animate([{ filter: 'blur(3px)' }, { filter: 'blur(0)' }], options).finished,
-        overlayContainer.animate(
-          [
-            { transform: 'scale(1)', opacity: 1 },
-            { transform: 'scale(0)', opacity: 0 },
-          ],
-          {
-            ...options,
-            duration: 300,
-          }
-        ).finished,
-      ])
-      appendStyle(rootNode, {
-        filter: '',
-      })
-      return
-    }
-
-    await overlayContainer.animate(
-      [
-        { transform: 'translate3d(0, 0, 0)', opacity: 1 },
-        { transform: `translate3d(${isRTLCurrentLocale() ? -5 : 5}%, -5%, 0)`, opacity: 0 },
-      ],
-      options
-    ).finished
   }
 }

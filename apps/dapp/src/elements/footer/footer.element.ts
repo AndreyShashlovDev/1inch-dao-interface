@@ -72,7 +72,7 @@ export class FooterElement extends LitElement {
 
   private async onOpenSettings() {
     const id = await this.mobileOverlay.open(html`
-      <inch-card forMobileView>
+      <inch-card overlayView>
         <inch-settings @closeSettings="${() => this.mobileOverlay.close(id)}"></inch-settings>
       </inch-card>
     `)

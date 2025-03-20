@@ -3,6 +3,7 @@ import { css } from 'lit'
 
 export const cardHeaderStyle = css`
   :host {
+    grid-area: header;
     display: flex;
     height: 60px;
     width: 100%;

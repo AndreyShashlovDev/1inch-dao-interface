@@ -10,7 +10,7 @@ export const appStyle = css`
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    //background-color: var(--color-background-bg-body);
+    background-color: var(--color-background-bg-body);
     overscroll-behavior: none;
     touch-action: pan-y;
     transition: height 0.2s;

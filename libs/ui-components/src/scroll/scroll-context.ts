@@ -4,6 +4,7 @@ export interface ScrollContext extends HTMLElement {
   readonly maxHeight?: number
   readonly maxWidth?: number
   readonly scrollTopFromConsumer?: number
+  readonly setMaxHeight?: boolean
   setScrollTopFromConsumer(state: number): void
 }
 

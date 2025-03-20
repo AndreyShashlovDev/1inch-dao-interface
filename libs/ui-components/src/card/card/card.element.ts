@@ -8,12 +8,13 @@ export class CardElement extends LitElement {
 
   static override styles = cardStyle
 
-  @property({ type: Boolean }) forMobileView = false
+  @property({ type: Boolean }) overlayView = false
 
   @property({ type: Boolean }) showShadow = false
 
   protected override render() {
     return html`
+      <slot name="close-overlay"></slot>
       <slot name="header"></slot>
       <div class="card-content">
         <slot></slot>
@@ -22,8 +23,8 @@ export class CardElement extends LitElement {
   }
 
   protected override firstUpdated() {
-    if (this.forMobileView && !this.classList.contains('mobile')) {
-      this.classList.add('mobile')
+    if (this.overlayView && !this.classList.contains('overlay')) {
+      this.classList.add('overlay')
     }
     if (this.showShadow && !this.classList.contains('shadow')) {
       this.classList.add('shadow')

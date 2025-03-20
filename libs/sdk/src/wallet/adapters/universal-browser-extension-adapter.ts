@@ -35,7 +35,7 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
     this.data.setProvider(this.providerDetail.provider)
     const addresses = await this.data.getAddresses()
     const walletChainId = await this.data.getChainId()
-    const state = addresses.length > 0 && walletChainId !== null
+    const state = addresses.length > 0
     if (!state) {
       this.data.setProvider(null)
     } else {
@@ -46,7 +46,6 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
     }
     if (!state && force && walletChainId !== null) {
       this.connect(chainId).catch()
-      return true
     }
     return state
   }

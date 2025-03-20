@@ -1,10 +1,11 @@
-import { changeMobileMatchMedia, getMobileMatchMedia } from '@1inch-community/core/lit-utils'
+import { getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
 import { IWallet } from '@1inch-community/models'
 import '@1inch-community/ui-components/card'
 import { ContextProvider } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
+import { when } from 'lit/directives/when.js'
 import { controllerContext } from './context'
 import './elements/wallet-list'
 import { walletManageStyle } from './wallet-manage.style'
@@ -19,13 +20,9 @@ export class WalletManageElement extends LitElement {
 
   @property({ type: Boolean }) showShadow?: boolean
 
-  private readonly mobileMedia = getMobileMatchMedia()
+  private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   private readonly context = new ContextProvider(this, { context: controllerContext })
-
-  protected override firstUpdated() {
-    changeMobileMatchMedia(this)
-  }
 
   protected override render() {
     if (!this.controller) {
@@ -39,11 +36,12 @@ export class WalletManageElement extends LitElement {
     const headerText = this.controller.isConnected ? 'Wallet management' : 'Connect wallet'
 
     return html`
-      <inch-card
-        showShadow="${ifDefined(this.showShadow)}"
-        forMobileView="${ifDefined(this.mobileMedia.matches ? '' : undefined)}"
-      >
-        <inch-card-header closeButton headerText="${headerText}"></inch-card-header>
+      <inch-card showShadow="${ifDefined(this.showShadow)}" overlayView>
+        ${when(
+          !this.mobileMedia.matches,
+          () => html` <inch-card-close-overlay></inch-card-close-overlay> `
+        )}
+        <inch-card-header headerText="${headerText}"></inch-card-header>
         <inch-wallet-list></inch-wallet-list>
       </inch-card>
     `
