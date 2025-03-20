@@ -7,7 +7,6 @@ on:
       - new-project-structure
 
 env:
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   WALLET_CONNECT_PROJECT_ID: ${{ secrets.WALLET_CONNECT_PROJECT_ID }}
   ONE_INCH_DEV_PORTAL_HOST: ${{ vars.ONE_INCH_DEV_PORTAL_HOST }}
@@ -45,4 +44,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apps/dapp/dist
+          publish_dir: ./apps/dapp/dist/dapp
