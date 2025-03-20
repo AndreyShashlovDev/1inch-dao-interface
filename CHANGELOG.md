@@ -1,3 +1,18 @@
+# [1.0.0-alpha.5](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.4...v1.0.0-alpha.5) (2025-03-20)
+
+
+### Bug Fixes
+
+* **core, dapp:** remove unused components and simplify Sentry config ([bb5a075](https://github.com/1inch-community/interface/commit/bb5a075d11438bd6d9af298227a87f0edec8878b))
+* **deps:** update dependencies across multiple packages ([bdd457f](https://github.com/1inch-community/interface/commit/bdd457f30e9ced99bc93ed6a93ec8218863ad9c0))
+* streamline and update methods; improve consistency ([700b350](https://github.com/1inch-community/interface/commit/700b3502d3b21ca11b215e41c08d5179b1cdf7db))
+
+
+### BREAKING CHANGES
+
+* **core, dapp:** Removed `inch-chain-selector` from header and footer components.
+* Certain method signatures and expected parameters have been modified across modules.
+
 # [1.0.0-alpha.4](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.3...v1.0.0-alpha.4) (2025-03-13)
 
 ### Features
