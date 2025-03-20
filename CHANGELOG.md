@@ -1,3 +1,10 @@
+# [1.0.0-alpha.6](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.5...v1.0.0-alpha.6) (2025-03-20)
+
+
+### Bug Fixes
+
+* **workflows:** add condition to deploy step in dev-pipeline ([acdff22](https://github.com/1inch-community/interface/commit/acdff22e629732bd648a05decb81e8180b134d24))
+
 # [1.0.0-alpha.5](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.4...v1.0.0-alpha.5) (2025-03-20)
 
 
