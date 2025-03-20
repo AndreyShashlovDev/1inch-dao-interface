@@ -43,6 +43,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
+        if: ${{ hashFiles('./apps/dapp/dist/dapp/*') != '' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apps/dapp/dist/dapp
