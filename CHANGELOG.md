@@ -1,3 +1,15 @@
+# [1.0.0-alpha.7](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.6...v1.0.0-alpha.7) (2025-03-20)
+
+
+### Features
+
+* **overlay:** enhance overlay positioning and add close button ([69245ce](https://github.com/1inch-community/interface/commit/69245ce7c4b740d7048abc0dadf83f04c5529856))
+
+
+### BREAKING CHANGES
+
+* **overlay:** Updated `OverlayController` constructor to accept a target factory function instead of direct target elements.
+
 # [1.0.0-alpha.6](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.5...v1.0.0-alpha.6) (2025-03-20)
 
 
