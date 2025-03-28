@@ -1,3 +1,10 @@
+# [1.0.0-alpha.8](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.7...v1.0.0-alpha.8) (2025-03-28)
+
+
+### Features
+
+* chain selector refactor ([87b7770](https://github.com/1inch-community/interface/commit/87b77706de4899f8a1ea8443b103ba6a6215ce2e))
+
 # [1.0.0-alpha.7](https://github.com/1inch-community/interface/compare/v1.0.0-alpha.6...v1.0.0-alpha.7) (2025-03-20)
 
 
