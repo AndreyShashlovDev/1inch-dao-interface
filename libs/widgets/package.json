@@ -42,6 +42,10 @@
     "viem": "^2.23.9"
   },
   "exports": {
+    "./chain-selector": {
+      "types": "./dist/chain-selector/index.d.ts",
+      "import": "./dist/chain-selector/index.js"
+    },
     "./notifications": {
       "types": "./dist/notifications/index.d.ts",
       "import": "./dist/notifications/index.js"

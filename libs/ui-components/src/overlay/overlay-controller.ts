@@ -3,10 +3,12 @@ import { TemplateResult } from 'lit'
 import { IOverlayController } from './overlay-controller.interface'
 import { OverlayDesktopController } from './overlay-desktop-controller'
 import { OverlayMobileController } from './overlay-mobile-controller'
+import { OverlayPopupController } from './overlay-popup-controller';
 
 export class OverlayController implements IOverlayController {
   private readonly mobileOverlay: IOverlayController
   private readonly desktopOverlay: IOverlayController
+  private readonly popupOverlay: IOverlayController
 
   private readonly mobileMedia = getMobileMatchMedia()
 
@@ -20,6 +22,7 @@ export class OverlayController implements IOverlayController {
   constructor(rootNodeName: string, targetFactory: () => HTMLElement | null) {
     this.mobileOverlay = new OverlayMobileController(rootNodeName)
     this.desktopOverlay = new OverlayDesktopController(targetFactory, rootNodeName)
+    this.popupOverlay = new OverlayPopupController(targetFactory, rootNodeName)
   }
 
   isOpenOverlay(overlayId: number): boolean {
@@ -27,6 +30,10 @@ export class OverlayController implements IOverlayController {
       return this.mobileOverlay.isOpenOverlay(overlayId)
     }
     return this.desktopOverlay.isOpenOverlay(overlayId)
+  }
+
+  isPopupOpen(overlayId: number): boolean {
+    return this.popupOverlay.isOpenOverlay(overlayId)
   }
 
   async open(openTarget: TemplateResult | HTMLElement): Promise<number> {
@@ -41,5 +48,13 @@ export class OverlayController implements IOverlayController {
       return await this.mobileOverlay.close(overlayId)
     }
     return await this.desktopOverlay.close(overlayId)
+  }
+
+  async openPopup(openTarget: TemplateResult | HTMLElement): Promise<number> {
+    return await this.popupOverlay.open(openTarget)
+  }
+
+  async closePopup(overlayId: number): Promise<void> {
+    return await this.popupOverlay.close(overlayId)
   }
 }

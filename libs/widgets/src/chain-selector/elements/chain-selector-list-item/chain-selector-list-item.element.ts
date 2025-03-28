@@ -1,0 +1,69 @@
+import { html, LitElement } from 'lit';
+import { chainSelectorListItemStyle } from './chain-selector-list-item.style';
+import { customElement, property } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
+import '@1inch-community/ui-components/icon';
+import { IWallet } from '@1inch-community/models';
+import { isL2Chain } from '@1inch-community/sdk/chain';
+import { dispatchEvent, getMobileMatchMediaAndSubscribe, isRTLCurrentLocale } from '@1inch-community/core/lit-utils';
+import { when } from 'lit/directives/when.js';
+import { ChainViewInfo } from '../../models';
+
+@customElement(ChainSelectorListItemElement.tagName)
+export class ChainSelectorListItemElement extends LitElement {
+  static tagName = 'inch-chain-selector-list-item' as const;
+
+  static override styles = chainSelectorListItemStyle
+
+  private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
+
+  @property({ type: Object }) info?: ChainViewInfo
+
+  @property({ type: Object, attribute: false }) controller?: IWallet;
+
+  @property({ type: Array, attribute: false }) selectedChainList?: ChainViewInfo[];
+
+  protected override render() {
+    if (!this.info || !this.selectedChainList) return
+
+    const isL2 = isL2Chain(this.info.chainId)
+    /**
+     * Переписать на два флага, чтобы два разных события были были по очереди (для анимации удаления)
+     */
+    const isActiveChain = this.selectedChainList.includes(this.info)
+    const classes = {
+      container: true,
+      active: isActiveChain
+    }
+    /**
+     * TODO: Размер иконок для мобилки
+     */
+    const iconSize = this.mobileMedia.matches ? 26 : 24
+
+    return html`
+      <div class="${classMap(classes)}" @click="${() => this.onItemClick()}">
+        ${when(isL2, () => html`<inch-icon icon="${isRTLCurrentLocale() ? 'l2ChainRTL24' : 'l2Chain24'}"></inch-icon>`)}
+        <inch-icon width="${iconSize}px" height="${iconSize}px" icon="${this.info.iconName}"></inch-icon>
+        <span>${this.info.name}</span>
+        <inch-icon class="list-icon" icon="${isActiveChain ? 'check24' : 'plus24'}"></inch-icon>
+        <inch-icon class="list-icon-delete" icon="minus24"></inch-icon>
+      </div>
+    `
+  }
+
+  private onItemClick() {
+    if (!this.info) throw new Error('')
+
+    dispatchEvent(this, 'chainItemClick', this.info);
+  }
+
+  private onDeselectAll() {
+    console.log('deselectAll');
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'inch-chain-selector-list-item': ChainSelectorListItemElement
+  }
+}

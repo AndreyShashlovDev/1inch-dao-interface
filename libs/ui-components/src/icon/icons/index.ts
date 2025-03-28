@@ -10,6 +10,18 @@ export type IconsRecord = {
 }
 
 export const icons: Record<string, IconsRecord> = {
+  plus24: {
+    width: '24px',
+    height: '24px',
+    loader: () => import('./plus_24.svg').then(m => m.plus24Svg) },
+  minus24: {
+    width: '24px',
+    height: '24px',
+    loader: () => import('./minus_24.svg').then(m => m.minus24Svg) },
+  check24: {
+    width: '24px',
+    height: '24px',
+    loader: () => import('./check_24.svg').then(m => m.check24Svg) },
   circle16: {
     width: '16px',
     height: '16px',

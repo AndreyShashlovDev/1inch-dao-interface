@@ -16,6 +16,7 @@ type ButtonType =
   | 'secondary-gray'
   | 'tertiary'
   | 'tertiary-gray'
+  | 'link'
 
 @customElement(ButtonElement.tagName)
 export class ButtonElement extends LitElement {

@@ -118,86 +118,99 @@ export const buttonSizeStyle = css`
 `
 
 export const buttonTypeStyle = css`
-  .primary {
-    --button-background-color: var(--primary);
-    --button-background-color-hover: var(--primary-hover);
-    --button-box-shadow-color-active: var(--secondary);
-    --button-text-color: var(--color-core-white);
-    --loader-color: var(--primary-hover);
-  }
+    .primary {
+        --button-background-color: var(--primary);
+        --button-background-color-hover: var(--primary-hover);
+        --button-box-shadow-color-active: var(--secondary);
+        --button-text-color: var(--color-core-white);
+        --loader-color: var(--primary-hover);
+    }
 
-  .primary-critical {
-    --button-background-color: var(--color-core-red-critical);
-    --button-background-color-hover: var(--color-core-red-critical-hover);
-    --button-box-shadow-color-active: var(--color-background-bg-critical);
-    --button-text-color: var(--color-core-white);
-  }
+    .primary-critical {
+        --button-background-color: var(--color-core-red-critical);
+        --button-background-color-hover: var(--color-core-red-critical-hover);
+        --button-box-shadow-color-active: var(--color-background-bg-critical);
+        --button-text-color: var(--color-core-white);
+    }
 
-  .primary-warning {
-    --button-background-color: var(--color-core-orange-warning);
-    --button-background-color-hover: var(--color-core-orange-warning-hover);
-    --button-box-shadow-color-active: var(--color-background-bg-warning);
-    --button-text-color: var(--color-core-white);
-  }
+    .primary-warning {
+        --button-background-color: var(--color-core-orange-warning);
+        --button-background-color-hover: var(--color-core-orange-warning-hover);
+        --button-box-shadow-color-active: var(--color-background-bg-warning);
+        --button-text-color: var(--color-core-white);
+    }
 
-  .primary-gray {
-    --button-background-color: var(--color-background-bg-primary);
-    --button-background-color-hover: var(--color-background-bg-secondary);
-    --button-box-shadow-color-active: var(--color-background-bg-secondary);
-    --button-text-color: var(--color-content-content-primary);
-  }
+    .primary-gray {
+        --button-background-color: var(--color-background-bg-primary);
+        --button-background-color-hover: var(--color-background-bg-secondary);
+        --button-box-shadow-color-active: var(--color-background-bg-secondary);
+        --button-text-color: var(--color-content-content-primary);
+    }
 
-  .secondary {
-    --button-background-color: var(--secondary);
-    --button-background-color-hover: var(--secondary-hover);
-    --button-box-shadow-color-active: var(--secondary-hover);
-    --button-text-color: var(--primary);
-    --button-text-color-hover: var(--primary-hover);
-  }
+    .secondary {
+        --button-background-color: var(--secondary);
+        --button-background-color-hover: var(--secondary-hover);
+        --button-box-shadow-color-active: var(--secondary-hover);
+        --button-text-color: var(--primary);
+        --button-text-color-hover: var(--primary-hover);
+    }
 
-  .secondary-critical {
-    --button-background-color: var(--color-background-bg-critical);
-    --button-background-color-hover: var(--color-background-bg-critical-hover);
-    --button-box-shadow-color-active: var(--color-background-bg-critical-hover);
-    --button-text-color: var(--color-core-red-critical-hover);
-  }
+    .secondary-critical {
+        --button-background-color: var(--color-background-bg-critical);
+        --button-background-color-hover: var(--color-background-bg-critical-hover);
+        --button-box-shadow-color-active: var(--color-background-bg-critical-hover);
+        --button-text-color: var(--color-core-red-critical-hover);
+    }
 
-  .secondary-warning {
-    --button-background-color: var(--color-background-bg-warning);
-    --button-background-color-hover: var(--color-background-bg-warning-hover);
-    --button-box-shadow-color-active: var(--color-background-bg-warning-hover);
-    --button-text-color: var(--color-core-orange-warning);
-  }
+    .secondary-warning {
+        --button-background-color: var(--color-background-bg-warning);
+        --button-background-color-hover: var(--color-background-bg-warning-hover);
+        --button-box-shadow-color-active: var(--color-background-bg-warning-hover);
+        --button-text-color: var(--color-core-orange-warning);
+    }
 
-  .secondary-gray {
-    --button-background-color: transparent;
-    --button-border-color: var(--color-border-border-tertiary);
-    --button-background-color-hover: var(--color-background-bg-secondary);
-    --button-box-shadow-color-active: var(--secondary);
-    --button-text-color: var(--color-content-content-primary);
-    --button-text-color-hover: var(--color-content-content-secondary);
-    --button-background-color-disabled: transparent;
-    --button-border-color-disabled: var(--color-background-bg-disabled);
-  }
+    .secondary-gray {
+        --button-background-color: transparent;
+        --button-border-color: var(--color-border-border-tertiary);
+        --button-background-color-hover: var(--color-background-bg-secondary);
+        --button-box-shadow-color-active: var(--secondary);
+        --button-text-color: var(--color-content-content-primary);
+        --button-text-color-hover: var(--color-content-content-secondary);
+        --button-background-color-disabled: transparent;
+        --button-border-color-disabled: var(--color-background-bg-disabled);
+    }
 
-  .tertiary {
-    --button-background-color: transparent;
-    --button-background-color-hover: var(--secondary);
-    --button-text-color: var(--primary);
-  }
+    .tertiary {
+        --button-background-color: transparent;
+        --button-background-color-hover: var(--secondary);
+        --button-text-color: var(--primary);
+    }
 
-  .tertiary-gray {
-    --button-background-color: transparent;
-    --button-background-color-hover: var(--color-background-bg-secondary);
-    --button-text-color: var(--color-content-content-primary);
-    --button-text-color-hover: var(--color-content-content-secondary);
-  }
+    .tertiary-gray {
+        --button-background-color: transparent;
+        --button-background-color-hover: var(--color-background-bg-secondary);
+        --button-text-color: var(--color-content-content-primary);
+        --button-text-color-hover: var(--color-content-content-secondary);
+    }
 
-  button:disabled {
-    background-color: var(--button-background-color-disabled, var(--color-background-bg-disabled));
-    color: var(--color-content-content-disabled);
-    border: 1px solid var(--button-border-color-disabled, none);
-  }
+
+    .link {
+        padding: 0;
+        border: none;
+
+        font-weight: 500;
+        --button-text-color: var(--primary);
+
+        --button-background-color: transparent;
+        --button-background-color-hover: transparent;
+    }
+
+
+    button:disabled {
+        background-color: var(--button-background-color-disabled, var(--color-background-bg-disabled));
+        color: var(--color-content-content-disabled);
+        border: 1px solid var(--button-border-color-disabled, none);
+    }
 `
 
 export const buttonLoaderStyle = css`

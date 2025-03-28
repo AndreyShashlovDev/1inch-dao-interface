@@ -4,6 +4,7 @@ import { IApplicationContext } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/notifications'
 import '@1inch-community/widgets/wallet-manage'
+import '@1inch-community/widgets/chain-selector'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -48,6 +49,9 @@ export class HeaderElement extends LitElement {
           this.applicationContext.wallet.isConnected,
           () => html`
             <div class="right-content">
+              <inch-chain-selector
+                .controller="${this.applicationContext.wallet}">
+              </inch-chain-selector>
               <inch-connect-wallet-view
                 .controller="${this.applicationContext.wallet}"
               ></inch-connect-wallet-view>
