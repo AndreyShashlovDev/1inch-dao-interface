@@ -11,6 +11,7 @@ export default tsEslint.config(
     'build/',
     '**/scripts/**',
     '**/*.min.js',
+    '**/vite.config.ts',
   ]),
   eslint.configs.recommended,
   tsEslint.configs.recommended,
