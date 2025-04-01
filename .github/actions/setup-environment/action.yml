@@ -28,6 +28,14 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
 
+    - name: Node version
+      run: node -v
+      shell: bash
+
+    - name: Pnpm version
+      run: pnpm -v
+      shell: bash
+
     - name: Install dependencies
       run: pnpm install --ignore-scripts --frozen-lockfile
       shell: bash
