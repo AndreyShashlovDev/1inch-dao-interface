@@ -4,6 +4,7 @@ import { GlobalEmbeddedContextElement } from './global-embedded-context.element'
 
 export async function bootstrapApplicationContext(config: EmbeddedBootstrapConfig) {
   const env: IEnvironment = {
+    production: true,
     oneInchDevPortalHost: '',
     walletConnectProjectId: '',
   }

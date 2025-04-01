@@ -60,6 +60,7 @@ export class TurnstileController implements ITurnstileController {
   async init(context: IApplicationContext): Promise<void> {
     this.context.set(context)
     this.siteKey = this.context.value.environment.get('cloudflareTurnstileSiteKey') ?? null
+    if (!this.siteKey) throw new Error('TurnstileController.init Error: siteKey is not defined')
     this.initScript()
   }
 

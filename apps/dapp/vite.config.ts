@@ -36,7 +36,6 @@ export default defineConfig(({ mode }) => {
     appType: 'spa',
     base: baseHref,
     root: __dirname,
-    cacheDir: isProduction ? undefined : 'cache/vite' + outDir,
 
     define: {
       global: {},

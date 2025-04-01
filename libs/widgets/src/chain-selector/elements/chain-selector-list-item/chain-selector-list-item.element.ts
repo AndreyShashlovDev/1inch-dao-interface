@@ -71,9 +71,7 @@ export class ChainSelectorListItemElement extends LitElement {
     dispatchEvent(this, 'chainItemClick', this.info)
   }
 
-  private onDeselectAll() {
-    console.log('deselectAll')
-  }
+  private onDeselectAll() {}
 }
 
 declare global {

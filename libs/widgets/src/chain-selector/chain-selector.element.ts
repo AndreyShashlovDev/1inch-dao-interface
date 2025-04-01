@@ -85,8 +85,6 @@ export class ChainSelectorElement extends LitElement {
 
   protected updated(_changedProperties: PropertyValues) {
     super.updated(_changedProperties)
-    console.log(_changedProperties)
-    console.log(this.refContainer.value)
     setTimeout(() => {
       this.refContainer.value?.classList.add('test')
     }, 10000)
