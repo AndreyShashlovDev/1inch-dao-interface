@@ -69,7 +69,6 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     const tokenIdMap = await this.context.tokenStorage.getTokenAddressListOrderByChainId()
     const pending: Promise<ProxyResultBalance>[] = []
     for (const chainId of chainIds) {
-      debugger
       const client = await this.context.onChain.getClient(chainId)
       const tokenList = tokenIdMap[chainId]
       if (getBalanceHelperAddress(chainId) !== null) {

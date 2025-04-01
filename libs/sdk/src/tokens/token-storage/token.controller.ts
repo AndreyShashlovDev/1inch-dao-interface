@@ -367,8 +367,10 @@ export class TokenController implements ITokenStorage {
   }
 
   async getTokenUSDPrices(
-    chainId: ChainId,
-    tokenAddressList: Address[]
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _: ChainId,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    __: Address[]
   ): Promise<Record<Address, string>> {
     return {}
     // const result: Record<Address, string> = {}

@@ -48,7 +48,7 @@ export class SelectTokenContext implements ISelectTokenContext {
     this.connectedWalletAddress$,
     this.searchToken$.pipe(debounceTime(300), startWith(''), distinctUntilChanged()),
   ]).pipe(
-    switchMap(([address, searchToken]: [Address | null, string]) => {
+    switchMap(([address]: [Address | null, string]) => {
       return this.applicationContext.tokenStorage.getSymbolData(address ?? undefined)
     }),
     tap(() => this.searchInProgress$.next(false)),
