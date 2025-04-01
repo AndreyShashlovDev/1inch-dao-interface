@@ -85,17 +85,14 @@ export class ChainSelectorElement extends LitElement {
 
   protected updated(_changedProperties: PropertyValues) {
     super.updated(_changedProperties)
-    console.log(_changedProperties)
-    console.log(this.refContainer.value)
-    setTimeout(() => {
-      this.refContainer.value?.classList.add('test')
-    }, 10000)
+    // console.log(_changedProperties)
+    // console.log(this.refContainer.value)
   }
 
   @CacheActivePromise()
   private async onClick() {
     if (this.overlay.isPopupOpen(this.overlayId ?? 0)) {
-      this.closeOverlay()
+      this.closePopup()
       return
     }
     this.overlayId = await this.overlay.openPopup(html`
@@ -109,15 +106,9 @@ export class ChainSelectorElement extends LitElement {
   }
 
   private resetSelectedChainList() {
-    /**
-     * TODO: Определиться с дефолтом?
-     */
     this.selectedChainList = [chainList[0]]
   }
 
-  /**
-   * TODO: Отказаться от ререндера, а просто инжектить новые значки в какой-то контейнер, не удаляя старые
-   */
   private getChainIcon() {
     if (this.selectedChainList.length >= 6) {
       return html`
@@ -199,7 +190,7 @@ export class ChainSelectorElement extends LitElement {
     }
   }
 
-  private closeOverlay() {
+  private closePopup() {
     if (!this.overlayId) return
     this.overlay.closePopup(this.overlayId)
     this.overlayId = null
@@ -213,10 +204,6 @@ export class ChainSelectorElement extends LitElement {
   }
 
   private onChangeSelectedChainList(chainList: ChainViewInfo[]) {
-    if (chainList.length === 0) {
-      return this.resetSelectedChainList()
-    }
-
     this.selectedChainList = chainList
   }
 }

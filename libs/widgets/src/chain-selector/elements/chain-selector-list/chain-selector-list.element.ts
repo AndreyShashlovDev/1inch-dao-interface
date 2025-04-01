@@ -1,7 +1,6 @@
 import {
   dispatchEvent,
   getMobileMatchMediaAndSubscribe,
-  subscribe,
 } from '@1inch-community/core/lit-utils'
 import { IWallet } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
@@ -10,7 +9,6 @@ import '@1inch-community/ui-components/card'
 import '@1inch-community/ui-components/scroll'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { tap } from 'rxjs'
 import { ChainViewInfo } from '../../models'
 import '../chain-selector-list-item'
 import { chainSelectorListStyle } from './chain-selector-list.style'
@@ -26,25 +24,6 @@ export class ChainSelectorListElement extends LitElement {
   @property({ type: Array, attribute: false }) selectedChainList: ChainViewInfo[] = []
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
-
-  protected override firstUpdated() {
-    if (!this.controller) throw new Error('')
-    subscribe(
-      this,
-      [
-        this.controller.data.chainId$.pipe(
-          tap((chainId) => {
-            if (chainId !== null) {
-              /**
-               * TODO: здесь раньше была текущая активная сеть. Надо заменить логику.
-               */
-            }
-          })
-        ),
-      ],
-      { requestUpdate: false }
-    )
-  }
 
   protected override render() {
     return this.mobileMedia.matches ? this.getMobileList() : this.getDesktopList()
@@ -89,12 +68,13 @@ export class ChainSelectorListElement extends LitElement {
     `
   }
 
+  private resetSelectedChainList() {
+    this.selectedChainList = [chainList[0]]
+  }
+
   private onSelectAllClick(): void {
     if (this.selectedChainList.length === chainList.length) {
-      /**
-       * TODO: Логика выбора только ETH
-       */
-      this.selectedChainList = []
+      this.resetSelectedChainList()
     } else {
       this.selectedChainList = chainList
     }
@@ -107,6 +87,10 @@ export class ChainSelectorListElement extends LitElement {
       this.selectedChainList = this.selectedChainList.filter((item) => item !== chainInfo)
     } else {
       this.selectedChainList = [...this.selectedChainList, chainInfo]
+    }
+
+    if (this.selectedChainList.length === 0) {
+      this.resetSelectedChainList();
     }
 
     dispatchEvent(this, 'changeSelectedChainList', this.selectedChainList)

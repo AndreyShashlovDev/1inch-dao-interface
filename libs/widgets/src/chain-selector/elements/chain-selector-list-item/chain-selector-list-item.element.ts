@@ -28,19 +28,18 @@ export class ChainSelectorListItemElement extends LitElement {
   @property({ type: Array, attribute: false }) selectedChainList?: ChainViewInfo[]
 
   protected override render() {
-    if (!this.info || !this.selectedChainList) return
+    if (this.info === undefined || this.selectedChainList === undefined) return
 
     const isL2 = isL2Chain(this.info.chainId)
-    /**
-     * Переписать на два флага, чтобы два разных события были были по очереди (для анимации удаления)
-     */
+
     const isActiveChain = this.selectedChainList.includes(this.info)
+
     const classes = {
       container: true,
       active: isActiveChain,
     }
     /**
-     * TODO: Размер иконок для мобилки
+     * TODO: Mobile icon size
      */
     const iconSize = this.mobileMedia.matches ? 26 : 24
 
@@ -69,10 +68,6 @@ export class ChainSelectorListItemElement extends LitElement {
     if (!this.info) throw new Error('')
 
     dispatchEvent(this, 'chainItemClick', this.info)
-  }
-
-  private onDeselectAll() {
-    console.log('deselectAll')
   }
 }
 
