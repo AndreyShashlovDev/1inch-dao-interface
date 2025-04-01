@@ -11,7 +11,7 @@ export function CacheActivePromise<Ctx extends object, T extends Array<unknown>>
   }
 
   return function (
-    ctx: { constructor: { name: string } },
+    ctx: { constructor: { name1: string } },
     fieldName: string,
     propertyDescriptor: PropertyDescriptor
   ): PropertyDescriptor {
