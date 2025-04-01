@@ -5,11 +5,6 @@
       "name": "dev",
       "prerelease": true,
       "channel": "beta"
-    },
-    {
-      "name": "new-project-structure",
-      "prerelease": "alpha",
-      "channel": "alpha"
     }
   ],
   "plugins": [
