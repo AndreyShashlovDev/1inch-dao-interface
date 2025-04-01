@@ -19,6 +19,7 @@ export default tsEslint.config(
     rules: {
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   }
 ) as ConfigArray

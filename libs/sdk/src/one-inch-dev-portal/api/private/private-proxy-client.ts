@@ -79,6 +79,6 @@ export class PrivateProxyClient implements IProxyClient {
     this.expirationTime = expiration_time * 1000 - 2000
     this.context.value.storage.set('private-proxy-client-token', this.token)
     this.context.value.storage.set('private-proxy-client-expiration-time', this.expirationTime)
-    console.log('auth complete')
+    console.warn('auth complete')
   }
 }

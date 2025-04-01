@@ -76,7 +76,6 @@ export class TokenListElement extends LitElement {
           const normalizedIndex = index - 1
           const record = this.extractTokenViewDataByIndex(normalizedIndex)
           if (!record) return html``
-          console.log('qwe', record)
           return html`
             <inch-token-list-item
               .crossChainTokensBindingRecord="${record}"

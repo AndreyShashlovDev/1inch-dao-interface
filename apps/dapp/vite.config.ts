@@ -41,6 +41,7 @@ export default defineConfig(({ mode }) => {
     define: {
       global: {},
       'process.env': JSON.stringify({}),
+      __PRODUCTION__: JSON.stringify(isProduction),
       __APP_VERSION__: JSON.stringify(version),
       __DEV_PORTAL_HOST__: JSON.stringify(process.env.ONE_INCH_DEV_PORTAL_HOST),
       __WALLET_CONNECT_PROJECT_ID__: JSON.stringify(process.env.WALLET_CONNECT_PROJECT_ID),

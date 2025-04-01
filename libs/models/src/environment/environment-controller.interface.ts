@@ -3,6 +3,7 @@ export interface IEnvironmentController {
 }
 
 export interface IEnvironment {
+  production: boolean
   oneInchDevPortalHost: string
   oneInchDevPortalToken?: string
   cloudflareTurnstileSiteKey?: string
