@@ -1,0 +1,43 @@
+name: 'PR Checks'
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  WALLET_CONNECT_PROJECT_ID: ${{ secrets.WALLET_CONNECT_PROJECT_ID }}
+  ONE_INCH_DEV_PORTAL_HOST: ${{ vars.ONE_INCH_DEV_PORTAL_HOST }}
+  DAPP_IS_PRODUCTION: true
+
+jobs:
+  check:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Prettier check
+        run: pnpm run prettier:check
+
+      - name: Lint check
+        run: pnpm run lint
+
+      - name: Build libs
+        run: pnpm run build:libs:all
+
+      - name: Build dapp
+        run: pnpm run build:dapp
+
+      - name: Run tests
+        run: pnpm run test
+
+
