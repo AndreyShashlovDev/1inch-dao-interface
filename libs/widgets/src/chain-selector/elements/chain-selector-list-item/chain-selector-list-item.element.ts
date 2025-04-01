@@ -25,18 +25,16 @@ export class ChainSelectorListItemElement extends LitElement {
 
   @property({ type: Object, attribute: false }) controller?: IWallet
 
-  @property({ type: Array, attribute: false }) selectedChainList?: ChainViewInfo[]
+  @property({ type: Boolean, attribute: false }) isActiveChain: boolean = false
 
   protected override render() {
-    if (this.info === undefined || this.selectedChainList === undefined) return
+    if (this.info === undefined) return
 
     const isL2 = isL2Chain(this.info.chainId)
 
-    const isActiveChain = this.selectedChainList.includes(this.info)
-
     const classes = {
       container: true,
-      active: isActiveChain,
+      active: this.isActiveChain,
     }
     /**
      * TODO: Mobile icon size
@@ -58,7 +56,7 @@ export class ChainSelectorListItemElement extends LitElement {
           icon="${this.info.iconName}"
         ></inch-icon>
         <span>${this.info.name}</span>
-        <inch-icon class="list-icon" icon="${isActiveChain ? 'check24' : 'plus24'}"></inch-icon>
+        <inch-icon class="list-icon" icon="${this.isActiveChain ? 'check24' : 'plus24'}"></inch-icon>
         <inch-icon class="list-icon-delete" icon="minus24"></inch-icon>
       </div>
     `

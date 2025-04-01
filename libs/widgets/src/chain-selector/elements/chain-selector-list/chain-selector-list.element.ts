@@ -36,6 +36,7 @@ export class ChainSelectorListElement extends LitElement {
           .info="${info}"
           .controller="${this.controller}"
           .selectedChainList="${this.selectedChainList}"
+          .isActiveChain="${this.selectedChainList.includes(info)}"
           @chainItemClick="${(event: CustomEvent) =>
             this.onChainItemClick(event.detail.value as ChainViewInfo)}"
         ></inch-chain-selector-list-item>

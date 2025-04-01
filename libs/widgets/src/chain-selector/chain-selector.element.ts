@@ -5,9 +5,8 @@ import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { OverlayController } from '@1inch-community/ui-components/overlay'
-import { html, LitElement, PropertyValues } from 'lit'
+import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-import { createRef, ref } from 'lit/directives/ref.js'
 import { when } from 'lit/directives/when.js'
 import { defer, filter, map } from 'rxjs'
 import { chainViewConfig } from '../wallet-manage/chain-view-config'
@@ -20,8 +19,6 @@ export class ChainSelectorElement extends LitElement {
   static tagName = 'inch-chain-selector' as const
 
   static override styles = chainSelectorStyle
-
-  private refContainer = createRef<HTMLDivElement>()
 
   @property({ type: Object, attribute: false })
   controller?: IWallet
@@ -61,7 +58,6 @@ export class ChainSelectorElement extends LitElement {
     return html`
       <inch-button class="button" @click="${() => this.onClick()}" size="l" type="primary-gray">
         <div
-          ${ref(this.refContainer)}
           class="capacity-${this.selectedChainList.length > 6
             ? 6
             : this.selectedChainList.length} icon-container"
@@ -81,12 +77,6 @@ export class ChainSelectorElement extends LitElement {
         )}
       </inch-button>
     `
-  }
-
-  protected updated(_changedProperties: PropertyValues) {
-    super.updated(_changedProperties)
-    // console.log(_changedProperties)
-    // console.log(this.refContainer.value)
   }
 
   @CacheActivePromise()
