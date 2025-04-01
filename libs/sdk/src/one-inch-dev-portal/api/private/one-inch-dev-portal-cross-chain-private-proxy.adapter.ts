@@ -14,8 +14,8 @@ import {
   QuoteResult,
 } from '@1inch-community/models'
 import { Address, type Hash } from 'viem'
-import { CrossChainSDKFacade } from '../../sdk/cross-chain-sdk'
-import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain/one-inch-dev-portal-cross-chain-onchain.adapter'
+import { CrossChainSDKFacade } from '../../sdk'
+import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain'
 import { PrivateProxyClient } from './private-proxy-client'
 
 export class OneInchDevPortalCrossChainPrivateProxyAdapter

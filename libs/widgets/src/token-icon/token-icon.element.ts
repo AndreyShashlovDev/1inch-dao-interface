@@ -1,68 +1,27 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { ChainId, IApplicationContext, IToken } from '@1inch-community/models'
-import { getWrapperNativeToken, isNativeToken } from '@1inch-community/sdk/chain'
+import { chainViewConfig, getWrapperNativeToken, isNativeToken } from '@1inch-community/sdk/chain'
+import '@1inch-community/ui-components/icon'
 import { consume } from '@lit/context'
 import { Task } from '@lit/task'
-import { css, html, LitElement } from 'lit'
+import { html, LitElement, TemplateResult } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import type { Address } from 'viem'
 import { repositories } from './repositories'
 import { RepositoryPayload } from './repositories/repository.model'
+import { tokenIconStyle } from './token-icon.style'
 
 @customElement(TokenIconElement.tagName)
 export class TokenIconElement extends LitElement {
   static tagName = 'inch-token-icon' as const
 
-  static override styles = css`
-    :host {
-      user-select: none;
-      outline: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .stub {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--color-background-bg-secondary);
-      border-radius: 50%;
-      color: var(--color-content-content-secondary);
-      position: relative;
-    }
-    .stub-loader {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 1px solid;
-      border-bottom-color: var(--secondary);
-      border-top-color: var(--secondary);
-      animation: spin 1s linear infinite;
-    }
-
-    img {
-      user-select: none;
-      outline: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-  `
+  static override styles = [tokenIconStyle]
 
   @property({ type: String, attribute: true }) symbol?: string
   @property({ type: String, attribute: true }) address?: Address
   @property({ type: Number, attribute: true }) chainId?: ChainId
   @property({ type: Number, attribute: true }) size = 24
+  @property({ type: Boolean, attribute: true }) hideChainIcon = false
 
   @consume({ context: ApplicationContextToken })
   applicationContext!: IApplicationContext
@@ -88,7 +47,7 @@ export class TokenIconElement extends LitElement {
         value.width = this.size
         value.height = this.size
         value.ondragstart = () => false
-        return html`${value}`
+        return appendChainIcon(html`${value}`, this.hideChainIcon, this.size, this.chainId)
       },
     })
   }
@@ -156,6 +115,27 @@ export class TokenIconElement extends LitElement {
     }
     return null
   }
+}
+
+function appendChainIcon(
+  view: TemplateResult,
+  hideChainIcon: boolean,
+  size: number,
+  chainId?: ChainId
+) {
+  if (!chainId || hideChainIcon) return view
+  const chainSize = size / 2.5
+  return html`
+    <div class="wrap-chain">
+      ${view}
+      <inch-icon
+        class="chain-view"
+        width="${chainSize}"
+        height="${chainSize}"
+        icon="${chainViewConfig[chainId].iconName}"
+      ></inch-icon>
+    </div>
+  `
 }
 
 function symbolView(size: number, symbol?: string, showLoader?: boolean) {

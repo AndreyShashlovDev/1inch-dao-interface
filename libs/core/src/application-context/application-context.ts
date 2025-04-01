@@ -4,6 +4,7 @@ import {
   IEnvironmentController,
   Ii18nManager,
   ILogger,
+  InitializingEntity,
   INotificationsManager,
   IOnChain,
   IOneInchDevPortalCrossChainAdapter,
@@ -15,6 +16,7 @@ import {
   ITokenStorage,
   ITurnstileController,
   IWallet,
+  Type,
 } from '@1inch-community/models'
 
 export type ApplicationContextPayload = {
@@ -179,15 +181,15 @@ export class ApplicationContext implements IApplicationContext {
     await Promise.all([
       this._logger.init(this),
       this._settings.init(this),
+      this._turnstile.init(this),
+      this._wallet.init(this),
       this._i18n.init(this),
       this._theme.init(this),
-      this._wallet.init(this),
-      this._notifications.init(this),
       this._tokenController.init(this),
       this._tokenRateProvider.init(this),
       this._api.init(this),
-      this._turnstile.init(this),
       this._chainController.init(this),
+      this._notifications.init(this),
       this._animations.init(this),
     ])
   }
@@ -201,4 +203,14 @@ export class ApplicationContext implements IApplicationContext {
   getActiveSwapContext(): ISwapContext | null {
     return this._activeSwapContext?.deref() ?? null
   }
+
+  async buildEntity<T extends InitializingEntity>(constructor: Type<T> | (() => T)): Promise<T> {
+    const entity = isConstructor(constructor) ? new constructor() : constructor()
+    await entity.init(this)
+    return entity
+  }
+}
+
+function isConstructor(fn: any): fn is Type {
+  return typeof fn === 'function' && !!fn.prototype
 }

@@ -1,0 +1,430 @@
+import { CacheActivePromise } from '@1inch-community/core/decorators'
+import { BigFloat } from '@1inch-community/core/math'
+import { lazyAppContext } from '@1inch-community/core/utils'
+import {
+  ChainId,
+  IApplicationContext,
+  IBalancesTokenRecord,
+  IBigFloat,
+  ICrossChainTokensBindingRecord,
+  IToken,
+  ITokenListViewData,
+  ITokenPriceRecord,
+  ITokenRecord,
+  ITokenStorage,
+  TokenRecordId,
+} from '@1inch-community/models'
+import { from, switchMap } from 'rxjs'
+import { Address, isAddressEqual } from 'viem'
+import { getChainIdList } from '../../chain/chain-id-list'
+import { TokenSchema } from './token.schema'
+
+export class TokenController implements ITokenStorage {
+  private readonly context = lazyAppContext('TokenController')
+  private readonly schema = new TokenSchema()
+
+  private get oneInchApiAdapter() {
+    return this.context.value.api
+  }
+
+  async init(context: IApplicationContext): Promise<void> {
+    this.context.set(context)
+    await this.schema.init(context)
+  }
+
+  @CacheActivePromise()
+  async getSymbolData(walletAddress?: Address): Promise<ITokenListViewData> {
+    if (walletAddress) {
+      return this.getSymbolDataByWalletAddress(walletAddress)
+    }
+    return this.getSymbolDataWithoutWalletAddress()
+  }
+
+  @CacheActivePromise()
+  async getSymbolDataWithoutWalletAddress(): Promise<ITokenListViewData> {
+    const { crossChainTokensBinding } = this.schema
+    const allTokensInfo = await crossChainTokensBinding.orderBy('priority').reverse().toArray()
+    return {
+      allTokensInfo,
+      userTokensInfo: [],
+    }
+  }
+
+  @CacheActivePromise()
+  async getSymbolDataByWalletAddress(walletAddress: Address): Promise<ITokenListViewData> {
+    await this.updateDatabase(walletAddress)
+    const { balances, tokens, crossChainTokensBinding, tokenPrice } = this.schema
+    const crossChainTokensBindingSortedSymbols = crossChainTokensBinding
+      .orderBy('priority')
+      .reverse()
+    const tokenIdsWithBalance: TokenRecordId[] = []
+    const tokenSymbolsWithBalance = new Set<string>()
+    const tokenRecord: Record<TokenRecordId, ITokenRecord> = {}
+    const tokenRateRecord: Record<TokenRecordId, BigFloat> = {}
+    const tokenRawBalanceRecord: Record<TokenRecordId, bigint> = {}
+    const tokenBalanceRecord: Record<TokenRecordId, BigFloat> = {}
+    const tokenFiatBalanceRecord: Record<TokenRecordId, BigFloat> = {}
+    const crossChainTokensBindingRecord: Record<string, ICrossChainTokensBindingRecord> = {}
+    const crossChainTokensBindingResult: ICrossChainTokensBindingRecord[] = []
+    const crossChainTokensBindingWithBalanceResult: ICrossChainTokensBindingRecord[] = []
+    await balances
+      .where('walletAddress')
+      .equals(walletAddress)
+      .and((record) => record.amount !== '' && record.amount !== '0')
+      .each((record) => {
+        tokenIdsWithBalance.push(record.tokenRecordId)
+        tokenRawBalanceRecord[record.tokenRecordId] = BigInt(record.amount)
+      })
+    await tokens
+      .where('id')
+      .anyOf(tokenIdsWithBalance)
+      .each((record) => {
+        tokenSymbolsWithBalance.add(record.symbol)
+        const balance = tokenRawBalanceRecord[record.id]
+        tokenBalanceRecord[record.id] = BigFloat.fromBigInt(balance, record.decimals)
+        tokenRecord[record.id] = record
+      })
+    await crossChainTokensBindingSortedSymbols
+      .clone()
+      .filter((record) => tokenSymbolsWithBalance.has(record.symbol))
+      .each((record) => {
+        crossChainTokensBindingRecord[record.symbol] = record
+      })
+    await tokenPrice
+      .where('tokenRecordId')
+      .anyOf(tokenIdsWithBalance)
+      .each((record) => {
+        tokenRateRecord[record.tokenRecordId] = BigFloat.from(record.price)
+      })
+    tokenIdsWithBalance.forEach((id) => {
+      const rate = tokenRateRecord[id]
+      const balance = tokenBalanceRecord[id]
+      if (!rate || !balance) return
+      tokenFiatBalanceRecord[id] = rate.mul(balance)
+    })
+    Object.entries(tokenFiatBalanceRecord)
+      .sort(([, balance1], [, balance2]) => {
+        const result = balance1.sub(balance2)
+        if (result.isZero()) return 0
+        return result.isNegative() ? 1 : -1
+      })
+      .forEach(([id]) => {
+        const token = tokenRecord[id as TokenRecordId]
+        crossChainTokensBindingWithBalanceResult.push(crossChainTokensBindingRecord[token.symbol])
+      })
+    await crossChainTokensBindingSortedSymbols
+      .clone()
+      .filter((record) => !tokenSymbolsWithBalance.has(record.symbol))
+      .each((record) => {
+        crossChainTokensBindingResult.push(record)
+      })
+    return {
+      allTokensInfo: crossChainTokensBindingResult,
+      userTokensInfo: crossChainTokensBindingWithBalanceResult,
+    }
+  }
+
+  @CacheActivePromise()
+  async getCrossChainTokenBalance(symbol: string, walletAddress: Address): Promise<IBigFloat> {
+    await this.updateDatabase(walletAddress)
+    const { balances, tokens, crossChainTokensBinding } = this.schema
+    const crossChainTokensBindingRecord = await crossChainTokensBinding
+      .where('symbol')
+      .equals(symbol)
+      .toArray()
+      .then((result) => result[0] ?? null)
+    if (!crossChainTokensBindingRecord) return BigFloat.zero()
+    let totalBalance = BigFloat.zero()
+    const tokenMap = new Map<TokenRecordId, IToken>()
+    await tokens
+      .where('id')
+      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
+      .each((record) => tokenMap.set(record.id, record))
+    await balances
+      .where('tokenRecordId')
+      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
+      .each((record) => {
+        if (!isAddressEqual(record.walletAddress, walletAddress)) return
+        const token = tokenMap.get(record.tokenRecordId)
+        if (!token) return
+        const balance = BigFloat.fromBigInt(BigInt(record.amount), token.decimals)
+        totalBalance = totalBalance.add(balance)
+      })
+    return totalBalance
+  }
+
+  @CacheActivePromise()
+  async getCrossChainTokenFiatBalance(symbol: string, walletAddress: Address): Promise<IBigFloat> {
+    await this.updateDatabase(walletAddress)
+    const { balances, tokens, crossChainTokensBinding, tokenPrice } = this.schema
+    const crossChainTokensBindingRecord = await crossChainTokensBinding
+      .where('symbol')
+      .equals(symbol)
+      .toArray()
+      .then((result) => result[0] ?? null)
+    if (!crossChainTokensBindingRecord) return BigFloat.zero()
+    let totalBalance = BigFloat.zero()
+    const tokenMap = new Map<TokenRecordId, IToken>()
+    const tokenPriceMap = new Map<TokenRecordId, ITokenPriceRecord>()
+    await Promise.all([
+      tokens
+        .where('id')
+        .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
+        .each((record) => tokenMap.set(record.id, record)),
+      tokenPrice
+        .where('id')
+        .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
+        .each((record) => tokenPriceMap.set(record.id, record)),
+    ])
+    await balances
+      .where('tokenRecordId')
+      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
+      .each((record) => {
+        if (!isAddressEqual(record.walletAddress, walletAddress)) return
+        const token = tokenMap.get(record.tokenRecordId)
+        const tokenPriceRecord = tokenPriceMap.get(record.tokenRecordId)
+        if (!token || !tokenPriceRecord) return
+        const balance = BigFloat.fromBigInt(BigInt(record.amount), token.decimals)
+        const tokenPrice = BigFloat.fromString(tokenPriceRecord.price)
+        const fiatBalance = balance.mul(tokenPrice)
+        totalBalance = totalBalance.add(fiatBalance)
+      })
+    return totalBalance
+  }
+
+  @CacheActivePromise()
+  async getCrossChainTotalFiatBalance(walletAddress: Address) {
+    await this.updateDatabase(walletAddress)
+    const { balances, tokens, tokenPrice } = this.schema
+    const balanceMap = new Map<TokenRecordId, IBalancesTokenRecord>()
+    const tokenPriceMap = new Map<TokenRecordId, ITokenPriceRecord>()
+    const tokenMap = new Map<TokenRecordId, IToken>()
+    await balances
+      .where('walletAddress')
+      .equals(walletAddress)
+      .each((record) => balanceMap.set(record.tokenRecordId, record))
+    const tokenIdList = balanceMap.keys().toArray()
+    await Promise.all([
+      tokenPrice
+        .where('tokenRecordId')
+        .anyOf(tokenIdList)
+        .each((record) => tokenPriceMap.set(record.tokenRecordId, record)),
+      tokens
+        .where('id')
+        .anyOf(tokenIdList)
+        .each((record) => tokenMap.set(record.id, record)),
+    ])
+    let totalBalance = BigFloat.zero()
+    for (const id of tokenIdList) {
+      const token = tokenMap.get(id)
+      const balanceRecord = balanceMap.get(id)
+      const tokenPriceRecord = tokenPriceMap.get(id)
+      if (!token || !balanceRecord || !tokenPriceRecord) continue
+      const balance = BigFloat.fromBigInt(BigInt(balanceRecord.amount), token.decimals)
+      const tokenPrice = BigFloat.fromString(tokenPriceRecord.price)
+      const fiatBalance = balance.mul(tokenPrice)
+      totalBalance = totalBalance.add(fiatBalance)
+    }
+    return totalBalance
+  }
+
+  @CacheActivePromise()
+  async getCrossChainTokenName(symbol: string) {
+    const targetToken = await this.getCrossChainTokenByPriority(symbol)
+    return targetToken ? targetToken.name : symbol
+  }
+
+  @CacheActivePromise()
+  async getCrossChainTokenByPriority(symbol: string) {
+    const { tokens, crossChainTokensBinding } = this.schema
+    const crossChainTokensBindingRecord = await crossChainTokensBinding
+      .where('symbol')
+      .equals(symbol)
+      .toArray()
+      .then((result) => result[0] ?? null)
+    if (!crossChainTokensBindingRecord) return null
+    let targetToken!: ITokenRecord
+    await tokens
+      .where('id')
+      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
+      .each((record) => {
+        if (!targetToken || targetToken.priority < record.priority) {
+          targetToken = record
+        }
+      })
+    return targetToken ?? null
+  }
+
+  @CacheActivePromise()
+  async getCrossChainTokenIdListWithBalance(
+    symbol: string,
+    walletAddress: Address
+  ): Promise<TokenRecordId[]> {
+    const { balances, crossChainTokensBinding } = this.schema
+    const crossChainTokensBindingRecord = await crossChainTokensBinding
+      .where('symbol')
+      .equals(symbol)
+      .toArray()
+      .then((result) => result[0] ?? null)
+    if (!crossChainTokensBindingRecord) return []
+    const tokenIdSet = new Set(crossChainTokensBindingRecord.tokenRecordIds)
+    const result: TokenRecordId[] = []
+    await balances
+      .where('walletAddress')
+      .equals(walletAddress)
+      .each((record) => {
+        if (!tokenIdSet.has(record.tokenRecordId)) return
+        result.push(record.tokenRecordId)
+      })
+    return result
+  }
+
+  isSupportedTokenPermit(): Promise<boolean> {
+    throw new Error('Method not implemented.')
+  }
+
+  async getTokenAddressListOrderByChainId() {
+    return await this.schema.getTokenAddressListOrderByChainId()
+  }
+
+  async getToken(chainId: ChainId, address: Address) {
+    return await this.schema.getToken(chainId, address)
+  }
+
+  async getNativeToken(chainId: ChainId) {
+    return await this.schema.getNativeToken(chainId)
+  }
+
+  async getTokenBySymbol(chainId: ChainId, symbol: string) {
+    return this.schema.getTokenBySymbol(chainId, symbol)
+  }
+
+  async getTokenList(chainId: ChainId, addresses: Address[]) {
+    return await this.schema.getTokenList(chainId, addresses)
+  }
+
+  async getTokenListSortedByPriority(chainId: ChainId, addresses: Address[]) {
+    const tokens = await this.getTokenList(chainId, addresses)
+    return tokens.sort((token1, token2) => token2.priority - token1.priority)
+  }
+
+  async getTokenMap(chainId: ChainId, addresses: Address[]) {
+    return await this.schema.getTokenMap(chainId, addresses)
+  }
+
+  async getTokenBalanceMap(chainId: ChainId, walletAddress: Address, addresses: Address[]) {
+    // await this.updateBalanceDatabase([chainId], walletAddress)
+    return await this.schema.getTokenBalanceMap(chainId, walletAddress, addresses)
+  }
+
+  async getTokenBalance(chainId: ChainId, tokenAddress: Address, walletAddress: Address) {
+    // await this.updateBalanceDatabase([chainId], walletAddress, tokenAddress)
+    return await this.schema.getTokenBalance(chainId, tokenAddress, walletAddress)
+  }
+
+  async getTokenUSDPrice(chainId: ChainId, tokenAddress: Address) {
+    const result = await this.getTokenUSDPrices(chainId, [tokenAddress])
+    return result[tokenAddress]
+  }
+
+  async isFavoriteToken(chainId: ChainId, tokenAddress: Address) {
+    const token = await this.getToken(chainId, tokenAddress)
+    return token?.isFavorite ?? false
+  }
+
+  async getTokenLogoURL(chainId: ChainId, tokenAddress: Address) {
+    const token = await this.getToken(chainId, tokenAddress)
+    return token?.logoURL ?? null
+  }
+
+  async getPriorityToken(chainId: ChainId, addresses: Address[]) {
+    const tokens = await this.getTokenList(chainId, addresses)
+    const isStable = (token: ITokenRecord) =>
+      token.tags.includes('PEG:USD') || token.tags.includes('PEG:EUR')
+    return tokens.sort((record1, record2) => {
+      const isStable1 = isStable(record1)
+      const isStable2 = isStable(record2)
+      if (isStable1 && isStable2) {
+        return record1.priority - record2.priority
+      }
+      if (isStable1 && !isStable2) {
+        return -1
+      }
+      if (!isStable1 && isStable2) {
+        return 1
+      }
+
+      return record1.priority - record2.priority
+    })[0]
+  }
+
+  async setFavoriteState(chainId: ChainId, tokenAddress: Address, state: boolean) {
+    await this.schema.setFavoriteState(chainId, tokenAddress, state)
+  }
+
+  async getAllFavoriteTokenAddresses(chainId: ChainId) {
+    return await this.schema.getAllFavoriteTokenAddresses(chainId)
+  }
+
+  async getTokenUSDPrices(
+    chainId: ChainId,
+    tokenAddressList: Address[]
+  ): Promise<Record<Address, string>> {
+    return {}
+    // const result: Record<Address, string> = {}
+    // let priceRecord: Record<Address, string>
+    //
+    // if (this.tokenPriceCache.has(chainId)) {
+    //   priceRecord = this.tokenPriceCache.get(chainId)!
+    // } else {
+    //   const prices = await this.oneInchApiAdapter.getTokenPrice([chainId]).catch(() => null)
+    //   if (prices === null) {
+    //     return {}
+    //   }
+    //   const pricesByChain = prices.find((record) => parseChainId(record.id) === chainId)
+    //   if (!pricesByChain || !pricesByChain.result) {
+    //     return {}
+    //   }
+    //   priceRecord = pricesByChain.result
+    //   this.tokenPriceCache.set(chainId, priceRecord)
+    // }
+    //
+    // for (const address of tokenAddressList) {
+    //   result[address] = priceRecord[address] ?? '0'
+    // }
+    // return result
+  }
+
+  @CacheActivePromise()
+  private async updateDatabase(walletAddress?: Address): Promise<void> {
+    await this.updateTokenDatabase()
+    await Promise.all([this.updateBalanceDatabase(walletAddress), this.updateTokenPrice()])
+  }
+
+  @CacheActivePromise()
+  private async updateTokenDatabase() {
+    if (!this.schema.tokensIsExpired()) return
+    const tokens = await this.oneInchApiAdapter.getTokenList()
+    await this.schema.setTokens(tokens)
+  }
+
+  @CacheActivePromise()
+  private async updateBalanceDatabase(walletAddress?: Address) {
+    if (!walletAddress || !this.schema.balancesIsExpired(walletAddress)) return
+    const chainIdList = getChainIdList()
+    const balances = await this.oneInchApiAdapter.getBalances(chainIdList, [walletAddress])
+    await this.schema.setBalances(balances)
+  }
+
+  @CacheActivePromise()
+  private async updateTokenPrice() {
+    if (!this.schema.tokenPriceIsExpired()) return
+    const chainIdList = getChainIdList()
+    const tokenPrice = await this.oneInchApiAdapter.getTokenPrice(chainIdList)
+    await this.schema.setTokenPrice(tokenPrice)
+  }
+
+  liveQuery<T>(querier: () => T | Promise<T>) {
+    return from(import('dexie')).pipe(switchMap((dexie) => dexie.liveQuery<T>(querier)))
+  }
+}

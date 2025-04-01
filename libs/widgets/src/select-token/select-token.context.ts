@@ -14,6 +14,7 @@ import {
   distinctUntilChanged,
   mergeMap,
   Observable,
+  shareReplay,
   startWith,
   Subject,
   switchMap,
@@ -22,6 +23,8 @@ import {
 import { type Address } from 'viem'
 
 export class SelectTokenContext implements ISelectTokenContext {
+  private readonly openSymbols = new Set<string>()
+
   readonly chainId$: Observable<ChainId | null> = defer(
     () => this.applicationContext.wallet.data.chainId$
   )
@@ -41,20 +44,15 @@ export class SelectTokenContext implements ISelectTokenContext {
     })
   )
 
-  readonly tokenAddressList$ = combineLatest([
-    this.chainId$,
+  readonly tokenViewData$ = combineLatest([
     this.connectedWalletAddress$,
     this.searchToken$.pipe(debounceTime(300), startWith(''), distinctUntilChanged()),
   ]).pipe(
-    switchMap(([chainId, address, searchToken]: [ChainId | null, Address | null, string]) => {
-      if (chainId === null) return []
-      return this.applicationContext.tokenStorage.getSortedByPriorityAndBalanceTokenAddresses(
-        chainId,
-        searchToken,
-        address ?? undefined
-      )
+    switchMap(([address, searchToken]: [Address | null, string]) => {
+      return this.applicationContext.tokenStorage.getSymbolData(address ?? undefined)
     }),
-    tap(() => this.searchInProgress$.next(false))
+    tap(() => this.searchInProgress$.next(false)),
+    shareReplay({ bufferSize: 1, refCount: true })
   )
 
   constructor(
@@ -79,5 +77,17 @@ export class SelectTokenContext implements ISelectTokenContext {
 
   onSelectToken(token: IToken) {
     this.swapContext.setToken(this.tokenType, token)
+  }
+
+  isOpenCrossChainView(symbol: string): boolean {
+    return this.openSymbols.has(symbol)
+  }
+
+  onOpenCrossChainView(symbol: string, isOpen: boolean) {
+    if (isOpen) {
+      this.openSymbols.add(symbol)
+    } else {
+      this.openSymbols.delete(symbol)
+    }
   }
 }

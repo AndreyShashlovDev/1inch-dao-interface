@@ -43,7 +43,7 @@ export interface IOneInchDevPortalCrossChainAdapter
     ICrossChainSDKFacade {
   getBalances(chainIds: ChainId[], walletAddresses: Address[]): Promise<ProxyResultBalance>
   getTokenBalances(chainId: ChainId, walletAddress: Address, tokenAddress: Address): Promise<bigint>
-  getTokenPrice(): Promise<ProxyResultTokenPrice>
+  getTokenPrice(chainIds: ChainId[]): Promise<ProxyResultTokenPrice>
   getTokenList(): Promise<ITokenV2Dto[]>
   getGasPrice(chainId: ChainId): Promise<GasPriceDto | null>
   getProxyClient(): IProxyClient

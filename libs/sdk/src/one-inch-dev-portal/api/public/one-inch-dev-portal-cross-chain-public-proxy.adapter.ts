@@ -1,5 +1,4 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
-import { getEnvironmentValue } from '@1inch-community/core/environment'
 import {
   ChainId,
   GasPriceDto,
@@ -17,23 +16,20 @@ import {
   QuoteResult,
 } from '@1inch-community/models'
 import { Address, type Hash } from 'viem'
-import { getChainIdList } from '../../../chain/chain-id-list'
-import { CrossChainSDKFacade } from '../../sdk/cross-chain-sdk'
+import { CrossChainSDKFacade } from '../../sdk'
 import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain'
 import { PublicProxyClient } from './public-proxy-client'
 
 export class OneInchDevPortalCrossChainPublicProxyAdapter
   implements IOneInchDevPortalCrossChainAdapter
 {
-  private readonly host: string = getEnvironmentValue('oneInchDevPortalHost')
-  private readonly apiToken = getEnvironmentValue('oneInchDevPortalToken')
-  private readonly client = new PublicProxyClient(this.host, this.apiToken)
+  private readonly client = new PublicProxyClient()
   private readonly sdkFacade = new CrossChainSDKFacade()
   private readonly fallBackAdapter = new OneInchDevPortalCrossChainOnChainAdapter()
 
   async init(context: IApplicationContext): Promise<void> {
     await Promise.all([
-      this.client.init(),
+      this.client.init(context),
       this.sdkFacade.init(context),
       this.fallBackAdapter.init(context),
     ])
@@ -86,10 +82,9 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
   }
 
   @CacheActivePromise()
-  async getTokenPrice(): Promise<ProxyResultTokenPrice> {
-    const chains = getChainIdList()
+  async getTokenPrice(chainIds: ChainId[]): Promise<ProxyResultTokenPrice> {
     return Promise.all(
-      chains.map(async (chainId) => {
+      chainIds.map(async (chainId) => {
         const result = await this.client.get<Record<Address, string>>(
           `/price/v1.1/${chainId}?currency=USD`
         )

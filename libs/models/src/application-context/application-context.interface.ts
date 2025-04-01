@@ -1,7 +1,9 @@
 import { IAnimationsManager } from '../animations'
 import { IOneInchDevPortalCrossChainAdapter } from '../api'
+import { InitializingEntity } from '../base'
 import { IOnChain } from '../chain'
 import { IEnvironmentController } from '../environment'
+import { Type } from '../global'
 import { Ii18nManager } from '../i18n'
 import { ILogger } from '../logger'
 import { INotificationsManager } from '../notifications'
@@ -34,4 +36,6 @@ export interface IApplicationContext {
   makeSwapContext(): Promise<ISwapContext>
 
   getActiveSwapContext(): ISwapContext | null
+
+  buildEntity<T extends InitializingEntity>(constructor: Type<T> | (() => T)): Promise<T>
 }

@@ -1,16 +1,24 @@
-import { IProxyClient } from '@1inch-community/models'
+import { lazyAppContext } from '@1inch-community/core/utils'
+import { IApplicationContext, IProxyClient } from '@1inch-community/models'
 
 export class PublicProxyClient implements IProxyClient {
+  private readonly context = lazyAppContext('PublicProxyClient')
+
   get isAuth() {
     return true
   }
 
-  constructor(
-    private readonly host: string,
-    private readonly token?: string
-  ) {}
+  get host() {
+    return this.context.value.environment.get('oneInchDevPortalHost')
+  }
 
-  async init() {}
+  get token() {
+    return this.context.value.environment.get('oneInchDevPortalToken')
+  }
+
+  async init(context: IApplicationContext) {
+    this.context.set(context)
+  }
 
   async get<T>(url: string): Promise<T> {
     const response = await fetch(`${this.host}${url}`, {

@@ -57,7 +57,7 @@ export class PrivateProxyClient implements IProxyClient {
 
   @CacheActivePromise()
   private async auth() {
-    if (this.isAuth || !this.context) return
+    if (this.isAuth) return
     let turnstileToken = this.context.value.turnstile.getToken()
     if (turnstileToken === null) {
       if (!this.context.value.turnstile.getVerificationInProgress()) {

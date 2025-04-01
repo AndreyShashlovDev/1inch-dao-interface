@@ -1,7 +1,7 @@
-import { ITurnstileController } from '@1inch-community/models'
+import { IApplicationContext, ITurnstileController } from '@1inch-community/models'
 import { firstValueFrom, Subject } from 'rxjs'
-import { getEnvironmentValue } from '../environment'
 import { appendStyle } from '../lit-utils'
+import { lazyAppContext } from '../utils'
 
 const CALLBACK_NAME = '__turnstile_callback__'
 
@@ -48,21 +48,19 @@ const TurnstileRetry: string[] = [
 const MAX_RETRY_COUNT = 4
 
 export class TurnstileController implements ITurnstileController {
-  private readonly element = document.createElement('div')
-  private readonly siteKey = getEnvironmentValue('cloudflareTurnstileSiteKey')
   private readonly complete$ = new Subject<void>()
+  private readonly context = lazyAppContext('TurnstileController')
+  private element: HTMLDivElement | null = null
+  private siteKey: string | null = null
   private token: string | null = null
   private retryCounter = 0
   private verificationInProgress = false
-  private isInit = false
+  private isInitScript = false
 
-  async init(): Promise<void> {
-    appendStyle(this.element, {
-      position: 'absolute',
-      zIndex: '-1',
-      top: '-1000px',
-      left: '-1000px',
-    })
+  async init(context: IApplicationContext): Promise<void> {
+    this.context.set(context)
+    this.siteKey = this.context.value.environment.get('cloudflareTurnstileSiteKey') ?? null
+    this.initScript()
   }
 
   getToken(): string | null {
@@ -80,34 +78,43 @@ export class TurnstileController implements ITurnstileController {
   }
 
   startTurnstile() {
+    if (this.verificationInProgress || !this.isInitScript) return
     this.clean()
     this.render()
   }
 
   private initScript() {
-    if (this.isInit) return
+    if (this.isInitScript) return
     const script = document.createElement('script')
     script.type = 'text/javascript'
     script.async = true
     script.defer = true
     script.src = `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=${CALLBACK_NAME}`
 
-    Reflect.set(window, CALLBACK_NAME, () => this.render())
+    Reflect.set(window, CALLBACK_NAME, () => {
+      this.isInitScript = true
+      this.render()
+    })
 
     document.head.appendChild(script)
-    this.isInit = true
   }
 
   private render() {
-    this.initScript()
     if (!this.siteKey || !window.turnstile) return
     this.verificationInProgress = true
+    this.element = document.createElement('div')
+    appendStyle(this.element, {
+      position: 'absolute',
+      zIndex: '-1',
+      top: '-1000px',
+      left: '-1000px',
+    })
+    document.body.appendChild(this.element)
     window.turnstile.render(this.element, {
       sitekey: this.siteKey,
       callback: (token) => this.setToken(token),
       'error-callback': (err) => this.handleError(`${err}`),
     })
-    document.body.appendChild(this.element)
   }
 
   private setToken(token: string) {
@@ -119,9 +126,10 @@ export class TurnstileController implements ITurnstileController {
   }
 
   private clean() {
-    if (!this.element.parentElement) return
+    if (!this.element || !this.element.parentElement) return
     window.turnstile?.remove(this.element)
     document.body.removeChild(this.element)
+    this.element = null
   }
 
   private handleError(err: string) {

@@ -7,6 +7,7 @@ export const tokenListItemStyle = css`
     width: 100%;
     outline: none;
     user-select: none;
+    transition: height 0.2s;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -20,14 +21,17 @@ export const tokenListItemStyle = css`
     transition: background-color 0.2s;
   }
 
-  .name-and-balance {
+  .item-container__expanded {
+  }
+
+  .content {
     display: flex;
     flex-direction: column;
     gap: 4px;
     max-width: 50%;
   }
 
-  .name-and-balance .name {
+  .content .primary-content {
     color: var(--color-content-content-primary);
     font-size: 16px;
     font-style: normal;
@@ -38,7 +42,7 @@ export const tokenListItemStyle = css`
     overflow: hidden;
   }
 
-  .name-and-balance .balance {
+  .content .secondary-content {
     color: var(--color-content-content-secondary);
     font-size: 14px;
     font-style: normal;
@@ -49,68 +53,14 @@ export const tokenListItemStyle = css`
     white-space: nowrap;
   }
 
-  .usd-balance {
-    color: var(--color-content-content-primary);
-    text-align: right;
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 500;
-    line-height: 24px;
-    white-space: nowrap;
-  }
-
-  .usd-balance {
-  }
-
-  .usd-balance-and-favorite-start {
-    display: flex;
-    align-items: center;
+  .right-content {
     margin-left: auto;
-  }
-
-  .usd-balance-and-favorite-start:dir(rtl) {
-    margin-right: auto;
-    margin-left: 0;
-  }
-
-  .is-favorite-start {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-end;
   }
 
   @media (hover: hover) {
     .item-container:hover {
       background-color: var(--color-background-bg-secondary);
-    }
-
-    .item-container:not(.is-favorite-token) .usd-balance {
-      transform: translateX(24px);
-      transition: transform 0.2s;
-    }
-
-    .item-container:not(.is-favorite-token) .usd-balance:dir(rtl) {
-      transform: translateX(-24px);
-      transition: transform 0.2s;
-    }
-
-    .item-container:not(.is-favorite-token) .is-favorite-start {
-      transform: scale(0);
-      transition: transform 0.2s;
-    }
-
-    .item-container:hover .is-favorite-start {
-      transform: scale(1);
-    }
-
-    .item-container:hover .usd-balance {
-      transform: translateX(0);
-    }
-
-    .item-container:hover .usd-balance:dir(rtl) {
-      transform: translateX(0);
     }
   }
 

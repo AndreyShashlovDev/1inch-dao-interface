@@ -12,6 +12,7 @@ import { InitializingEntity } from '../base'
 import { ChainId } from './chain-id'
 
 export interface IOnChain extends InitializingEntity {
+  readonly crossChainEmitter: Observable<void>
   getClient(chainId: ChainId): Promise<PublicClient>
   getBlockEmitter(chainId: ChainId): Observable<Block>
   getAllowance(chainId: ChainId, token: Address, owner: Address, spender: Address): Promise<bigint>

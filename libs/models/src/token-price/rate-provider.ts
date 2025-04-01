@@ -1,8 +1,8 @@
-import { Observable } from 'rxjs'
-import { InitializingEntity } from '../base'
-import { ChainId } from '../chain'
-import { IToken } from '../token'
-import { Rate } from './rate'
+import type { Observable } from 'rxjs'
+import type { InitializingEntity } from '../base'
+import type { ChainId } from '../chain'
+import type { IToken } from '../token'
+import type { Rate } from './rate'
 
 export interface ITokenRateProvider extends InitializingEntity {
   getOnChainRate(

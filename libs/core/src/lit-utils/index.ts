@@ -1,3 +1,4 @@
+export * from './append-class'
 export * from './append-style'
 export * from './directives'
 export * from './dom.utils'

@@ -1,153 +1,151 @@
-import { css } from 'lit';
+import { css } from 'lit'
 
 export const chainSelectorStyle = css`
-    
-    .icon-container {
-        position: relative;
-        
-        width: 24px;
-        height: 24px;
-        
-        background-color: transparent;
-        
-        overflow: hidden;
-    }
+  .icon-container {
+    position: relative;
 
-    .icon-common {
-        position: absolute;
+    width: 24px;
+    height: 24px;
 
-        border: 2px solid white;
-        border-radius: 50%;
+    background-color: transparent;
 
-        transition: all .2ms;
-    }
+    overflow: hidden;
+  }
 
-    .icon-0 {
-        z-index: 1;
-    }
+  .icon-common {
+    position: absolute;
 
-    .icon-1 {
-        z-index: 2;
-    }
-    
-    .icon-2 {
-        z-index: 3;
-    }
+    border: 2px solid white;
+    border-radius: 50%;
 
-    .icon-3 {
-        z-index: 4;
-    }
-    
-    .capacity-2 .icon-0 {
-        top: -2px;
-        left: -2px;
-    }
+    transition: all 0.2ms;
+  }
 
-    .capacity-2 .icon-1 {
-        right: -2px;
-        bottom: -2px;
-    }
+  .icon-0 {
+    z-index: 1;
+  }
 
-    .capacity-3 .icon-0 {
-        top: -2px;
-        left: 4px;
-    }
+  .icon-1 {
+    z-index: 2;
+  }
 
-    .capacity-3 .icon-1 {
-        left: -2px;
-        bottom: -2px;
-    }
+  .icon-2 {
+    z-index: 3;
+  }
 
-    .capacity-3 .icon-2 {
-        right: -2px;
-        bottom: -2px;
-    }
+  .icon-3 {
+    z-index: 4;
+  }
 
-    .capacity-4 .icon-1 {
-        top: -2px;
-        left: -2px;
-    }
+  .capacity-2 .icon-0 {
+    top: -2px;
+    left: -2px;
+  }
 
-    .capacity-4 .icon-0 {
-        top: -2px;
-        right: -2px;
-    }
+  .capacity-2 .icon-1 {
+    right: -2px;
+    bottom: -2px;
+  }
 
-    .capacity-4 .icon-2 {
-        left: -2px;
-        bottom: -2px;
-    }
+  .capacity-3 .icon-0 {
+    top: -2px;
+    left: 4px;
+  }
 
-    .capacity-4 .icon-3 {
-        right: -2px;
-        bottom: -2px;
-    }
+  .capacity-3 .icon-1 {
+    left: -2px;
+    bottom: -2px;
+  }
 
-    .capacity-5 .icon-common {
-        border: none;
-    }
+  .capacity-3 .icon-2 {
+    right: -2px;
+    bottom: -2px;
+  }
 
-    .capacity-5 .icon-1 {
-        top: 2px;
-        left: 9px;
-    }
+  .capacity-4 .icon-1 {
+    top: -2px;
+    left: -2px;
+  }
 
-    .capacity-5 .icon-0 {
-        top: 8px;
-        right: 2px;
-    }
+  .capacity-4 .icon-0 {
+    top: -2px;
+    right: -2px;
+  }
 
-    .capacity-5 .icon-4 {
-        right: 4px;
-        bottom: 2px;
-    }
+  .capacity-4 .icon-2 {
+    left: -2px;
+    bottom: -2px;
+  }
 
-    .capacity-5 .icon-3 {
-        left: 4px;
-        bottom: 2px;
-    }
+  .capacity-4 .icon-3 {
+    right: -2px;
+    bottom: -2px;
+  }
 
-    .capacity-5 .icon-2 {
-        top: 8px;
-        left: 2px;
-    }
+  .capacity-5 .icon-common {
+    border: none;
+  }
 
-    .capacity-6 .icon-common {
-        border: none;
-    }
+  .capacity-5 .icon-1 {
+    top: 2px;
+    left: 9px;
+  }
 
-    .capacity-6 .icon-2 {
-        top: 1px;
-        left: 5px;
-    }
+  .capacity-5 .icon-0 {
+    top: 8px;
+    right: 2px;
+  }
 
-    .capacity-6 .icon-1 {
-        top: 1px;
-        right: 5px;
-    }
+  .capacity-5 .icon-4 {
+    right: 4px;
+    bottom: 2px;
+  }
 
-    .capacity-6 .icon-0 {
-        top: 8px;
-        right: 1px;
-    }
+  .capacity-5 .icon-3 {
+    left: 4px;
+    bottom: 2px;
+  }
 
-    .capacity-6 .icon-5 {
-        right: 5px;
-        bottom: 2px;
-    }
+  .capacity-5 .icon-2 {
+    top: 8px;
+    left: 2px;
+  }
 
-    .capacity-6 .icon-4 {
-        left: 5px;
-        bottom: 2px;
-    }
+  .capacity-6 .icon-common {
+    border: none;
+  }
 
-    .capacity-6 .icon-3 {
-        top: 8px;
-        left: 1px;
-    }
-    
-    .unsupported {
-        color: var(--color-core-red-critical);
-    }
-    
+  .capacity-6 .icon-2 {
+    top: 1px;
+    left: 5px;
+  }
+
+  .capacity-6 .icon-1 {
+    top: 1px;
+    right: 5px;
+  }
+
+  .capacity-6 .icon-0 {
+    top: 8px;
+    right: 1px;
+  }
+
+  .capacity-6 .icon-5 {
+    right: 5px;
+    bottom: 2px;
+  }
+
+  .capacity-6 .icon-4 {
+    left: 5px;
+    bottom: 2px;
+  }
+
+  .capacity-6 .icon-3 {
+    top: 8px;
+    left: 1px;
+  }
+
+  .unsupported {
+    color: var(--color-core-red-critical);
+  }
 `

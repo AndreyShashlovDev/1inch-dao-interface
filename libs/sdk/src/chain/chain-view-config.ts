@@ -1,6 +1,6 @@
-import { ChainId } from "@1inch-community/models"
-import { isL2Chain } from "@1inch-community/sdk/chain"
-import { isSupportFusion } from "@1inch-community/sdk/swap"
+import { ChainId } from '@1inch-community/models'
+import { isSupportFusion } from '../swap'
+import { isL2Chain } from './layer2-chain'
 
 type ChainViewInfo = {
   name: string
@@ -23,18 +23,17 @@ export const chainViewConfig: Record<ChainId, ChainViewInfo> = {
   [ChainId.avalanche]: { name: 'Avalanche', iconName: 'avalanche24' },
   [ChainId.fantom]: { name: 'Fantom', iconName: 'fantom24' },
   [ChainId.aurora]: { name: 'Aurora', iconName: 'aurora24' },
-  [ChainId.klaytn]: { name: 'Klaytn', iconName: 'klaytn24' }
-};
+  [ChainId.klaytn]: { name: 'Klaytn', iconName: 'klaytn24' },
+}
 
 export const chainList: ChainViewFull[] = Object.keys(chainViewConfig)
-  .filter(chainId => isSupportFusion(+chainId))
+  .filter((chainId) => isSupportFusion(+chainId))
   .map((chainId) => ({ ...(chainViewConfig as any)[chainId], chainId: Number(chainId) }))
   .sort((info1: ChainViewFull, info2: ChainViewFull) => {
-    if (info1.chainId == ChainId.eth) return -1;
-    if (info2.chainId == ChainId.eth) return 1;
-    if (isL2Chain(info1.chainId)) return -1;
-    if (isL2Chain(info2.chainId)) return 1;
+    if (info1.chainId == ChainId.eth) return -1
+    if (info2.chainId == ChainId.eth) return 1
+    if (isL2Chain(info1.chainId)) return -1
+    if (isL2Chain(info2.chainId)) return 1
 
-
-    return (info2.priority ?? 0) - (info1.priority ?? 0);
-  });
+    return (info2.priority ?? 0) - (info1.priority ?? 0)
+  })

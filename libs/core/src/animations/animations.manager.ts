@@ -47,7 +47,7 @@ export class AnimationsManager implements IAnimationsManager {
       keyframes.push({
         width: `${size}px`,
         height: `${size}px`,
-        transform: `translate3d(${size}px, ${size}px, ${size}px) rotate3d(1, 1, 1, 45deg);`,
+        transform: `translate3d(${size}px, ${size}px, ${size}px) rotate3d(1, 1, 1, 45deg)`,
       })
       keyframes.push({
         width: '10px',

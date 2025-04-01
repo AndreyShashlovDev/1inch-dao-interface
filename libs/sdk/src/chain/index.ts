@@ -1,5 +1,6 @@
 export * from './average-block-time'
 export * from './block-time-cache'
+export * from './chain-view-config'
 export * from './chain.manager'
 export * from './contracts'
 export * from './is-chain-id'

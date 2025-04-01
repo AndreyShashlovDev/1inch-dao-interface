@@ -21,6 +21,10 @@ export const tokenListStyle = css`
     align-items: center;
   }
 
+  .list-header {
+    color: var(--color-content-content-secondary);
+  }
+
   ${mobileMediaCSS(css`
     :host {
       height: 100%;

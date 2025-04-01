@@ -1,38 +1,26 @@
 import { IApplicationContext, InitializingEntity } from '@1inch-community/models'
-import { JsonParser } from './storage.manager'
+import { lazyAppContext } from '../utils'
 
-type ExpireFnOrTime<ExpireProps> = number | ((props: ExpireProps) => number)
-
-export class TTLStorage<Key, ExpireProps = unknown> implements InitializingEntity {
-  private context?: IApplicationContext
-  private lastUpdateTimestampMap: Map<Key, number> = new Map()
+export class TTLStorage implements InitializingEntity {
+  private readonly context = lazyAppContext('TTLStorage')
+  private timestamp = 0
 
   constructor(
     private readonly key: string,
-    private readonly expireFnOrTime: ExpireFnOrTime<ExpireProps>
+    private readonly expireTime: number
   ) {}
 
   async init(context: IApplicationContext): Promise<void> {
-    this.context = context
-    const state = this.context.storage.get<[Key, number][]>(this.key, JsonParser)
-    this.lastUpdateTimestampMap = new Map(state ?? [])
+    this.context.set(context)
+    this.timestamp = this.context.value.storage.get<number>(this.key, Number) ?? 0
   }
 
-  update(key: Key) {
-    if (!this.context)
-      throw new Error('TtlController Error: update impossible, context not initialized')
-    const timestamp = Date.now()
-    this.lastUpdateTimestampMap.set(key, timestamp)
-    this.context.storage.set(this.key, [...this.lastUpdateTimestampMap.entries()])
+  reset(): void {
+    this.timestamp = Date.now()
+    this.context.value.storage.set(this.key, this.timestamp)
   }
 
-  isExpired(key: Key, props?: ExpireProps): boolean {
-    const expire =
-      typeof this.expireFnOrTime === 'function'
-        ? this.expireFnOrTime(props as ExpireProps)
-        : this.expireFnOrTime
-    const lastUpdateTimestamp = this.lastUpdateTimestampMap.get(key)
-    if (!lastUpdateTimestamp) return true
-    return Date.now() - lastUpdateTimestamp > expire
+  isExpired(): boolean {
+    return Date.now() - this.timestamp > this.expireTime
   }
 }

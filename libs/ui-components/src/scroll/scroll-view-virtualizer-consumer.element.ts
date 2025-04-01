@@ -16,7 +16,7 @@ import { createRef, ref } from 'lit/directives/ref.js'
 import { when } from 'lit/directives/when.js'
 import { fromEvent, merge, of, tap } from 'rxjs'
 import { mainViewportContext } from './main-viewport-context'
-import { ScrollContext, scrollContext } from './scroll-context'
+import { type ScrollContext, scrollContext } from './scroll-context'
 
 @customElement(ScrollViewVirtualizerConsumerElement.tagName)
 export class ScrollViewVirtualizerConsumerElement extends LitElement {

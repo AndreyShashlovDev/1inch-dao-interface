@@ -23,9 +23,7 @@ export class TokenRateProvider implements ITokenRateProvider {
     await Promise.all(this.onChainAdapters.map((adapter) => adapter.init(context)))
   }
 
-  @CacheActivePromise((_, chainId: ChainId, sourceToken: IToken, destinationToken: IToken) =>
-    [chainId, sourceToken.address, destinationToken.address].join(':')
-  )
+  @CacheActivePromise()
   async getOnChainRate(
     chainId: ChainId,
     sourceToken: IToken,

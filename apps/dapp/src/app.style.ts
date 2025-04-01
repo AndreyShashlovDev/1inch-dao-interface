@@ -14,6 +14,7 @@ export const appStyle = css`
     overscroll-behavior: none;
     touch-action: pan-y;
     transition: height 0.2s;
+    scrollbar-gutter: auto;
   }
 
   @supports (height: 100dvh) {
@@ -34,7 +35,7 @@ export const appStyle = css`
     }
   `)}
 
-    .content {
+  .content {
     display: flex;
     width: 100%;
     justify-content: center;

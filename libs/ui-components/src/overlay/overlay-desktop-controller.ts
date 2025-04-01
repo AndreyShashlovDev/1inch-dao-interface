@@ -157,19 +157,4 @@ export class OverlayDesktopController implements IOverlayController {
     subscription.unsubscribe()
     this.subscriptions.delete(overlayId)
   }
-
-  private updatePosition(overlayId: number) {
-    if (!this.activeOverlayMap.has(overlayId)) {
-      return
-    }
-    const overlayContainer = this.activeOverlayMap.get(overlayId)!
-    const rect = this.target!.getBoundingClientRect()
-    const rectContent = overlayContainer.getBoundingClientRect()
-    const top = rect.top + rect.height + 8
-    const left = rect.right - rectContent.width
-    appendStyle(overlayContainer, {
-      top: `${top}px`,
-      left: `${left}px`,
-    })
-  }
 }

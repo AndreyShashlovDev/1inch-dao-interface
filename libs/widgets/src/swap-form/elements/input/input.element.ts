@@ -257,6 +257,7 @@ export class InputElement extends LitElement {
           symbol="${symbol}"
           address="${address}"
           chainId="${observe(this.chainId$)}"
+          size="32"
         ></inch-token-icon>
         <span class="symbol">${symbol}</span>
         ${when(

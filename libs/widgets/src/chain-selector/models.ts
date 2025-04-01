@@ -1,4 +1,4 @@
-import { ChainId } from '@1inch-community/models';
+import { ChainId } from '@1inch-community/models'
 
 export type ChainViewInfo = {
   name: string

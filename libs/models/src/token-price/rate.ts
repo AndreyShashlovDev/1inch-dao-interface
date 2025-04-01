@@ -1,5 +1,5 @@
-import { ChainId } from '../chain'
-import { IToken } from '../token'
+import type { ChainId } from '../chain'
+import type { IToken } from '../token'
 
 export type Rate = {
   chainId: ChainId

@@ -1,8 +1,7 @@
-import { IApplicationContext } from '../application-context'
+import { InitializingEntity } from '../base'
 
-export interface IProxyClient {
+export interface IProxyClient extends InitializingEntity {
   readonly isAuth: boolean
-  init(context: IApplicationContext): Promise<void>
   get<T>(url: string): Promise<T>
   post<T, Body = unknown>(url: string, body: Body): Promise<T>
 }

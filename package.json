@@ -25,6 +25,7 @@
     "watch:libs:all": "pnpm run build:libs:all && pnpm --filter \"./libs/*\" --parallel run watch",
     "clear:all:node_modules": "find . -type d -name node_modules -exec rm -rf {} +",
     "clear:all:dist": "find . -type d -name dist -exec rm -rf {} +",
+    "clear:all:tsbuildinfo": "find . -type f -name 'tsconfig.tsbuildinfo' -exec rm -f {} +",
     "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist",
     "reset": "pnpm run clear:all && pnpm install",
     "postinstall": "pnpm run build:libs:all",

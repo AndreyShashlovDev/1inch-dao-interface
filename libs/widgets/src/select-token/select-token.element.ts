@@ -61,7 +61,11 @@ export class SelectTokenElement extends LitElement {
 
   protected override firstUpdated() {
     subscribe(this, [
-      this.getTokenAddressList().pipe(tap((list) => (this.isEmpty = list.length === 0))),
+      this.getTokenViewData().pipe(
+        tap((data) => {
+          this.isEmpty = data.allTokensInfo.length === 0 && data.userTokensInfo.length === 0
+        })
+      ),
     ])
   }
 
@@ -74,9 +78,9 @@ export class SelectTokenElement extends LitElement {
     )
   }
 
-  private getTokenAddressList() {
+  private getTokenViewData() {
     if (!this.selectTokenContext) throw new Error('')
-    return this.selectTokenContext.tokenAddressList$
+    return this.selectTokenContext.tokenViewData$
   }
 }
 

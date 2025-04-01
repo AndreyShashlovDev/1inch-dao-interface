@@ -2,11 +2,6 @@ import { IEnvironment } from '@1inch-community/models'
 
 const requiredEnvFields: (keyof IEnvironment)[] = ['oneInchDevPortalHost', 'walletConnectProjectId']
 
-const __environment__: IEnvironment = {
-  oneInchDevPortalHost: '',
-  walletConnectProjectId: '',
-}
-
 const env: Partial<IEnvironment> = {
   oneInchDevPortalHost: 'https://api.1inch.dev',
 }
@@ -20,10 +15,7 @@ export function getEnvironmentValue<K extends keyof IEnvironment>(valueName: K):
   if (embeddedMode && env[valueName] === undefined && requiredEnvFields.includes(valueName)) {
     throw new Error(`environment value ${valueName} not exist`)
   }
-  if (embeddedMode) {
-    return env[valueName]!
-  }
-  return __environment__[valueName] ?? env[valueName]!
+  return env[valueName]!
 }
 
 export function setEnvironmentValue<K extends keyof IEnvironment>(

@@ -22,6 +22,16 @@
     "resolveJsonModule": true,
     "skipDefaultLibCheck": true,
     "useDefineForClassFields": false,
+    "removeComments": true,
+    "incremental": true,
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": false,
+    //    "isolatedModules": true,
+    //    "noUnusedLocals": true,
+    //    "noUnusedParameters": true,
+    //    "noImplicitReturns": true,
+    //    "noImplicitOverride": true,
+    //    "noUncheckedIndexedAccess": true,
     "plugins": [
       {
         "name": "ts-lit-plugin",

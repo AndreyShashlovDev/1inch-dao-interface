@@ -1,6 +1,9 @@
+import { IBigFloat } from '@1inch-community/models'
+import { smartFormatNumber } from '../formatters'
+
 const BigFloatRegExp = /^BigFloat\((-?\d+(\.\d+)?)\)$/
 
-export class BigFloat {
+export class BigFloat implements IBigFloat {
   protected static readonly FIXED_DECIMALS: number = 50
 
   static from(value: string): BigFloat
@@ -54,6 +57,10 @@ export class BigFloat {
   static isBigFloat(json: string): boolean {
     if (!json.startsWith('BigFloat(')) return false // performance optimization for json parsing
     return BigFloatRegExp.test(json)
+  }
+
+  static zero() {
+    return new BigFloat(0n)
   }
 
   protected constructor(protected readonly value: bigint) {}
@@ -110,6 +117,11 @@ export class BigFloat {
     return `${intPart}.${roundedFracPart.padStart(precision, '0')}`
   }
 
+  toFixedSmart(precision: number): string {
+    const str = this.toString()
+    return smartFormatNumber(str, precision)
+  }
+
   add(other: BigFloat): BigFloat {
     return new BigFloat(this.value + other.value)
   }
@@ -138,6 +150,14 @@ export class BigFloat {
 
   equals(other: BigFloat): boolean {
     return this.value === other.value
+  }
+
+  isNegative(): boolean {
+    return this.value < 0n
+  }
+
+  isZero(): boolean {
+    return this.value === 0n
   }
 }
 

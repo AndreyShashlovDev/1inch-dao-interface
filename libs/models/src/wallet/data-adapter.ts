@@ -1,8 +1,8 @@
-import { Observable } from 'rxjs'
-import { Address, ProviderRpcError } from 'viem'
-import { InitializingEntity } from '../base'
-import { ChainId } from '../chain'
-import { EIP1193Provider, EIP6963ProviderInfo } from './provider'
+import type { Observable } from 'rxjs'
+import type { Address, ProviderRpcError } from 'viem'
+import type { InitializingEntity } from '../base'
+import type { ChainId } from '../chain'
+import type { EIP1193Provider, EIP6963ProviderInfo } from './provider'
 
 export interface IDataAdapter extends InitializingEntity {
   readonly info$: Observable<EIP6963ProviderInfo>

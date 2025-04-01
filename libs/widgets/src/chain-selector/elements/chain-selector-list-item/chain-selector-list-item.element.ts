@@ -1,17 +1,21 @@
-import { html, LitElement } from 'lit';
-import { chainSelectorListItemStyle } from './chain-selector-list-item.style';
-import { customElement, property } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
-import '@1inch-community/ui-components/icon';
-import { IWallet } from '@1inch-community/models';
-import { isL2Chain } from '@1inch-community/sdk/chain';
-import { dispatchEvent, getMobileMatchMediaAndSubscribe, isRTLCurrentLocale } from '@1inch-community/core/lit-utils';
-import { when } from 'lit/directives/when.js';
-import { ChainViewInfo } from '../../models';
+import {
+  dispatchEvent,
+  getMobileMatchMediaAndSubscribe,
+  isRTLCurrentLocale,
+} from '@1inch-community/core/lit-utils'
+import { IWallet } from '@1inch-community/models'
+import { isL2Chain } from '@1inch-community/sdk/chain'
+import '@1inch-community/ui-components/icon'
+import { html, LitElement } from 'lit'
+import { customElement, property } from 'lit/decorators.js'
+import { classMap } from 'lit/directives/class-map.js'
+import { when } from 'lit/directives/when.js'
+import { ChainViewInfo } from '../../models'
+import { chainSelectorListItemStyle } from './chain-selector-list-item.style'
 
 @customElement(ChainSelectorListItemElement.tagName)
 export class ChainSelectorListItemElement extends LitElement {
-  static tagName = 'inch-chain-selector-list-item' as const;
+  static tagName = 'inch-chain-selector-list-item' as const
 
   static override styles = chainSelectorListItemStyle
 
@@ -19,9 +23,9 @@ export class ChainSelectorListItemElement extends LitElement {
 
   @property({ type: Object }) info?: ChainViewInfo
 
-  @property({ type: Object, attribute: false }) controller?: IWallet;
+  @property({ type: Object, attribute: false }) controller?: IWallet
 
-  @property({ type: Array, attribute: false }) selectedChainList?: ChainViewInfo[];
+  @property({ type: Array, attribute: false }) selectedChainList?: ChainViewInfo[]
 
   protected override render() {
     if (!this.info || !this.selectedChainList) return
@@ -33,7 +37,7 @@ export class ChainSelectorListItemElement extends LitElement {
     const isActiveChain = this.selectedChainList.includes(this.info)
     const classes = {
       container: true,
-      active: isActiveChain
+      active: isActiveChain,
     }
     /**
      * TODO: Размер иконок для мобилки
@@ -42,8 +46,18 @@ export class ChainSelectorListItemElement extends LitElement {
 
     return html`
       <div class="${classMap(classes)}" @click="${() => this.onItemClick()}">
-        ${when(isL2, () => html`<inch-icon icon="${isRTLCurrentLocale() ? 'l2ChainRTL24' : 'l2Chain24'}"></inch-icon>`)}
-        <inch-icon width="${iconSize}px" height="${iconSize}px" icon="${this.info.iconName}"></inch-icon>
+        ${when(
+          isL2,
+          () =>
+            html`<inch-icon
+              icon="${isRTLCurrentLocale() ? 'l2ChainRTL24' : 'l2Chain24'}"
+            ></inch-icon>`
+        )}
+        <inch-icon
+          width="${iconSize}px"
+          height="${iconSize}px"
+          icon="${this.info.iconName}"
+        ></inch-icon>
         <span>${this.info.name}</span>
         <inch-icon class="list-icon" icon="${isActiveChain ? 'check24' : 'plus24'}"></inch-icon>
         <inch-icon class="list-icon-delete" icon="minus24"></inch-icon>
@@ -54,11 +68,11 @@ export class ChainSelectorListItemElement extends LitElement {
   private onItemClick() {
     if (!this.info) throw new Error('')
 
-    dispatchEvent(this, 'chainItemClick', this.info);
+    dispatchEvent(this, 'chainItemClick', this.info)
   }
 
   private onDeselectAll() {
-    console.log('deselectAll');
+    console.log('deselectAll')
   }
 }
 

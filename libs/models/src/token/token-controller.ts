@@ -1,17 +1,25 @@
-import { Observable } from 'rxjs'
-import { Address } from 'viem'
-import { InitializingEntity } from '../base'
-import { ChainId } from '../chain'
-import { IBalancesTokenRecord } from '../database'
-import { IToken } from './token'
+import type { Observable } from 'rxjs'
+import type { Address } from 'viem'
+import type { InitializingEntity } from '../base'
+import type { IBigFloat } from '../big-float'
+import type { ChainId } from '../chain'
+import type { IBalancesTokenRecord, TokenRecordId } from '../database'
+import type { IToken } from './token'
+import type { ITokenListViewData } from './token-list-view-data'
 
 export interface ITokenStorage extends InitializingEntity {
+  getCrossChainTokenBalance(symbol: string, walletAddress: Address): Promise<IBigFloat>
+  getCrossChainTokenByPriority(symbol: string): Promise<IToken | null>
+  getCrossChainTokenName(symbol: string): Promise<string>
+  getCrossChainTokenIdListWithBalance(
+    symbol: string,
+    walletAddress: Address
+  ): Promise<TokenRecordId[]>
+  getCrossChainTokenFiatBalance(symbol: string, walletAddress: Address): Promise<IBigFloat>
+  getCrossChainTotalFiatBalance(walletAddress: Address): Promise<IBigFloat>
+
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
-  getSortedByPriorityAndBalanceTokenAddresses(
-    chainId: ChainId,
-    filterPattern: string,
-    walletAddress?: Address
-  ): Promise<Address[]>
+  getSymbolData(walletAddress?: Address): Promise<ITokenListViewData>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
   getTokenLogoURL(chainId: ChainId, address: Address): Promise<string | null>
   getNativeToken(chainId: ChainId): Promise<IToken | null>
@@ -36,11 +44,5 @@ export interface ITokenStorage extends InitializingEntity {
   getAllFavoriteTokenAddresses(chainId: ChainId): Promise<Address[]>
   isSupportedTokenPermit(chainId: ChainId, tokenAddress: Address): Promise<boolean>
   isFavoriteToken(chainId: ChainId, tokenAddress: Address): Promise<boolean>
-  updateTokenDatabase(chainId: ChainId): Promise<void>
-  updateBalanceDatabase(
-    chainId: ChainId,
-    walletAddress: Address,
-    tokenAddress?: Address
-  ): Promise<void>
   liveQuery<T>(querier: () => T | Promise<T>): Observable<T>
 }

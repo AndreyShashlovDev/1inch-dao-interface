@@ -1,24 +1,21 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { LongTimeCache } from '@1inch-community/core/cache'
-import { formatNumber } from '@1inch-community/core/formatters'
-import { ChainId, IApplicationContext } from '@1inch-community/models'
-import { getChainById, nativeTokenAddress } from '@1inch-community/sdk/chain'
+import { IApplicationContext } from '@1inch-community/models'
 import { consume } from '@lit/context'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { Address, formatUnits } from 'viem'
+import { Address } from 'viem'
 import { walletViewAddressBalanceStyle } from './wallet-view-address-balance.style'
 
 const storage = new LongTimeCache<string, string>('inch-wallet-view-address-balance', 7)
 
 @customElement(WalletViewAddressBalanceElement.tagName)
 export class WalletViewAddressBalanceElement extends LitElement {
-  static tagName = 'inch-wallet-view-address-balance'
+  static tagName = 'inch-wallet-view-address-balance' as const
 
   static override styles = walletViewAddressBalanceStyle
 
-  @property({ type: Number }) chainId?: ChainId
   @property({ type: String }) address?: Address
 
   @consume({ context: ApplicationContextToken })
@@ -26,18 +23,15 @@ export class WalletViewAddressBalanceElement extends LitElement {
 
   private readonly task = new Task(
     this,
-    async ([chainId, address]) => {
-      if (!chainId || !address) throw new Error('')
-      const balanceRecord = await this.applicationContext.tokenStorage.getTokenBalance(
-        chainId,
-        nativeTokenAddress,
-        address
-      )
-      const balance = formatNumber(formatUnits(BigInt(balanceRecord?.amount ?? 0), 18), 6)
-      storage.set([this.chainId, this.address].join(':'), balance)
+    async ([address]) => {
+      if (!address) throw new Error('')
+      const fiatBalance =
+        await this.applicationContext.tokenStorage.getCrossChainTotalFiatBalance(address)
+      const balance = fiatBalance.toFixedSmart(2)
+      storage.set(address, balance)
       return balance
     },
-    () => [this.chainId, this.address] as const
+    () => [this.address] as const
   )
 
   protected override render() {
@@ -45,20 +39,17 @@ export class WalletViewAddressBalanceElement extends LitElement {
       pending: () => this.getLoader(),
       error: () => this.getLoader(),
       complete: (balance) => {
-        if (this.chainId === undefined) throw new Error('')
-        const chain = getChainById(this.chainId)
-        return html`<span>${balance} ${chain.nativeCurrency.symbol}</span>`
+        return html`<span>$${balance}</span>`
       },
     })
   }
 
   private getLoader() {
     const loader = () => html`<div class="loader"></div>`
-    if (!this.chainId || !this.address) return loader()
-    const balance = storage.get([this.chainId, this.address].join(':'))
-    const chain = getChainById(this.chainId)
+    if (!this.address) return loader()
+    const balance = storage.get(this.address)
     if (balance) {
-      return html`<span>${balance} ${chain.nativeCurrency.symbol}</span>`
+      return html`<span>$${balance}</span>`
     }
     return loader()
   }

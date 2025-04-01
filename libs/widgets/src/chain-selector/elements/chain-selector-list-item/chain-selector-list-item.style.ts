@@ -1,78 +1,76 @@
-import { mobileMediaCSS } from '@1inch-community/core/lit-utils';
-import { css } from 'lit';
+import { mobileMediaCSS } from '@1inch-community/core/lit-utils'
+import { css } from 'lit'
 
 export const chainSelectorListItemStyle = css`
-    
-    :host {
-        width: 100%;
-        height: 100%;
+  :host {
+    width: 100%;
+    height: 100%;
+  }
+
+  .container {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 8px;
+    border-radius: 12px;
+    background-color: transparent;
+    transition: background-color 0.2s;
+    color: var(--color-content-content-primary);
+    font-size: 14px;
+  }
+
+  .list-icon {
+    margin-left: auto;
+    transition: transform 0.2s;
+    transform: scale(0);
+    stroke: transparent;
+  }
+
+  .list-icon-delete {
+    position: absolute;
+    right: 8px;
+
+    margin-left: auto;
+    transition: transform 0.2s;
+    transform: scale(0);
+    stroke: var(--primary);
+  }
+
+  @media (hover: hover) {
+    .container:hover {
+      background-color: var(--color-background-bg-secondary);
     }
 
+    .container:hover .list-icon {
+      transform: scale(1);
+      stroke: var(--color-content-content-tertiary);
+    }
+
+    .active .list-icon {
+      transform: scale(1);
+      stroke: var(--primary);
+    }
+
+    .active:hover .list-icon {
+      transform: scale(0);
+    }
+
+    .active:hover .list-icon-delete {
+      transform: scale(1);
+    }
+  }
+
+  .container:active {
+    background-color: var(--color-background-bg-secondary);
+  }
+
+  ${mobileMediaCSS(css`
     .container {
-        position: relative;
-        
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        height: 40px;
-        padding: 0 8px;
-        border-radius: 12px;
-        background-color: transparent;
-        transition: background-color .2s;
-        color: var(--color-content-content-primary);
-        font-size: 14px;
+      height: 50px;
+      font-size: 16px;
     }
-    
-    .list-icon {
-        margin-left: auto;
-        transition: transform .2s;
-        transform: scale(0);
-        stroke: transparent;
-    }
-
-    .list-icon-delete {
-        position: absolute;
-        right: 8px;
-        
-        margin-left: auto;
-        transition: transform .2s;
-        transform: scale(0);
-        stroke: var(--primary);
-    }
-
-    @media (hover: hover) {
-        .container:hover {
-            background-color: var(--color-background-bg-secondary);
-        }
-        
-        .container:hover .list-icon {
-            transform: scale(1);
-            stroke: var(--color-content-content-tertiary);
-        }
-
-        .active .list-icon {
-            transform: scale(1);
-            stroke: var(--primary);
-        }
-
-        .active:hover .list-icon {
-            transform: scale(0);
-        }
-
-        .active:hover .list-icon-delete {
-            transform: scale(1);
-        }
-    }
-
-    .container:active {
-        background-color: var(--color-background-bg-secondary);
-    }
-
-    ${mobileMediaCSS(css`
-        .container {
-            height: 50px;
-            font-size: 16px;
-        }
-    `)}
-
+  `)}
 `

@@ -10,4 +10,6 @@ export enum ChainId {
   aurora = 1313161554,
   klaytn = 8217,
   zkSyncEra = 324,
+  // base
+  // linea
 }

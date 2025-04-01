@@ -3,7 +3,7 @@ import { TemplateResult } from 'lit'
 import { IOverlayController } from './overlay-controller.interface'
 import { OverlayDesktopController } from './overlay-desktop-controller'
 import { OverlayMobileController } from './overlay-mobile-controller'
-import { OverlayPopupController } from './overlay-popup-controller';
+import { OverlayPopupController } from './overlay-popup-controller'
 
 export class OverlayController implements IOverlayController {
   private readonly mobileOverlay: IOverlayController

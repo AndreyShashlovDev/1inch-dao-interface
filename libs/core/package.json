@@ -56,6 +56,10 @@
       "types": "./dist/cache/index.d.ts",
       "import": "./dist/cache/index.js"
     },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
+    },
     "./decorators": {
       "types": "./dist/decorators/index.d.ts",
       "import": "./dist/decorators/index.js"

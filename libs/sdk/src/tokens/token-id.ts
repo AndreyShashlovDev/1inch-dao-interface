@@ -1,17 +1,29 @@
-import { ChainId, TokenId } from '@1inch-community/models'
-import { Address, isAddress } from 'viem'
-import { isChainId } from '../chain'
+import {
+  BalanceTokenRecordId,
+  ChainId,
+  TokenPriceRecordId,
+  TokenRecordId,
+} from '@1inch-community/models'
+import { Address } from 'viem'
 
 const separator = ':'
 
-export function buildTokenId(chainId: ChainId, tokenAddress: Address): TokenId {
+export function buildTokenId(chainId: ChainId, tokenAddress: Address): TokenRecordId {
   return `${chainId}${separator}${tokenAddress}`
 }
 
-export function divideTokenId(tokenId: TokenId): [ChainId, Address] {
-  const [chainId, tokenAddress] = tokenId.split(separator)
-  if (!isAddress(tokenAddress) || !isChainId(chainId)) {
-    throw new Error(`token id ${tokenId} is not valid`)
-  }
-  return [chainId, tokenAddress]
+export function buildTokenPriceId(chainId: ChainId, tokenAddress: Address): TokenPriceRecordId {
+  return `${chainId}${separator}${tokenAddress}`
+}
+
+export function buildBalanceId(
+  chainId: ChainId,
+  walletAddress: Address,
+  tokenAddress: Address
+): BalanceTokenRecordId {
+  return `${chainId}${separator}${walletAddress}${separator}${tokenAddress}`
+}
+
+export function destructuringId<T extends string[]>(id: string): T {
+  return id.split(separator) as T
 }

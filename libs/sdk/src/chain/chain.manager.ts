@@ -1,4 +1,5 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
+import { lazyAppContext } from '@1inch-community/core/utils'
 import { ChainId, IApplicationContext, IOnChain } from '@1inch-community/models'
 import {
   combineLatest,
@@ -48,13 +49,17 @@ const abi = parseAbi([
 ])
 
 export class OnChainManager implements IOnChain {
-  private context?: IApplicationContext
+  private readonly context = lazyAppContext('OnChainManager')
   private readonly clientMap = new Map<ChainId, ClientRecord>()
   private readonly blockEmitterMap = new Map<ChainId, Observable<Block>>()
   private readonly allowanceCache = new BlockTimeCache<string, bigint>()
 
+  get crossChainEmitter() {
+    return this.getBlockEmitter(ChainId.eth).pipe(map(() => void 0))
+  }
+
   async init(context: IApplicationContext): Promise<void> {
-    this.context = context
+    this.context.set(context)
   }
 
   getBlockEmitter(chainId: ChainId): Observable<Block> {
@@ -169,7 +174,7 @@ export class OnChainManager implements IOnChain {
   private async buildClient(chainId: ChainId): Promise<PublicClient> {
     if (!this.context) throw new Error('No context provided')
     const chain = getChainById(chainId)
-    const transportController = new WebFallbackTransportController(this.context, chain)
+    const transportController = new WebFallbackTransportController(this.context.value, chain)
     const client = createPublicClient({ chain, transport: transportController.createTransport() })
     this.clientMap.set(chainId, { client, transportController })
     await transportController.benchMartTransport()

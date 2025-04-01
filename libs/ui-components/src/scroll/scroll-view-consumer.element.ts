@@ -5,7 +5,7 @@ import { css, html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
 import { fromEvent, merge, tap } from 'rxjs'
-import { ScrollContext, scrollContext } from './scroll-context'
+import { type ScrollContext, scrollContext } from './scroll-context'
 
 @customElement(ScrollViewConsumerElement.tagName)
 export class ScrollViewConsumerElement extends LitElement {
