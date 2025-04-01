@@ -26,7 +26,7 @@ export const chainSelectorListItemStyle = css`
     margin-left: auto;
     transition: transform 0.2s;
     transform: scale(0);
-    stroke: transparent;
+    color: transparent;
   }
 
   .list-icon-delete {
@@ -36,7 +36,7 @@ export const chainSelectorListItemStyle = css`
     margin-left: auto;
     transition: transform 0.2s;
     transform: scale(0);
-    stroke: var(--primary);
+    color: var(--primary);
   }
 
   @media (hover: hover) {
@@ -46,12 +46,12 @@ export const chainSelectorListItemStyle = css`
 
     .container:hover .list-icon {
       transform: scale(1);
-      stroke: var(--color-content-content-tertiary);
+      color: var(--color-content-content-tertiary);
     }
 
     .active .list-icon {
       transform: scale(1);
-      stroke: var(--primary);
+      color: var(--primary);
     }
 
     .active:hover .list-icon {
