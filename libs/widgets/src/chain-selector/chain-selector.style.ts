@@ -15,7 +15,7 @@ export const chainSelectorStyle = css`
   .icon-common {
     position: absolute;
 
-    border: 2px solid white;
+    border: 2px solid var(--color-background-bg-body);
     border-radius: 50%;
 
     transition: all 0.2ms;
