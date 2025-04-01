@@ -1,3 +1,54 @@
+# 1.0.0-rc.1 (2025-04-01)
+
+
+### Bug Fixes
+
+* **core, dapp:** remove unused components and simplify Sentry config ([bb5a075](https://github.com/1inch-community/interface/commit/bb5a075d11438bd6d9af298227a87f0edec8878b))
+* **deps:** update dependencies across multiple packages ([bdd457f](https://github.com/1inch-community/interface/commit/bdd457f30e9ced99bc93ed6a93ec8218863ad9c0))
+* **package.json:** add --esm flag to update-version script ([d49747f](https://github.com/1inch-community/interface/commit/d49747fa9e0ad18a390c409c46f1d6bc5198485e))
+* **package.json:** correct publish command for libraries ([2a8fca4](https://github.com/1inch-community/interface/commit/2a8fca4ca44fab09dadef90afff75a2d05dcf634))
+* **package.json:** correct script file extension and version regression ([fb725e8](https://github.com/1inch-community/interface/commit/fb725e815e3ad704c25f61f5bd956d5b097741df))
+* **package.json:** remove hardcoded version in update-version script ([5c708da](https://github.com/1inch-community/interface/commit/5c708da3ee0e831367b4f13578126ace5edab036))
+* **package.json:** update ts-node command for update-version script ([e7c1d64](https://github.com/1inch-community/interface/commit/e7c1d64481684f6620a815781c3d60b62a5e4bc8))
+* **scripts:** add ES module flag to update-version script ([4389a25](https://github.com/1inch-community/interface/commit/4389a25dd001e6eea42565833be0c2e97cd2b30d))
+* streamline and update methods; improve consistency ([700b350](https://github.com/1inch-community/interface/commit/700b3502d3b21ca11b215e41c08d5179b1cdf7db))
+* **workflows:** add condition to deploy step in dev-pipeline ([acdff22](https://github.com/1inch-community/interface/commit/acdff22e629732bd648a05decb81e8180b134d24))
+* **workflows:** update dev-pipeline permissions to include issues ([a741f27](https://github.com/1inch-community/interface/commit/a741f27456b975821ed67e8a1a4fc749c4675366))
+* **workflows:** update publish script to use publish:libs:all ([b988ec8](https://github.com/1inch-community/interface/commit/b988ec891565d8dc4bc7da8bbf1826a474d0506a))
+
+
+### chore
+
+* **release:** bump version to 1.0.1 and update configurations ([6c27a2a](https://github.com/1inch-community/interface/commit/6c27a2a59ff7746344520936c58b49dfc2029a90))
+* **release:** bump versions to 1.1.1 across packages ([55ee0a3](https://github.com/1inch-community/interface/commit/55ee0a31bd03809730076da3ea0f985cbd2092ea))
+
+
+### Code Refactoring
+
+* **packages:** reset versions to 1.0.0 and update publish scripts ([2136434](https://github.com/1inch-community/interface/commit/213643466f3479696d1f24a656e0810c3d782441))
+
+
+### Features
+
+* **actions:** update default Node.js version to 22 ([61b07e2](https://github.com/1inch-community/interface/commit/61b07e2ed5f654881be538be0da3009872e12f4f))
+* **actions:** update default pnpm version to 10 ([2deb32d](https://github.com/1inch-community/interface/commit/2deb32d812da46ac6fce7dc8a3454ccc68b57f77))
+* **actions:** update default pnpm version to 10.6.0 ([a4dc7a1](https://github.com/1inch-community/interface/commit/a4dc7a1cd6362678a4af0be8dfe998ca44778b31))
+* chain selector refactor ([87b7770](https://github.com/1inch-community/interface/commit/87b77706de4899f8a1ea8443b103ba6a6215ce2e))
+* **ci:** add publish script and NPM_TOKEN to pipeline ([75974b5](https://github.com/1inch-community/interface/commit/75974b57c895417cfc778076071c3ca0769eae8f))
+* **libs:** add README documentation for core libraries ([c644fe5](https://github.com/1inch-community/interface/commit/c644fe5da8a7ab90c341390d0620cc0813ee2e31))
+* **overlay:** enhance overlay positioning and add close button ([69245ce](https://github.com/1inch-community/interface/commit/69245ce7c4b740d7048abc0dadf83f04c5529856))
+* **releaserc:** enable alpha prerelease configuration ([8586ab1](https://github.com/1inch-community/interface/commit/8586ab135cd0b7a1f2c019f0b0d31507e61f1e7c))
+
+
+### BREAKING CHANGES
+
+* **overlay:** Updated `OverlayController` constructor to accept a target factory function instead of direct target elements.
+* **core, dapp:** Removed `inch-chain-selector` from header and footer components.
+* Certain method signatures and expected parameters have been modified across modules.
+* **release:** Unified version updates might impact dependency resolutions and CI/CD workflows.
+* **packages:** Packages now have a unified version reset to 1.0.0 which might affect dependency resolutions.
+* **release:** Adjusted release process and project structures, which may impact CI/CD workflows and package publishing.
+
 # 1.0.0-dev.1 (2025-04-01)
 
 
