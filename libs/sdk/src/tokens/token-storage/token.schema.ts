@@ -138,15 +138,6 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
     this.database = db as unknown as TokenSchemaDatabase
   }
 
-  async getZeroBalanceChainId(walletAddress: Address): Promise<ChainId[]> {
-    const result: ChainId[] = []
-    await this.balances
-      .where('walletAddress')
-      .equals(walletAddress)
-      .each((record) => {})
-    return result
-  }
-
   async getToken(chainId: ChainId, address: Address): Promise<ITokenRecord | null> {
     const recordId = buildTokenId(chainId, address)
     const records = await this.tokens.where('id').equals(recordId).toArray()

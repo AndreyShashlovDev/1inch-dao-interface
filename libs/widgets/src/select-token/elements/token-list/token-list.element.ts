@@ -39,7 +39,7 @@ export class TokenListElement extends LitElement {
 
   private readonly indexList$ = this.tokenViewData$.pipe(
     map((data) => {
-      let length = data.userTokensInfo.length + data.allTokensInfo.length
+      const length = data.userTokensInfo.length + data.allTokensInfo.length
       return new Array(length).fill(0) as 0[]
     })
   )
