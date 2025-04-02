@@ -3,7 +3,6 @@ import {
   getMobileMatchMediaAndSubscribe,
   isRTLCurrentLocale,
 } from '@1inch-community/core/lit-utils'
-import { IWallet } from '@1inch-community/models'
 import { isL2Chain } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
@@ -22,8 +21,6 @@ export class ChainSelectorListItemElement extends LitElement {
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   @property({ type: Object }) info?: ChainViewInfo
-
-  @property({ type: Object, attribute: false }) controller?: IWallet
 
   @property({ type: Boolean, attribute: false }) isActiveChain: boolean = false
 

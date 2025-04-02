@@ -2,7 +2,6 @@ import {
   dispatchEvent,
   getMobileMatchMediaAndSubscribe,
 } from '@1inch-community/core/lit-utils'
-import { IWallet } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
@@ -19,8 +18,6 @@ export class ChainSelectorListElement extends LitElement {
 
   static override styles = [chainSelectorListStyle]
 
-  @property({ type: Object, attribute: false }) controller?: IWallet
-
   @property({ type: Array, attribute: false }) selectedChainList: ChainViewInfo[] = []
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
@@ -34,7 +31,6 @@ export class ChainSelectorListElement extends LitElement {
       (info) => html`
         <inch-chain-selector-list-item
           .info="${info}"
-          .controller="${this.controller}"
           .selectedChainList="${this.selectedChainList}"
           .isActiveChain="${this.selectedChainList.includes(info)}"
           @chainItemClick="${(event: CustomEvent) =>
