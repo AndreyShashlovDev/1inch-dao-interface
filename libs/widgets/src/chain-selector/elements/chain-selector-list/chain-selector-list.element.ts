@@ -1,7 +1,4 @@
-import {
-  dispatchEvent,
-  getMobileMatchMediaAndSubscribe,
-} from '@1inch-community/core/lit-utils'
+import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
@@ -87,7 +84,7 @@ export class ChainSelectorListElement extends LitElement {
     }
 
     if (this.selectedChainList.length === 0) {
-      this.resetSelectedChainList();
+      this.resetSelectedChainList()
     }
 
     dispatchEvent(this, 'changeSelectedChainList', this.selectedChainList)

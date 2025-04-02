@@ -1,5 +1,5 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
-import {dispatchEvent, getMobileMatchMediaAndSubscribe} from '@1inch-community/core/lit-utils'
+import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
@@ -92,9 +92,7 @@ export class ChainSelectorElement extends LitElement {
 
     switch (this.selectedChainList.length) {
       case 1:
-        return html`<inch-icon
-          icon="${this.selectedChainList[0].iconName}"
-        ></inch-icon>`
+        return html`<inch-icon icon="${this.selectedChainList[0].iconName}"></inch-icon>`
       case 2:
         return html`
           <div class="icon-container capacity-2">
@@ -146,9 +144,7 @@ export class ChainSelectorElement extends LitElement {
           )}
         `
       default:
-        return html`<inch-icon
-          icon="${this.selectedChainList[0].iconName}"
-        ></inch-icon>`
+        return html`<inch-icon icon="${this.selectedChainList[0].iconName}"></inch-icon>`
     }
   }
 

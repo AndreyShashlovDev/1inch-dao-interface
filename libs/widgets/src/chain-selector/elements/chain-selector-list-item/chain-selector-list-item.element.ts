@@ -53,7 +53,10 @@ export class ChainSelectorListItemElement extends LitElement {
           icon="${this.info.iconName}"
         ></inch-icon>
         <span>${this.info.name}</span>
-        <inch-icon class="list-icon" icon="${this.isActiveChain ? 'check24' : 'plus24'}"></inch-icon>
+        <inch-icon
+          class="list-icon"
+          icon="${this.isActiveChain ? 'check24' : 'plus24'}"
+        ></inch-icon>
         <inch-icon class="list-icon-delete" icon="minus24"></inch-icon>
       </div>
     `

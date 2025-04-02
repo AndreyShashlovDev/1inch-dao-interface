@@ -1,12 +1,12 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { getMobileMatchMediaAndSubscribe, subscribe } from '@1inch-community/core/lit-utils'
 import { IApplicationContext } from '@1inch-community/models'
+import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/chain-selector'
+import { ChainViewInfo } from '@1inch-community/widgets/chain-selector'
 import '@1inch-community/widgets/notifications'
 import '@1inch-community/widgets/wallet-manage'
-import { ChainViewInfo } from '@1inch-community/widgets/chain-selector'
-import { chainList } from '@1inch-community/sdk/chain'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -51,10 +51,10 @@ export class HeaderElement extends LitElement {
           this.applicationContext.wallet.isConnected,
           () => html`
             <div class="right-content">
-              <inch-chain-selector 
-                  .selectedChainList="${chainList}"
-                  @changeSelectedChainList="${(event: CustomEvent) =>
-                      this.onChangeSelectedChainList(event.detail.value as ChainViewInfo[])}"
+              <inch-chain-selector
+                .selectedChainList="${chainList}"
+                @changeSelectedChainList="${(event: CustomEvent) =>
+                  this.onChangeSelectedChainList(event.detail.value as ChainViewInfo[])}"
               >
               </inch-chain-selector>
               <inch-connect-wallet-view
@@ -80,7 +80,7 @@ export class HeaderElement extends LitElement {
     /**
      * TODO: onChangeSelectedChainList handler
      */
-    console.log(value);
+    console.log(value)
   }
 }
 
