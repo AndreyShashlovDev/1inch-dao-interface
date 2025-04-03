@@ -1,13 +1,16 @@
-import { observe, subscribe } from '@1inch-community/core/lit-utils'
+import { asyncTimeout } from '@1inch-community/core/async'
+import { LitCustomEvent, observe, subscribe } from '@1inch-community/core/lit-utils'
 import { ChainId, ISelectTokenContext, ITokenListViewData } from '@1inch-community/models'
 import { getChainById, isChainId } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import { ISceneContext, sceneContext } from '@1inch-community/ui-components/scene'
 import '@1inch-community/ui-components/scroll'
+import type { ScrollViewVirtualizerConsumerElement } from '@1inch-community/ui-components/scroll'
 import { consume } from '@lit/context'
 import { html, LitElement, TemplateResult } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
+import { createRef, ref } from 'lit/directives/ref.js'
 import { when } from 'lit/directives/when.js'
 import { defer, map, tap } from 'rxjs'
 import { Address } from 'viem'
@@ -31,8 +34,10 @@ export class TokenListElement extends LitElement {
   sceneContext?: ISceneContext
   @state() private chainId: ChainId | null = null
   @state() private walletAddress: Address | null = null
-  @state() private isEmpty = false
 
+  private readonly virtualizedRef = createRef<ScrollViewVirtualizerConsumerElement>()
+
+  @state()
   private tokenViewDataSnapshot: ITokenListViewData | null = null
 
   private readonly tokenViewData$ = defer(() => this.getTokenViewData())
@@ -43,6 +48,13 @@ export class TokenListElement extends LitElement {
       return new Array(length).fill(0) as 0[]
     })
   )
+
+  private get isEmpty() {
+    return (
+      this.tokenViewDataSnapshot?.allTokensInfo.length === 0 &&
+      this.tokenViewDataSnapshot?.userTokensInfo.length === 0
+    )
+  }
 
   protected override render() {
     const searchValue = this.context?.getSearchTokenValue() ?? ''
@@ -69,17 +81,31 @@ export class TokenListElement extends LitElement {
         `
       )}
       <inch-scroll-view-virtualizer-consumer
+        ${ref(this.virtualizedRef)}
         .header="${this.header}"
-        .items=${observe(this.indexList$, this.getStubAddresses())}
+        .items=${observe(this.indexList$)}
         .keyFunction="${(_: 0, index: number) => this.getListItemKeyByIndex(index)}"
         .renderItem=${(_: 0, index: number) => {
-          const normalizedIndex = index - 1
-          const record = this.extractTokenViewDataByIndex(normalizedIndex)
+          const record = this.extractTokenViewDataByIndex(index)
           if (!record) return html``
           return html`
             <inch-token-list-item
               .crossChainTokensBindingRecord="${record}"
               .walletAddress="${ifDefined(this.walletAddress ?? undefined)}"
+              @selectItem="${async (event: LitCustomEvent<[string, boolean]>) => {
+                const [symbol, openMore] = event.detail.value
+                const [lastSymbol] = this.context?.getOpenCrossChainView() ?? []
+                if (symbol === lastSymbol) {
+                  this.context?.onOpenCrossChainView('', false)
+                  return
+                }
+                if (symbol !== lastSymbol && lastSymbol !== '') {
+                  this.context?.onOpenCrossChainView('', false)
+                  await asyncTimeout(300)
+                }
+                await this.virtualizedRef.value?.scrollToIndex(index)
+                this.context?.onOpenCrossChainView(symbol, openMore)
+              }}"
             ></inch-token-list-item>
           `
         }}
@@ -99,7 +125,6 @@ export class TokenListElement extends LitElement {
     subscribe(this, [
       this.tokenViewData$.pipe(
         tap((data) => {
-          this.isEmpty = data.allTokensInfo.length === 0 && data.userTokensInfo.length === 0
           this.tokenViewDataSnapshot = data
         })
       ),

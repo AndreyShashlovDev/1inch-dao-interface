@@ -57,7 +57,7 @@ export class SwapFormDesktopElement extends LitElement {
 
   private readonly desktopScene = new SceneController('swapForm', {
     swapForm: { minWidth: 556, maxWidth: 556, maxHeight: 625, lazyRender: true },
-    selectToken: { minWidth: 556, maxWidth: 556, maxHeight: 680 },
+    selectToken: { minWidth: 556, maxWidth: 556, maxHeight: 750 },
     confirmSwap: { minWidth: 556, maxWidth: 556, maxHeight: 680 },
     settings: { minWidth: 556, maxWidth: 556, maxHeight: 900, lazyRender: true },
   })

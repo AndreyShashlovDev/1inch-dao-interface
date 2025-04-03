@@ -4,11 +4,13 @@ import {
   getMobileMatchMediaEmitter,
   mobileMediaCSS,
   resizeObserver,
+  scrollEnd,
   subscribe,
 } from '@1inch-community/core/lit-utils'
 import { getScrollbarStyle, scrollbarStyle } from '@1inch-community/core/theme'
 import '@lit-labs/virtualizer'
-import type { LitVirtualizer } from '@lit-labs/virtualizer'
+import { type LitVirtualizer } from '@lit-labs/virtualizer'
+import { virtualizerRef } from '@lit-labs/virtualizer/virtualize.js'
 import { consume } from '@lit/context'
 import { css, html, LitElement, TemplateResult } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
@@ -16,11 +18,11 @@ import { createRef, ref } from 'lit/directives/ref.js'
 import { when } from 'lit/directives/when.js'
 import { fromEvent, merge, of, tap } from 'rxjs'
 import { mainViewportContext } from './main-viewport-context'
-import { type ScrollContext, scrollContext } from './scroll-context'
+import { scrollContext, type ScrollContext } from './scroll-context'
 
 @customElement(ScrollViewVirtualizerConsumerElement.tagName)
 export class ScrollViewVirtualizerConsumerElement extends LitElement {
-  static tagName = 'inch-scroll-view-virtualizer-consumer'
+  static tagName = 'inch-scroll-view-virtualizer-consumer' as const
 
   static override styles = [
     getScrollbarStyle('lit-virtualizer', true),
@@ -80,16 +82,36 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
 
   private globalOffsetY: number | null = null
 
-  private readonly virtualizerRef = createRef<LitVirtualizer>()
+  private readonly virtualizerRef = createRef<LitVirtualizer & VirtualizerHostElement>()
   private readonly headerRef = createRef<HTMLElement>()
 
   private readonly headerStub = document.createElement('div')
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
-  get virtualizer() {
+  get virtualizerHost() {
     if (!this.virtualizerRef.value) throw new Error('')
     return this.virtualizerRef.value
+  }
+
+  get virtualizer(): Virtualizer | undefined {
+    return this.virtualizerHost[virtualizerRef]
+  }
+
+  async scrollToIndex(index: number) {
+    const normalizeIndex = index + 1 - (this.virtualizer?._first ?? 0)
+    const element = this.virtualizer?._children[normalizeIndex]
+    if (!element) return
+    const rectElement = element.getBoundingClientRect()
+    const rectHost = this.virtualizerHost.getBoundingClientRect()
+    let top = rectElement.top - rectHost.top + this.virtualizerHost.scrollTop
+    if (this.header && this.headerRef.value) {
+      top -= this.headerRef.value.offsetHeight
+    }
+    if (this.virtualizerHost.scrollTop !== top) {
+      this.virtualizerHost.scrollTo({ top, behavior: 'smooth' })
+      await scrollEnd(this.virtualizerHost)
+    }
   }
 
   protected override firstUpdated() {
@@ -105,9 +127,14 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
         merge(
           getMobileMatchMediaEmitter(),
           resizeObserver(this.context),
-          resizeObserver(this.virtualizer),
+          resizeObserver(this.virtualizerHost),
           this.mainViewportContext ? resizeObserver(this.mainViewportContext) : of()
-        ).pipe(tap(() => this.updateView())),
+        ).pipe(
+          tap(() => {
+            console.warn('ScrollViewVirtualizerConsumerElement update view')
+            this.updateView()
+          })
+        ),
       ],
       { requestUpdate: false }
     )
@@ -142,7 +169,7 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
         ${ref(this.virtualizerRef)}
         scroller
         .items=${this.getItems()}
-        .keyFunction="${this.keyFunction ?? ((_: unknown, index: number) => index)}"
+        .keyFunction="${(item: unknown, index: number) => this.keyFunctionHandler(item, index)}"
         .renderItem=${(item: unknown, index: number) => this.renderItemInternal(item, index)}
       ></lit-virtualizer>
     `
@@ -159,15 +186,15 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   private updateViewMobile() {
     if (!this.context || !this.virtualizerRef.value) return
     const contextRect = this.getViewPortBoundingClientRect()
-    const virtualizerRect = this.virtualizer.getBoundingClientRect()
+    const virtualizerRect = this.virtualizerHost.getBoundingClientRect()
     this.globalOffsetY = virtualizerRect.top - contextRect.top + 8 * 2
-    this.virtualizer.style.minHeight = `${(this.context.maxHeight ?? 0) - this.globalOffsetY}px`
+    this.virtualizerHost.style.minHeight = `${(this.context.maxHeight ?? 0) - this.globalOffsetY}px`
   }
 
   private updateViewDesktop() {
     if (!this.context || !this.virtualizerRef.value || !this.headerRef.value) return
     const contextRect = this.getViewPortBoundingClientRect()
-    this.virtualizer.style.minHeight = `${contextRect.height}px`
+    this.virtualizerHost.style.minHeight = `${contextRect.height}px`
   }
 
   private getViewPortBoundingClientRect() {
@@ -182,9 +209,27 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
     return this.items
   }
 
+  private keyFunctionHandler(item: unknown, index: number) {
+    if (this.header && index === 0) {
+      return '____header____'
+    }
+    let normalizerIndex = index
+    if (this.header) {
+      normalizerIndex -= 1
+    }
+    if (this.keyFunction) {
+      return this.keyFunction(item, normalizerIndex)
+    }
+    try {
+      return `${normalizerIndex}:${JSON.stringify(item)}`
+    } catch {
+      return normalizerIndex
+    }
+  }
+
   private renderItemInternal(item: unknown, index: number): TemplateResult {
     if (this.header && index === 0) return html`${this.headerStub}`
-    return this.renderItem?.(item, index) ?? html``
+    return this.renderItem?.(item, index - 1) ?? html``
   }
 
   private updateHeaderSize() {
@@ -215,8 +260,17 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 }
 
+export interface VirtualizerHostElement extends HTMLElement {
+  [virtualizerRef]?: Virtualizer
+}
+
+interface Virtualizer {
+  _first: number
+  _children: Array<HTMLElement>
+}
+
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-scroll-view-virtualizer-consumer': ScrollViewVirtualizerConsumerElement
+    [ScrollViewVirtualizerConsumerElement.tagName]: ScrollViewVirtualizerConsumerElement
   }
 }

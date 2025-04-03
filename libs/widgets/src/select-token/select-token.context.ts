@@ -23,8 +23,6 @@ import {
 import { type Address } from 'viem'
 
 export class SelectTokenContext implements ISelectTokenContext {
-  private readonly openSymbols = new Set<string>()
-
   readonly chainId$: Observable<ChainId | null> = defer(
     () => this.applicationContext.wallet.data.chainId$
   )
@@ -34,6 +32,7 @@ export class SelectTokenContext implements ISelectTokenContext {
   readonly searchToken$: BehaviorSubject<string> = new BehaviorSubject<string>('')
   readonly changeFavoriteTokenState$: Subject<[ChainId, Address]> = new Subject()
   readonly searchInProgress$: Subject<boolean> = new BehaviorSubject(false)
+  readonly openCrossChainView$ = new BehaviorSubject<[string, boolean]>(['', false])
 
   readonly favoriteTokens$ = this.chainId$.pipe(
     mergeMap((chainId) => {
@@ -79,15 +78,11 @@ export class SelectTokenContext implements ISelectTokenContext {
     this.swapContext.setToken(this.tokenType, token)
   }
 
-  isOpenCrossChainView(symbol: string): boolean {
-    return this.openSymbols.has(symbol)
+  getOpenCrossChainView() {
+    return this.openCrossChainView$.value
   }
 
-  onOpenCrossChainView(symbol: string, isOpen: boolean) {
-    if (isOpen) {
-      this.openSymbols.add(symbol)
-    } else {
-      this.openSymbols.delete(symbol)
-    }
+  onOpenCrossChainView(symbol: string, openMore: boolean) {
+    this.openCrossChainView$.next([symbol, openMore])
   }
 }

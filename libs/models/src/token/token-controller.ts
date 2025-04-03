@@ -21,6 +21,9 @@ export interface ITokenStorage extends InitializingEntity {
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
   getSymbolData(walletAddress?: Address): Promise<ITokenListViewData>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
+  getTokenById(id: TokenRecordId): Promise<IToken | null>
+  getTokenBalanceById(id: TokenRecordId): Promise<IBigFloat>
+  getTokenFiatBalanceById(id: TokenRecordId): Promise<IBigFloat>
   getTokenLogoURL(chainId: ChainId, address: Address): Promise<string | null>
   getNativeToken(chainId: ChainId): Promise<IToken | null>
   getTokenBySymbol(chainId: ChainId, symbol: string): Promise<IToken[]>

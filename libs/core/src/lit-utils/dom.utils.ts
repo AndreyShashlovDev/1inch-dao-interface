@@ -1,5 +1,7 @@
 import { CSSResult } from 'lit'
 
+export type LitCustomEvent<T, E extends Event = Event> = CustomEvent<{ value: T; event?: E }>
+
 export function createAndAppendInHeaderElement<K extends keyof HTMLElementTagNameMap>(
   tagName: K,
   sideEffect?: (el: HTMLElementTagNameMap[K]) => void

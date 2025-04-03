@@ -3,25 +3,32 @@ import { css } from 'lit'
 
 export const tokenListItemStyle = css`
   :host {
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
     height: 72px;
     width: 100%;
     outline: none;
     user-select: none;
-    transition: height 0.2s;
+    padding: 12px 16px;
+    border-radius: 16px;
+    overflow: hidden;
+    transition:
+      background-color 0.2s,
+      height 0.2s;
     -webkit-tap-highlight-color: transparent;
   }
 
+  :host(.expanded) {
+    background-color: var(--color-background-bg-secondary);
+  }
+
   .item-container {
-    padding: 12px 16px;
+    width: 100%;
     display: flex;
     gap: 8px;
     align-items: center;
     cursor: pointer;
-    border-radius: 16px;
-    transition: background-color 0.2s;
-  }
-
-  .item-container__expanded {
   }
 
   .content {
@@ -56,21 +63,75 @@ export const tokenListItemStyle = css`
   .right-content {
     margin-left: auto;
     align-items: flex-end;
+    transition:
+      transform 0.2s,
+      opacity 0.2s;
+  }
+
+  .right-content__expanded {
+    transform: translate3d(0, 15%, 0);
+    opacity: 0;
+  }
+
+  .chain-view {
+    padding-top: 8px;
+    transition:
+      opacity 0.2s,
+      transform 0.2s;
+  }
+
+  .chain-view__hide {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-10%);
+  }
+
+  .full-chain-view-button {
+    color: var(--primary);
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: color 0.2s;
+  }
+
+  .more-icon-container {
+    position: relative;
+    width: 24px;
+    height: 24px;
+  }
+
+  .more-icon {
+    position: absolute;
+    transition:
+      opacity 0.2s,
+      transform 0.2s;
+  }
+
+  .more-icon__hide {
+    transform: rotate(90deg);
+    opacity: 0;
   }
 
   @media (hover: hover) {
-    .item-container:hover {
+    :host(:hover:not(.expanded)) {
       background-color: var(--color-background-bg-secondary);
+    }
+
+    .full-chain-view-button:hover {
+      color: var(--primary-hover);
     }
   }
 
   ${mobileMediaCSS(css`
-    .item-container {
+    :host {
       padding: 8px 8px;
     }
   `)}
 
-  .item-container:active {
+  :host(:active) {
     background-color: var(--color-background-bg-secondary);
   }
 `

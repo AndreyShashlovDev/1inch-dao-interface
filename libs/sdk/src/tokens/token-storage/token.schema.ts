@@ -8,33 +8,14 @@ import {
   IBalancesTokenRecord,
   ICrossChainTokensBindingRecord,
   InitializingEntity,
-  ITokenDto,
   ITokenPriceRecord,
   ITokenRecord,
-  ITokenV2Dto,
-  ProxyResultBalance,
-  ProxyResultTokenPrice,
   TokenRecordId,
 } from '@1inch-community/models'
 import type { Table } from 'dexie'
-import { type Address, isAddressEqual } from 'viem'
-import { nativeTokenAddress, parseChainId } from '../../chain'
-import { buildBalanceId, buildTokenId, buildTokenPriceId, destructuringId } from '../token-id'
-
-const TokenPriority: Record<string, number> = {
-  native: 1000,
-  USDT: 100,
-  USDC: 100,
-  crosschain: 70,
-  WETH: 62,
-  '1INCH': 61,
-  'PEG:ETH': 60,
-  'PEG:USD': 50,
-  'PEG:BTC': 40,
-  'PEG:EUR': 30,
-  staking: 20,
-  savings: 10,
-}
+import { type Address } from 'viem'
+import { nativeTokenAddress } from '../../chain'
+import { buildBalanceId, buildTokenId } from '../token-id'
 
 interface TokenSchemaDatabase {
   readonly tokens: Table<ITokenRecord, TokenRecordId>
@@ -78,18 +59,6 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
   get crossChainTokensBinding() {
     if (!this.database) throw new Error('token database not init')
     return this.database.crossChainTokensBinding
-  }
-
-  tokensIsExpired() {
-    return this.tokensTTL.isExpired()
-  }
-
-  balancesIsExpired(walletAddress: Address) {
-    return this.balancesTTL.isExpired(walletAddress)
-  }
-
-  tokenPriceIsExpired() {
-    return this.tokenPriceTTL.isExpired()
   }
 
   async init(context: IApplicationContext) {
@@ -137,6 +106,42 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
     })
     this.database = db as unknown as TokenSchemaDatabase
   }
+
+  tokensIsExpired() {
+    return this.tokensTTL.isExpired()
+  }
+
+  balancesIsExpired(walletAddress: Address) {
+    return this.balancesTTL.isExpired(walletAddress)
+  }
+
+  tokenPriceIsExpired() {
+    return this.tokenPriceTTL.isExpired()
+  }
+
+  async balancesIsEmpty(walletAddress: Address) {
+    const count = await this.balances.where('walletAddress').equals(walletAddress).count()
+    return count === 0
+  }
+
+  async tokenPriceIsEmpty() {
+    const count = await this.tokenPrice.count()
+    return count === 0
+  }
+
+  resetTokensTTL() {
+    this.tokensTTL.reset()
+  }
+
+  resetBalancesTTL(walletAddress: Address) {
+    this.balancesTTL.reset(walletAddress)
+  }
+
+  resetTokenPriceTTL() {
+    this.tokenPriceTTL.reset()
+  }
+
+  // depr
 
   async getToken(chainId: ChainId, address: Address): Promise<ITokenRecord | null> {
     const recordId = buildTokenId(chainId, address)
@@ -199,23 +204,6 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
     return result
   }
 
-  async getTokens(chainId: ChainId, addresses: Address[]): Promise<ITokenRecord[]> {
-    const addressesSet = new Set(addresses)
-    return this.tokens
-      .filter((record) => record.chainId === chainId && addressesSet.has(record.address))
-      .toArray()
-  }
-
-  async getAllTokenAddresses(chainId: ChainId) {
-    const result: Address[] = []
-    await this.tokens
-      .where('chainId')
-      .equals(chainId)
-      .each((record) => result.push(record.address))
-
-    return result
-  }
-
   async getTokenBalance(
     chainId: ChainId,
     tokenAddress: Address,
@@ -224,123 +212,6 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
     const recordId = buildBalanceId(chainId, walletAddress, tokenAddress)
     const records = await this.balances.where('id').equals(recordId).toArray()
     return records[0] ?? null
-  }
-
-  async isEmptyTokenBalanceStorage(chainId: ChainId, walletAddress: Address) {
-    return this.balances
-      .filter(
-        (record) =>
-          record.chainId === chainId && isAddressEqual(record.walletAddress, walletAddress)
-      )
-      .toArray()
-      .then((list) => list.length === 0)
-  }
-
-  async setTokens(tokens: ITokenV2Dto[]) {
-    const tableTokens: ITokenRecord[] = []
-    const crossChainTokensBindingMap = new Map<string, Set<TokenRecordId>>()
-    const crossChainTokensBindingPriorityMap = new Map<string, number>()
-    for (const token of tokens) {
-      const chainId = token.chainId
-      const id = buildTokenId(chainId, token.address)
-      const priority = calcTokenPriority(token)
-      tableTokens.push({
-        id,
-        address: token.address,
-        decimals: token.decimals,
-        eip2612: token.eip2612 ?? null,
-        name: token.name,
-        symbol: token.symbol,
-        tags: token.tags,
-        logoURL: token.logoURI,
-        isFavorite: false,
-        chainId,
-        priority,
-      })
-      if (!crossChainTokensBindingMap.has(token.symbol)) {
-        crossChainTokensBindingMap.set(token.symbol, new Set())
-      }
-      if (crossChainTokensBindingMap.get(token.symbol)?.has(id)) {
-        throw new Error('violation of communication integrity')
-      }
-      crossChainTokensBindingMap.get(token.symbol)!.add(id)
-      const crossChainTokensBindingPriority =
-        crossChainTokensBindingPriorityMap.get(token.symbol) ?? 0
-      crossChainTokensBindingPriorityMap.set(
-        token.symbol,
-        crossChainTokensBindingPriority + priority
-      )
-    }
-
-    const crossChainTokensBindingTable: ICrossChainTokensBindingRecord[] = []
-
-    for (const [symbol, tokenRecordIds] of crossChainTokensBindingMap) {
-      crossChainTokensBindingTable.push({
-        symbol,
-        tokenRecordIds: [...tokenRecordIds],
-        priority: crossChainTokensBindingPriorityMap.get(symbol) ?? 0,
-      })
-    }
-
-    await Promise.all([
-      this.tokens.bulkPut(tableTokens),
-      this.crossChainTokensBinding.bulkPut(crossChainTokensBindingTable),
-    ])
-    this.tokensTTL.reset()
-  }
-
-  async setBalances(balances: ProxyResultBalance) {
-    const balancesRecords: IBalancesTokenRecord[] = []
-    const walletAddressSet = new Set<Address>()
-
-    for (const balance of balances) {
-      if (balance.error) {
-        this.context.value.logger.error(balance.error)
-        continue
-      }
-      const [chainIdStr, walletAddress]: [string, Address] = destructuringId(balance.id)
-      const chainId = parseChainId(chainIdStr)
-      const balanceRecord = balance.result!
-      for (const address in balanceRecord) {
-        const tokenAddress = address as Address
-        balancesRecords.push({
-          id: buildBalanceId(chainId, walletAddress, tokenAddress),
-          tokenRecordId: buildTokenId(chainId, tokenAddress),
-          chainId,
-          tokenAddress: tokenAddress,
-          walletAddress,
-          amount: balanceRecord[tokenAddress],
-        })
-      }
-      walletAddressSet.add(walletAddress)
-    }
-    await this.balances.bulkPut(balancesRecords)
-    for (const walletAddress of walletAddressSet) {
-      this.balancesTTL.reset(walletAddress)
-    }
-  }
-
-  async setTokenPrice(tokenPrice: ProxyResultTokenPrice): Promise<void> {
-    const tokenPriceRecords: ITokenPriceRecord[] = []
-    for (const price of tokenPrice) {
-      if (price.error) {
-        this.context.value.logger.error(price.error)
-        continue
-      }
-      const chainId = parseChainId(price.id)
-      const tokenPriceRecord = price.result!
-      for (const address in tokenPriceRecord) {
-        const tokenAddress = address as Address
-        tokenPriceRecords.push({
-          id: buildTokenPriceId(chainId, tokenAddress),
-          tokenRecordId: buildTokenId(chainId, tokenAddress),
-          chainId,
-          price: tokenPriceRecord[tokenAddress],
-        })
-      }
-    }
-    await this.tokenPrice.bulkPut(tokenPriceRecords)
-    this.tokenPriceTTL.reset()
   }
 
   async getAllFavoriteTokenAddresses(chainId: ChainId) {
@@ -378,15 +249,6 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
 
     return result
   }
-}
-
-function calcTokenPriority(dto: ITokenDto): number {
-  let priority = dto.providers?.length ?? 0
-  priority += TokenPriority[dto.symbol] ?? 0
-  for (const tag of dto.tags) {
-    priority += TokenPriority[tag] ?? 0
-  }
-  return priority
 }
 
 function buildTTLStorageName(prefix: string) {

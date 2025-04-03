@@ -15,7 +15,7 @@ dotenv.config({
 
 export default defineConfig(({ mode }) => {
   const isProduction = process.env['DAPP_IS_PRODUCTION']
-    ? Boolean(process.env['DAPP_IS_PRODUCTION'])
+    ? process.env['DAPP_IS_PRODUCTION'] === 'true'
     : mode === 'production'
 
   const electronBundle = process.env['ELECTRON_BUNDLE'] === 'true'

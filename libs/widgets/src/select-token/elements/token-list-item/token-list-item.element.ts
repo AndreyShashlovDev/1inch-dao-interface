@@ -1,5 +1,11 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import { subscribe, translate } from '@1inch-community/core/lit-utils'
+import {
+  appendClass,
+  appendStyle,
+  dispatchEvent,
+  subscribe,
+  translate,
+} from '@1inch-community/core/lit-utils'
 import { BigFloat } from '@1inch-community/core/math'
 import {
   IApplicationContext,
@@ -12,14 +18,15 @@ import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/token-icon'
 import { consume } from '@lit/context'
 import { Task } from '@lit/task'
-import { html, LitElement, TemplateResult } from 'lit'
+import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
 import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
-import { merge, switchMap } from 'rxjs'
+import { merge, switchMap, tap } from 'rxjs'
 import { Address } from 'viem'
 import { selectTokenContext } from '../../context'
+import '../token-list-item-chain'
 import '../token-list-stub-item'
 import { tokenListItemStyle } from './token-list-item.style'
 
@@ -43,9 +50,10 @@ export class TokenListItemElement extends LitElement {
   @state()
   expanded = false
 
-  private isDestroy = false
+  @state()
+  expandedMore = false
 
-  private preRenderTemplate: TemplateResult | null = null
+  private isDestroy = false
 
   private task = new Task(
     this,
@@ -101,16 +109,24 @@ export class TokenListItemElement extends LitElement {
   }
 
   protected override firstUpdated() {
-    if (this.context && this.crossChainTokensBindingRecord) {
-      this.expanded = this.context?.isOpenCrossChainView(this.crossChainTokensBindingRecord?.symbol)
+    if (!this.context) {
+      throw new Error('Context not init')
     }
     subscribe(
       this,
-      merge(this.applicationContext.onChain.crossChainEmitter).pipe(
-        switchMap(() =>
-          this.task.run([this.crossChainTokensBindingRecord, this.walletAddress, false])
-        )
-      ),
+      [
+        merge(this.applicationContext.onChain.crossChainEmitter).pipe(
+          switchMap(() =>
+            this.task.run([this.crossChainTokensBindingRecord, this.walletAddress, false])
+          )
+        ),
+        this.context.openCrossChainView$.pipe(
+          tap(([symbol, more]) => {
+            this.expanded = this.crossChainTokensBindingRecord?.symbol === symbol
+            this.expandedMore = this.expanded ? more : false
+          })
+        ),
+      ],
       { requestUpdate: false }
     )
   }
@@ -133,15 +149,28 @@ export class TokenListItemElement extends LitElement {
             tokenName
           ),
         pending: () => {
-          if (this.preRenderTemplate) return this.preRenderTemplate
-          return this.getStub()
+          return this.preRender()
         },
         error: () => {
-          if (this.preRenderTemplate) return this.preRenderTemplate
-          return this.getStub()
+          return this.preRender()
         },
       })}
     `
+  }
+
+  private preRender() {
+    if (!this.task.value) {
+      return this.getStub()
+    }
+    const [crossChainTokensBindingRecord, tokenName, balance, fiatBalance, tokenIdListWithBalance] =
+      this.task.value
+    return this.getTokenView(
+      crossChainTokensBindingRecord,
+      balance,
+      fiatBalance,
+      tokenIdListWithBalance,
+      tokenName
+    )
   }
 
   private getTokenView(
@@ -162,42 +191,114 @@ export class TokenListItemElement extends LitElement {
       'item-container': true,
       'item-container__expanded': this.expanded,
     }
+    const rightContentClasses = {
+      content: true,
+      'right-content': true,
+      'right-content__expanded': this.expanded,
+    }
+    const moreIconPlusClasses = {
+      'more-icon': true,
+      'more-icon__hide': this.expandedMore,
+    }
+    const moreIconMinusClasses = {
+      'more-icon': true,
+      'more-icon__hide': !this.expandedMore,
+    }
+    const chainViewClasses = {
+      'chain-view': true,
+      'chain-view__hide': !this.expanded,
+    }
 
-    this.preRenderTemplate = html`
-      <div>
-        <div
-          class="${classMap(classes)}"
-          @click="${() => {
-            this.expanded = !this.expanded
-            this.context?.onOpenCrossChainView(symbol, this.expanded)
-          }}"
-        >
-          <inch-token-icon symbol="${symbol}" size="40"></inch-token-icon>
-          <div class="content">
-            <span class="primary-content">${tokenName}</span>
-            <span class="secondary-content"
-              >${tokenRecordIds.length}
-              ${when(
-                tokenRecordIds.length === 1,
-                () => html`${translate('inch-token-list-item.network')}`,
-                () => html`${translate('inch-token-list-item.networks')}`
-              )}</span
-            >
-          </div>
+    let tokenIdsList = tokenIdListWithBalance
+    if (this.expandedMore) {
+      tokenIdsList = [
+        ...tokenIdListWithBalance,
+        ...tokenRecordIds.filter((id) => !tokenIdListWithBalance.includes(id)),
+      ]
+    }
 
-          <div class="right-content content">
-            <span class="primary-content">${balanceFormat} ${symbol}</span>
-            <span class="secondary-content">${balanceUsdFormat}</span>
-          </div>
+    this.updateHostStyle(tokenIdsList.length, tokenIdListWithBalance.length >= 1)
+
+    return html`
+      <div
+        class="${classMap(classes)}"
+        @click="${async () => {
+          this.expandedMore = !tokenIdListWithBalance.length
+          dispatchEvent(this, 'selectItem', [symbol, this.expandedMore])
+        }}"
+      >
+        <inch-token-icon symbol="${symbol}" size="40"></inch-token-icon>
+        <div class="content">
+          <span class="primary-content">${tokenName}</span>
+          <span class="secondary-content"
+            >${tokenRecordIds.length}
+            ${when(
+              tokenRecordIds.length === 1,
+              () => html`${translate('inch-token-list-item.network')}`,
+              () => html`${translate('inch-token-list-item.networks')}`
+            )}</span
+          >
         </div>
+
+        <div class="${classMap(rightContentClasses)}">
+          <span class="primary-content">${balanceFormat} ${symbol}</span>
+          <span class="secondary-content">${balanceUsdFormat}</span>
+        </div>
+      </div>
+
+      <div class="${classMap(chainViewClasses)}">
+        ${litMap(
+          tokenIdsList,
+          (id) =>
+            html`<inch-token-list-item-chain tokenRecordId="${id}"></inch-token-list-item-chain>`
+        )}
         ${when(
-          this.expanded,
-          () => html` <div>${litMap(tokenRecordIds, (id) => html` <div>${id}</div> `)}</div> `
+          tokenIdListWithBalance.length,
+          () => html`
+            <div
+              class="full-chain-view-button"
+              @click="${() => {
+                this.context?.onOpenCrossChainView(symbol, !this.expandedMore)
+              }}"
+            >
+              <span class="more-icon-container">
+                <inch-icon class="${classMap(moreIconMinusClasses)}" icon="minus24"></inch-icon>
+                <inch-icon class="${classMap(moreIconPlusClasses)}" icon="plus24"></inch-icon>
+              </span>
+              ${when(
+                this.expandedMore,
+                () => html`<span>Less</span>`,
+                () => html`<span>More</span>`
+              )}
+            </div>
+          `
         )}
       </div>
     `
+  }
 
-    return this.preRenderTemplate
+  private updateHostStyle(listLength: number, showMore: boolean) {
+    appendClass(this, {
+      expanded: this.expanded,
+    })
+    const paddingTop = 8
+    const hostBaseSize = 72
+    const chainItemSize = 60
+    const openMoreItemSize = 48
+    let total = listLength * chainItemSize + hostBaseSize + paddingTop
+    if (showMore) {
+      total += openMoreItemSize
+    }
+
+    if (this.expanded) {
+      appendStyle(this, {
+        height: `${total}px`,
+      })
+    } else {
+      appendStyle(this, {
+        height: '',
+      })
+    }
   }
 
   private getStub() {
@@ -207,6 +308,6 @@ export class TokenListItemElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-token-list-item': TokenListItemElement
+    [TokenListItemElement.tagName]: TokenListItemElement
   }
 }

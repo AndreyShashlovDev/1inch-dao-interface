@@ -60,6 +60,6 @@ export class IconElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-icon': IconElement
+    [IconElement.tagName]: IconElement
   }
 }
