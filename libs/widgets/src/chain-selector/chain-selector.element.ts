@@ -40,7 +40,9 @@ export class ChainSelectorElement extends LitElement {
           () => html`
             <span
               >${this.selectedChainList.length > 1
-                ? 'Cross-Chain'
+                ? this.selectedChainList.length === chainList.length
+                  ? 'All Networks'
+                  : 'Some Networks'
                 : this.selectedChainList[0].name}</span
             >
             <inch-icon icon="chevronDown16"></inch-icon>
