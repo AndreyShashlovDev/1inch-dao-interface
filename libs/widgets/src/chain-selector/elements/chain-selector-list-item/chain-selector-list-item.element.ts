@@ -3,13 +3,13 @@ import {
   getMobileMatchMediaAndSubscribe,
   isRTLCurrentLocale,
 } from '@1inch-community/core/lit-utils'
+import { ChainViewFull } from '@1inch-community/models'
 import { isL2Chain } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
 import { when } from 'lit/directives/when.js'
-import { ChainViewInfo } from '../../models'
 import { chainSelectorListItemStyle } from './chain-selector-list-item.style'
 
 @customElement(ChainSelectorListItemElement.tagName)
@@ -20,7 +20,7 @@ export class ChainSelectorListItemElement extends LitElement {
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
-  @property({ type: Object }) info?: ChainViewInfo
+  @property({ type: Object }) info?: ChainViewFull
 
   @property({ type: Boolean, attribute: false }) isActiveChain: boolean = false
 

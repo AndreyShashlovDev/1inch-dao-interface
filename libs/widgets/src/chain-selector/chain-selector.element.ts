@@ -1,5 +1,6 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
+import { ChainViewInfo } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
@@ -11,7 +12,6 @@ import { styleMap } from 'lit/directives/style-map.js'
 import { when } from 'lit/directives/when.js'
 import { chainSelectorStyle } from './chain-selector.style'
 import './elements/chain-selector-list'
-import { ChainViewInfo } from './models'
 
 @customElement(ChainSelectorElement.tagName)
 export class ChainSelectorElement extends LitElement {
@@ -74,9 +74,18 @@ export class ChainSelectorElement extends LitElement {
     return html`
       ${map(this.selectedChainList, (item, index) => {
         const size = positions[index].size
-        const style = {
+        let style: Record<string, string> = {
           transform: `translate(${positions[index].x}px, ${positions[index].y}px)`,
-          zIndex: index,
+          zIndex: index.toString(),
+        }
+        if (this.selectedChainList.length > 4) {
+          style = {
+            ...style,
+            width: `${size}px`,
+            height: `${size}px`,
+            background: `linear-gradient(135deg, ${item.color.join(', ')})`,
+          }
+          return html` <div class="icon-common" style="${styleMap(style)}"></div> `
         }
         return html`
           <inch-icon
@@ -106,7 +115,7 @@ export class ChainSelectorElement extends LitElement {
 function arrangeIcons(
   count: number,
   containerSize: number,
-  border = 0.5
+  border = 1
 ): { x: number; y: number; size: number }[] {
   const result: { x: number; y: number; size: number }[] = []
 

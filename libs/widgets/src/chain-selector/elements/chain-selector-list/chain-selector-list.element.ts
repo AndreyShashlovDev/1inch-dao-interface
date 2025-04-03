@@ -1,11 +1,11 @@
 import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
+import { ChainViewInfo } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
 import '@1inch-community/ui-components/scroll'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { ChainViewInfo } from '../../models'
 import '../chain-selector-list-item'
 import { chainSelectorListStyle } from './chain-selector-list.style'
 
