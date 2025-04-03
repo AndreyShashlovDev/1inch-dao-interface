@@ -71,30 +71,40 @@ export class ChainSelectorElement extends LitElement {
 
   private getChainIcon() {
     const positions = arrangeIcons(this.selectedChainList.length, 24)
+    const selectedChainListSet = new Set(this.selectedChainList)
+    let index = 0
     return html`
-      ${map(this.selectedChainList, (item, index) => {
-        const size = positions[index].size
-        let style: Record<string, string> = {
-          transform: `translate(${positions[index].x}px, ${positions[index].y}px)`,
-          zIndex: index.toString(),
+      ${map(chainList, (item) => {
+        const hide = !selectedChainListSet.has(item)
+        const position: { x: number; y: number; size: number } | undefined = positions[index]
+        const size: number | undefined = position?.size
+        const x: number | undefined = position?.x ?? 0
+        const y: number | undefined = position?.y ?? 0
+        if (!hide) {
+          index++
         }
-        if (this.selectedChainList.length > 4) {
-          style = {
-            ...style,
-            width: `${size}px`,
-            height: `${size}px`,
-            background: `linear-gradient(135deg, ${item.color.join(', ')})`,
-          }
-          return html` <div class="icon-common" style="${styleMap(style)}"></div> `
+        const hideChainIcon = this.selectedChainList.length > 4
+        const styleContainer: Record<string, string> = {
+          transform: `translate3d(${x}px, ${y}px, 0)`,
+          zIndex: index.toString(),
+          opacity: hide ? '0' : '1',
+          width: `${size}px`,
+          height: `${size}px`,
+          background: `linear-gradient(135deg, ${item.color.join(', ')})`,
+        }
+        const styleIcon: Record<string, string> = {
+          opacity: hideChainIcon ? '0' : '1',
         }
         return html`
-          <inch-icon
-            style="${styleMap(style)}"
-            width="${size}px"
-            height="${size}px"
-            class="icon-common"
-            icon="${item.iconName}"
-          ></inch-icon>
+          <div id="${item.name}" class="icon-item-container" style="${styleMap(styleContainer)}">
+            <inch-icon
+              class="icon-item"
+              style="${styleMap(styleIcon)}"
+              width="${size}px"
+              height="${size}px"
+              icon="${item.iconName}"
+            ></inch-icon>
+          </div>
         `
       })}
     `

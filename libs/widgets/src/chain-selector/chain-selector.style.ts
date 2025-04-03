@@ -9,9 +9,15 @@ export const chainSelectorStyle = css`
     overflow: hidden;
   }
 
-  .icon-common {
+  .icon-item-container {
     position: absolute;
     border-radius: 50%;
-    transition: all 0.2ms;
+    transition:
+      transform 0.2s,
+      opacity 0.2s;
+  }
+
+  .icon-item {
+    transition: opacity 0.2s;
   }
 `
