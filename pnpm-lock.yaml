@@ -71,6 +71,9 @@ importers:
       typescript-eslint:
         specifier: ^8.26.1
         version: 8.26.1(eslint@9.22.0(jiti@2.4.2))(typescript@5.8.2)
+      viem:
+        specifier: ^2.23.9
+        version: 2.23.12(typescript@5.8.2)
       vite:
         specifier: ^6.2.1
         version: 6.2.2(@types/node@22.13.10)(jiti@2.4.2)(terser@5.39.0)

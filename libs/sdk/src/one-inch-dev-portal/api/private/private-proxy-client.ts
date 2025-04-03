@@ -20,8 +20,6 @@ export class PrivateProxyClient implements IProxyClient {
     return this.context.value.environment.get('oneInchDevPortalHost')
   }
 
-  constructor() {}
-
   async init(context: IApplicationContext) {
     this.context.set(context)
     this.expirationTime =

@@ -20,7 +20,7 @@ export async function bootstrapApplicationContext(env: IEnvironment) {
       import('@1inch-community/sdk/tokens').then((m) => m.buildDefaultTokenRateProvider()),
     apiFactory: () =>
       import('@1inch-community/sdk/one-inch-dev-portal').then(
-        (m) => new m.OneInchDevPortalCrossChainPrivateProxyAdapter()
+        (m) => new m.OneInchDevPortalCrossChainOnChainAdapter()
       ),
     loggerFactory: () =>
       import('@1inch-community/core/sentry').then((m) => new m.SentryController()),

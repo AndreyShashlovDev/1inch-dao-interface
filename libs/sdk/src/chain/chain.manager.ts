@@ -5,7 +5,6 @@ import {
   combineLatest,
   distinctUntilChanged,
   filter,
-  finalize,
   firstValueFrom,
   from,
   fromEvent,
@@ -16,6 +15,7 @@ import {
   startWith,
   switchMap,
   take,
+  tap,
   timer,
 } from 'rxjs'
 import {
@@ -174,7 +174,8 @@ export class OnChainManager implements IOnChain {
   private async buildClient(chainId: ChainId): Promise<PublicClient> {
     if (!this.context) throw new Error('No context provided')
     const chain = getChainById(chainId)
-    const transportController = new WebFallbackTransportController(this.context.value, chain)
+    const transportController = new WebFallbackTransportController(chain)
+    await transportController.init(this.context.value)
     const client = createPublicClient({ chain, transport: transportController.createTransport() })
     this.clientMap.set(chainId, { client, transportController })
     await transportController.benchMartTransport()
@@ -182,29 +183,57 @@ export class OnChainManager implements IOnChain {
   }
 
   private buildBlockEmitter(chainId: ChainId): Observable<Block> {
-    const stream = combineLatest([isWindowVisibleAndFocused$(), sleepOnMousemove$()]).pipe(
-      switchMap(([isWindowVisibleAndFocused, isUserNotActive]) => {
-        return from(this.getClient(chainId)).pipe(
-          switchMap((client) => {
-            let time: number | null = averageBlockTime[chainId]
-            if (!isWindowVisibleAndFocused) {
-              time = null
-            }
-            if (isUserNotActive) {
-              time = 30 * 1000
-            }
-            return blockListener(client, time)
-          })
-        )
+    const updateTime$: Observable<number | null> = combineLatest([
+      isWindowVisibleAndFocused$().pipe(
+        map((state) => (state ? averageBlockTime[chainId] : null)),
+        tap((arg) => console.warn('buildBlockEmitter: isWindowVisibleAndFocused$', arg))
+      ),
+      sleepOnMousemove$().pipe(
+        map((state) => (state ? 30 * 1000 : null)),
+        tap((arg) => console.warn('buildBlockEmitter: sleepOnMousemove$', arg))
+      ),
+    ]).pipe(
+      map(([time1, time2]) => time1 ?? time2),
+      tap((arg) => console.warn('buildBlockEmitter: updateTime$', arg))
+    )
+
+    const client$ = from(this.getClient(chainId))
+
+    const block$ = combineLatest([client$, updateTime$]).pipe(
+      switchMap(([client, time]) => {
+        console.warn('buildBlockEmitter: restart', chainId, time)
+        return blockListener(client, time)
       }),
-      finalize(() => {
-        this.blockEmitterMap.delete(chainId)
+      // distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
+      tap((block) => {
+        console.warn('buildBlockEmitter: block', chainId, block.number)
       }),
-      distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
       shareReplay({ bufferSize: 1, refCount: true })
     )
-    this.blockEmitterMap.set(chainId, stream)
-    return stream
+
+    // const stream = combineLatest([isWindowVisibleAndFocused$(), sleepOnMousemove$()]).pipe(
+    //   switchMap(([isWindowVisibleAndFocused, isUserNotActive]) => {
+    //     return from(this.getClient(chainId)).pipe(
+    //       switchMap((client) => {
+    //         let time: number | null = averageBlockTime[chainId]
+    //         if (!isWindowVisibleAndFocused) {
+    //           time = null
+    //         }
+    //         if (isUserNotActive) {
+    //           time = 30 * 1000
+    //         }
+    //         return blockListener(client, time)
+    //       })
+    //     )
+    //   }),
+    //   finalize(() => {
+    //     this.blockEmitterMap.delete(chainId)
+    //   }),
+    //   distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
+    //   shareReplay({ bufferSize: 1, refCount: true })
+    // )
+    this.blockEmitterMap.set(chainId, block$)
+    return block$
   }
 }
 
@@ -243,8 +272,9 @@ function blockListener(client: PublicClient, time: number | null): Observable<Bl
 
 function sleepOnMousemove$(): Observable<boolean> {
   return fromEvent(window, 'mousemove').pipe(
+    startWith(null),
     switchMap(() =>
-      timer(90 * 1000).pipe(
+      timer(10 * 1000).pipe(
         map(() => true),
         startWith(false)
       )

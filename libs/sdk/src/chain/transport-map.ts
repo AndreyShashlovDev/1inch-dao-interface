@@ -1,9 +1,7 @@
 import { ChainId } from '@1inch-community/models'
-import { Chain } from 'viem'
 import { RPC } from './transport'
 
-export function getRPC(chain: Chain) {
-  const chainId = chain.id as ChainId
+export function getRPC(chainId: ChainId) {
   const http = HTTP_RPC_MAP[chainId]
   const ws = WS_RPC_MAP[chainId]
   return { http, ws } as const
@@ -98,6 +96,8 @@ const HTTP_RPC_MAP: Record<ChainId, RPC[]> = {
     'https://zksync-era.blockpi.network/v1/rpc/public',
     'https://zksync.meowrpc.com',
     'https://zksync.drpc.org',
+    'https://go.getblock.io/f76c09905def4618a34946bf71851542',
+    'https://zksync-mainnet.public.blastapi.io',
   ],
 }
 
@@ -127,5 +127,5 @@ const WS_RPC_MAP: Record<ChainId, RPC[]> = {
   [ChainId.fantom]: ['wss://gnosis.publicnode.com'],
   [ChainId.aurora]: ['wss://mainnet.aurora.dev'],
   [ChainId.klaytn]: ['wss://public-en-cypress.klaytn.net/ws'],
-  [ChainId.zkSyncEra]: ['wss://mainnet.era.zksync.io/ws'],
+  [ChainId.zkSyncEra]: ['wss://zksync.drpc.org'],
 }
