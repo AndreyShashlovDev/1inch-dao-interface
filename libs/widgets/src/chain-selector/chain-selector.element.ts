@@ -5,6 +5,7 @@ import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { OverlayController } from '@1inch-community/ui-components/overlay'
+import '@1inch-community/ui-components/text'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { map } from 'lit/directives/map.js'
@@ -32,19 +33,19 @@ export class ChainSelectorElement extends LitElement {
   }
 
   protected override render() {
+    const text =
+      this.selectedChainList.length > 1
+        ? this.selectedChainList.length === chainList.length
+          ? 'All Networks'
+          : 'Some Networks'
+        : this.selectedChainList[0].name
     return html`
       <inch-button class="button" @click="${() => this.onClick()}" size="l" type="primary-gray">
         <div class="icon-container">${this.getChainIcon()}</div>
         ${when(
           !this.mobileMedia.matches,
           () => html`
-            <span
-              >${this.selectedChainList.length > 1
-                ? this.selectedChainList.length === chainList.length
-                  ? 'All Networks'
-                  : 'Some Networks'
-                : this.selectedChainList[0].name}</span
-            >
+            <inch-text text="${text}"></inch-text>
             <inch-icon icon="chevronDown16"></inch-icon>
           `
         )}

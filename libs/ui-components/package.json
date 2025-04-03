@@ -70,6 +70,10 @@
       "types": "./dist/segmented-control/index.d.ts",
       "import": "./dist/segmented-control/index.js"
     },
+    "./text": {
+      "types": "./dist/text/index.d.ts",
+      "import": "./dist/text/index.js"
+    },
     "./timer": {
       "types": "./dist/timer/index.d.ts",
       "import": "./dist/timer/index.js"
