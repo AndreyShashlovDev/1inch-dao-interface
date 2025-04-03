@@ -5,11 +5,11 @@ export const chainSelectorListItemStyle = css`
   :host {
     width: 100%;
     height: 100%;
+    cursor: pointer;
   }
 
   .container {
     position: relative;
-
     display: flex;
     align-items: center;
     gap: 8px;

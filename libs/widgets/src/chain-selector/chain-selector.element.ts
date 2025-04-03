@@ -6,6 +6,8 @@ import '@1inch-community/ui-components/icon'
 import { OverlayController } from '@1inch-community/ui-components/overlay'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
+import { map } from 'lit/directives/map.js'
+import { styleMap } from 'lit/directives/style-map.js'
 import { when } from 'lit/directives/when.js'
 import { chainSelectorStyle } from './chain-selector.style'
 import './elements/chain-selector-list'
@@ -32,13 +34,7 @@ export class ChainSelectorElement extends LitElement {
   protected override render() {
     return html`
       <inch-button class="button" @click="${() => this.onClick()}" size="l" type="primary-gray">
-        <div
-          class="capacity-${this.selectedChainList.length > 6
-            ? 6
-            : this.selectedChainList.length} icon-container"
-        >
-          ${this.getChainIcon()}
-        </div>
+        <div class="icon-container">${this.getChainIcon()}</div>
         ${when(
           !this.mobileMedia.matches,
           () => html`
@@ -74,78 +70,25 @@ export class ChainSelectorElement extends LitElement {
   }
 
   private getChainIcon() {
-    if (this.selectedChainList.length >= 6) {
-      return html`
-        ${this.selectedChainList
-          .slice(0, 6)
-          .map(
-            (item, i) =>
-              html`<inch-icon
-                width="6px"
-                height="6px"
-                class="icon-${i} icon-common"
-                icon="${item.iconName}"
-              ></inch-icon>`
-          )}
-      `
-    }
-
-    switch (this.selectedChainList.length) {
-      case 1:
-        return html`<inch-icon icon="${this.selectedChainList[0].iconName}"></inch-icon>`
-      case 2:
+    const positions = arrangeIcons(this.selectedChainList.length, 24)
+    return html`
+      ${map(this.selectedChainList, (item, index) => {
+        const size = positions[index].size
+        const style = {
+          transform: `translate(${positions[index].x}px, ${positions[index].y}px)`,
+          zIndex: index,
+        }
         return html`
-          <div class="icon-container capacity-2">
-            ${this.selectedChainList.map(
-              (item, i) =>
-                html`<inch-icon
-                  width="16px"
-                  height="16px"
-                  class="icon-${i} icon-common"
-                  icon="${item.iconName}"
-                ></inch-icon>`
-            )}
-          </div>
+          <inch-icon
+            style="${styleMap(style)}"
+            width="${size}px"
+            height="${size}px"
+            class="icon-common"
+            icon="${item.iconName}"
+          ></inch-icon>
         `
-      case 3:
-        return html`
-          ${this.selectedChainList.map(
-            (item, i) =>
-              html`<inch-icon
-                width="12px"
-                height="12px"
-                class="icon-${i} icon-common"
-                icon="${item.iconName}"
-              ></inch-icon>`
-          )}
-        `
-      case 4:
-        return html`
-          ${this.selectedChainList.map(
-            (item, i) =>
-              html`<inch-icon
-                width="12px"
-                height="12px"
-                class="icon-${i} icon-common"
-                icon="${item.iconName}"
-              ></inch-icon>`
-          )}
-        `
-      case 5:
-        return html`
-          ${this.selectedChainList.map(
-            (item, i) =>
-              html`<inch-icon
-                width="6px"
-                height="6px"
-                class="icon-${i} icon-common"
-                icon="${item.iconName}"
-              ></inch-icon>`
-          )}
-        `
-      default:
-        return html`<inch-icon icon="${this.selectedChainList[0].iconName}"></inch-icon>`
-    }
+      })}
+    `
   }
 
   private closePopup() {
@@ -156,13 +99,69 @@ export class ChainSelectorElement extends LitElement {
 
   private onChangeSelectedChainList(chainList: ChainViewInfo[]) {
     this.selectedChainList = chainList
-
     dispatchEvent(this, 'changeSelectedChainList', this.selectedChainList)
   }
 }
 
+function arrangeIcons(
+  count: number,
+  containerSize: number,
+  border = 0.5
+): { x: number; y: number; size: number }[] {
+  const result: { x: number; y: number; size: number }[] = []
+
+  if (count <= 0) return result
+
+  if (count === 1) {
+    const size = containerSize - border * 2
+    return [{ x: border, y: border, size }]
+  }
+
+  if (count === 2) {
+    const size = containerSize / 1.5 - border * 2
+    return [
+      { x: border, y: border, size },
+      { x: containerSize - size - border, y: containerSize - size - border, size },
+    ]
+  }
+
+  if (count === 3) {
+    const size = containerSize / 1.8 - border * 2
+    return [
+      { x: (containerSize - size) / 2, y: border, size },
+      { x: border, y: containerSize - size - border, size },
+      { x: containerSize - size - border, y: containerSize - size - border, size },
+    ]
+  }
+
+  if (count === 4) {
+    const size = containerSize / 2 - border * 2
+    return [
+      { x: border, y: border, size },
+      { x: containerSize - size - border, y: border, size },
+      { x: border, y: containerSize - size - border, size },
+      { x: containerSize - size - border, y: containerSize - size - border, size },
+    ]
+  }
+
+  const sizeFactor = 2.5 + (count - 5) * 0.3
+  const size = containerSize / sizeFactor - border * 2
+
+  const angleStep = (2 * Math.PI) / count
+  const radius = (containerSize - size) / 2 - border
+
+  for (let i = 0; i < count; i++) {
+    const angle = angleStep * i - Math.PI / 2
+    const x = containerSize / 2 + radius * Math.cos(angle) - size / 2
+    const y = containerSize / 2 + radius * Math.sin(angle) - size / 2
+    result.push({ x, y, size })
+  }
+
+  return result
+}
+
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-chain-selector': ChainSelectorElement
+    [ChainSelectorElement.tagName]: ChainSelectorElement
   }
 }
