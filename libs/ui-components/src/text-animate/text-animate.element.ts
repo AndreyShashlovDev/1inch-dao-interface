@@ -1,20 +1,19 @@
-import { asyncFrame } from '@1inch-community/core/async'
 import { html, LitElement, PropertyValues } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
 import { when } from 'lit/directives/when.js'
-import { textStyle } from './text.style'
+import { textAnimateStyle } from './text-animate.style'
 
 const animationConfig = {
-  duration: 200,
-  easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+  duration: 300,
+  easing: 'cubic-bezier(0.5, 1.7, 0.5, 1)',
 }
 
-@customElement(TextElement.tagName)
-export class TextElement extends LitElement {
-  static readonly tagName = 'inch-text' as const
+@customElement(TextAnimateElement.tagName)
+export class TextAnimateElement extends LitElement {
+  static readonly tagName = 'inch-text-animate' as const
 
-  static override styles = textStyle
+  static override styles = textAnimateStyle
 
   @property({ type: String, attribute: true }) text?: string
   @state() private lastText?: string
@@ -40,7 +39,6 @@ export class TextElement extends LitElement {
   protected async updated(_changedProperties: PropertyValues) {
     super.updated(_changedProperties)
     if (this.isTransitionState) {
-      await asyncFrame()
       await this.transition()
     }
   }
@@ -63,17 +61,11 @@ export class TextElement extends LitElement {
     const { height, width } = newTextElement.getBoundingClientRect()
     await Promise.all([
       textElement.animate(
-        [
-          { transform: 'translateY(0)', opacity: '1' },
-          { transform: 'translateY(100%)', opacity: '0' },
-        ],
+        [{ transform: 'translateY(0)' }, { transform: 'translateY(100%)' }],
         animationConfig
       ).finished,
       newTextElement.animate(
-        [
-          { transform: 'translateY(-100%)', opacity: '0' },
-          { transform: 'translateY(0)', opacity: '1' },
-        ],
+        [{ transform: 'translateY(-100%)' }, { transform: 'translateY(0)' }],
         animationConfig
       ).finished,
       this.animate(
@@ -90,6 +82,6 @@ export class TextElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    [TextElement.tagName]: TextElement
+    [TextAnimateElement.tagName]: TextAnimateElement
   }
 }

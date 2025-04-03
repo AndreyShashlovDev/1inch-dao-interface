@@ -1,6 +1,6 @@
 import { css } from 'lit'
 
-export const textStyle = css`
+export const textAnimateStyle = css`
   :host {
     position: relative;
     display: flex;
@@ -18,6 +18,5 @@ export const textStyle = css`
   .new-text {
     position: absolute;
     transform: translateY(-100%);
-    opacity: 0;
   }
 `

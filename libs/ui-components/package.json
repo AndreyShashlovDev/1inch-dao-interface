@@ -70,9 +70,9 @@
       "types": "./dist/segmented-control/index.d.ts",
       "import": "./dist/segmented-control/index.js"
     },
-    "./text": {
-      "types": "./dist/text/index.d.ts",
-      "import": "./dist/text/index.js"
+    "./text-animate": {
+      "types": "./dist/text-animate/index.d.ts",
+      "import": "./dist/text-animate/index.js"
     },
     "./timer": {
       "types": "./dist/timer/index.d.ts",

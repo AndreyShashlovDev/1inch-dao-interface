@@ -5,7 +5,7 @@ import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { OverlayController } from '@1inch-community/ui-components/overlay'
-import '@1inch-community/ui-components/text'
+import '@1inch-community/ui-components/text-animate'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { map } from 'lit/directives/map.js'
@@ -45,7 +45,7 @@ export class ChainSelectorElement extends LitElement {
         ${when(
           !this.mobileMedia.matches,
           () => html`
-            <inch-text text="${text}"></inch-text>
+            <inch-text-animate text="${text}"></inch-text-animate>
             <inch-icon icon="chevronDown16"></inch-icon>
           `
         )}
