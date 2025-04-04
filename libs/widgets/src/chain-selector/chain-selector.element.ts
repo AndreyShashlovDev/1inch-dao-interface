@@ -55,10 +55,11 @@ export class ChainSelectorElement extends LitElement {
   }
 
   private async onClick() {
-    if (this.overlay.isPopupOpen(this.overlayId ?? 0)) {
-      this.closePopup()
+    if (this.overlayId !== null && this.overlay.isPopupOpen(this.overlayId)) {
+      await this.closePopup()
       return
     }
+
     this.overlayId = await this.overlay.openPopup(html`
       <inch-chain-selector-list
         .selectedChainList="${this.selectedChainViewInfoList}"
@@ -117,9 +118,9 @@ export class ChainSelectorElement extends LitElement {
     `
   }
 
-  private closePopup() {
+  private async closePopup() {
     if (!this.overlayId) return
-    this.overlay.closePopup(this.overlayId)
+    await this.overlay.closePopup(this.overlayId)
     this.overlayId = null
   }
 
