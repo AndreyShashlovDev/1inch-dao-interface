@@ -1,5 +1,5 @@
 import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
-import { ChainViewInfo } from '@1inch-community/models'
+import {ChainViewFull} from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
@@ -15,7 +15,7 @@ export class ChainSelectorListElement extends LitElement {
 
   static override styles = [chainSelectorListStyle]
 
-  @property({ type: Array, attribute: false }) selectedChainList: ChainViewInfo[] = []
+  @property({ type: Array, attribute: false }) selectedChainList: ChainViewFull[] = []
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
@@ -31,7 +31,7 @@ export class ChainSelectorListElement extends LitElement {
           .selectedChainList="${this.selectedChainList}"
           .isActiveChain="${this.selectedChainList.includes(info)}"
           @chainItemClick="${(event: CustomEvent) =>
-            this.onChainItemClick(event.detail.value as ChainViewInfo)}"
+            this.onChainItemClick(event.detail.value as ChainViewFull)}"
         ></inch-chain-selector-list-item>
       `
     )
@@ -76,7 +76,7 @@ export class ChainSelectorListElement extends LitElement {
     dispatchEvent(this, 'changeSelectedChainList', this.selectedChainList)
   }
 
-  private onChainItemClick(chainInfo: ChainViewInfo) {
+  private onChainItemClick(chainInfo: ChainViewFull) {
     if (this.selectedChainList.includes(chainInfo)) {
       this.selectedChainList = this.selectedChainList.filter((item) => item !== chainInfo)
     } else {

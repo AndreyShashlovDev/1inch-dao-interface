@@ -1,10 +1,9 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { getMobileMatchMediaAndSubscribe, subscribe } from '@1inch-community/core/lit-utils'
-import { IApplicationContext } from '@1inch-community/models'
+import {ChainId, IApplicationContext} from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/chain-selector'
-import { ChainViewInfo } from '@1inch-community/widgets/chain-selector'
 import '@1inch-community/widgets/notifications'
 import '@1inch-community/widgets/wallet-manage'
 import { consume } from '@lit/context'
@@ -52,9 +51,9 @@ export class HeaderElement extends LitElement {
           () => html`
             <div class="right-content">
               <inch-chain-selector
-                .selectedChainList="${chainList}"
-                @changeSelectedChainList="${(event: CustomEvent) =>
-                  this.onChangeSelectedChainList(event.detail.value as ChainViewInfo[])}"
+                .selectedChainList="${chainList.map((item) => item.chainId)}"
+                @changeSelectedChainIdList="${(event: CustomEvent) =>
+                  this.onChangeSelectedChainIdList(event.detail.value as ChainId[])}"
               >
               </inch-chain-selector>
               <inch-connect-wallet-view
@@ -76,7 +75,7 @@ export class HeaderElement extends LitElement {
     `
   }
 
-  private onChangeSelectedChainList(value: ChainViewInfo[]) {
+  private onChangeSelectedChainIdList(value: ChainId[]) {
     /**
      * TODO: onChangeSelectedChainList handler
      */

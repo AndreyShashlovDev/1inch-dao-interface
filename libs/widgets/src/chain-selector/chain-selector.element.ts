@@ -1,13 +1,12 @@
-import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
-import { ChainViewInfo } from '@1inch-community/models'
+import {ChainId, ChainViewFull} from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { OverlayController } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/ui-components/text-animate'
-import { html, LitElement } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import {html, LitElement, PropertyValues} from 'lit'
+import {customElement, property, state} from 'lit/decorators.js'
 import { map } from 'lit/directives/map.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import { when } from 'lit/directives/when.js'
@@ -20,25 +19,27 @@ export class ChainSelectorElement extends LitElement {
 
   static override styles = chainSelectorStyle
 
-  @property({ type: Array, attribute: false }) selectedChainList: ChainViewInfo[] = []
+  @state() selectedChainViewInfoList: ChainViewFull[] = []
+  @property({ type: Array, attribute: false }) selectedChainIdList: ChainId[] = []
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   private readonly overlay = new OverlayController('#app-root', () => this)
   private overlayId: number | null = null
 
-  constructor() {
-    super()
-    this.resetSelectedChainList()
+  protected override firstUpdated(_changedProperties: PropertyValues) {
+    super.firstUpdated(_changedProperties)
+    this.resetSelectedChainViewInfoList()
+    this.updateChainIdList()
   }
 
   protected override render() {
     const text =
-      this.selectedChainList.length > 1
-        ? this.selectedChainList.length === chainList.length
+      this.selectedChainViewInfoList.length > 1
+        ? this.selectedChainViewInfoList.length === chainList.length
           ? 'All Networks'
           : 'Some Networks'
-        : this.selectedChainList[0].name
+        : chainList[0].name
     return html`
       <inch-button class="button" @click="${() => this.onClick()}" size="l" type="primary-gray">
         <div class="icon-container">${this.getChainIcon()}</div>
@@ -53,7 +54,6 @@ export class ChainSelectorElement extends LitElement {
     `
   }
 
-  @CacheActivePromise()
   private async onClick() {
     if (this.overlay.isPopupOpen(this.overlayId ?? 0)) {
       this.closePopup()
@@ -61,20 +61,24 @@ export class ChainSelectorElement extends LitElement {
     }
     this.overlayId = await this.overlay.openPopup(html`
       <inch-chain-selector-list
-        .selectedChainList="${this.selectedChainList}"
+        .selectedChainList="${this.selectedChainViewInfoList}"
         @changeSelectedChainList="${(event: CustomEvent) =>
-          this.onChangeSelectedChainList(event.detail.value as ChainViewInfo[])}"
+          this.onChangeSelectedChainList(event.detail.value as ChainViewFull[])}"
       ></inch-chain-selector-list>
     `)
   }
 
-  private resetSelectedChainList() {
-    this.selectedChainList = [chainList[0]]
+  private resetSelectedChainViewInfoList() {
+    this.selectedChainViewInfoList = [chainList[0]]
+  }
+
+  private updateChainIdList() {
+    this.selectedChainIdList = this.selectedChainViewInfoList.map(item => item.chainId)
   }
 
   private getChainIcon() {
-    const positions = arrangeIcons(this.selectedChainList.length, 24)
-    const selectedChainListSet = new Set(this.selectedChainList)
+    const positions = arrangeIcons(this.selectedChainViewInfoList.length, 24)
+    const selectedChainListSet = new Set(this.selectedChainViewInfoList)
     let index = 0
     return html`
       ${map(chainList, (item) => {
@@ -86,7 +90,7 @@ export class ChainSelectorElement extends LitElement {
         if (!hide) {
           index++
         }
-        const hideChainIcon = this.selectedChainList.length > 4
+        const hideChainIcon = this.selectedChainViewInfoList.length > 4
         const styleContainer: Record<string, string> = {
           transform: `translate3d(${x}px, ${y}px, 0)`,
           zIndex: index.toString(),
@@ -119,9 +123,11 @@ export class ChainSelectorElement extends LitElement {
     this.overlayId = null
   }
 
-  private onChangeSelectedChainList(chainList: ChainViewInfo[]) {
-    this.selectedChainList = chainList
-    dispatchEvent(this, 'changeSelectedChainList', this.selectedChainList)
+  private onChangeSelectedChainList(chainList: ChainViewFull[]) {
+    this.selectedChainViewInfoList = chainList
+    this.updateChainIdList()
+
+    dispatchEvent(this, 'changeSelectedChainIdList', this.selectedChainIdList)
   }
 }
 
