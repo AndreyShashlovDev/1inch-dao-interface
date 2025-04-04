@@ -51,7 +51,7 @@ export class HeaderElement extends LitElement {
           () => html`
             <div class="right-content">
               <inch-chain-selector
-                .selectedChainList="${chainList.map((item) => item.chainId)}"
+                .selectedChainIdList="${chainList.map((item) => item.chainId)}"
                 @changeSelectedChainIdList="${(event: CustomEvent) =>
                   this.onChangeSelectedChainIdList(event.detail.value as ChainId[])}"
               >
