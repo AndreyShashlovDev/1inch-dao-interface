@@ -5,7 +5,7 @@ import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { OverlayController } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/ui-components/text-animate'
-import { html, LitElement, PropertyValues } from 'lit'
+import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { map } from 'lit/directives/map.js'
 import { styleMap } from 'lit/directives/style-map.js'
@@ -30,10 +30,6 @@ export class ChainSelectorElement extends LitElement {
   private readonly overlay = new OverlayController('#app-root', () => this)
 
   private overlayId: number | null = null
-
-  protected override firstUpdated(_changedProperties: PropertyValues) {
-    super.firstUpdated(_changedProperties)
-  }
 
   protected override render() {
     const text =
