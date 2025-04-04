@@ -1,12 +1,12 @@
 import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
-import {ChainId, ChainViewFull} from '@1inch-community/models'
+import { ChainId, ChainViewFull } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { OverlayController } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/ui-components/text-animate'
-import {html, LitElement, PropertyValues} from 'lit'
-import {customElement, property, state} from 'lit/decorators.js'
+import { html, LitElement, PropertyValues } from 'lit'
+import { customElement, property, state } from 'lit/decorators.js'
 import { map } from 'lit/directives/map.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import { when } from 'lit/directives/when.js'
@@ -73,7 +73,7 @@ export class ChainSelectorElement extends LitElement {
   }
 
   private updateChainIdList() {
-    this.selectedChainIdList = this.selectedChainViewInfoList.map(item => item.chainId)
+    this.selectedChainIdList = this.selectedChainViewInfoList.map((item) => item.chainId)
   }
 
   private getChainIcon() {

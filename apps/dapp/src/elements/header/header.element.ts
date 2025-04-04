@@ -1,6 +1,6 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { getMobileMatchMediaAndSubscribe, subscribe } from '@1inch-community/core/lit-utils'
-import {ChainId, IApplicationContext} from '@1inch-community/models'
+import { ChainId, IApplicationContext } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/chain-selector'

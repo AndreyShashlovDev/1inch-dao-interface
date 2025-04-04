@@ -1,5 +1,5 @@
 import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
-import {ChainViewFull} from '@1inch-community/models'
+import { ChainViewFull } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
