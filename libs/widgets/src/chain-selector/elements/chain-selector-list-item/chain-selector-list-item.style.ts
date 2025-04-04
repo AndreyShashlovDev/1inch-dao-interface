@@ -39,7 +39,12 @@ export const chainSelectorListItemStyle = css`
     color: var(--primary);
   }
 
-  @media (hover: hover) {
+  .active .list-icon {
+    transform: scale(1);
+    color: var(--primary);
+  }
+
+  @media (min-width > 1024px) {
     .container:hover {
       background-color: var(--color-background-bg-secondary);
     }
@@ -49,11 +54,6 @@ export const chainSelectorListItemStyle = css`
       color: var(--color-content-content-tertiary);
     }
 
-    .active .list-icon {
-      transform: scale(1);
-      color: var(--primary);
-    }
-
     .active:hover .list-icon {
       transform: scale(0);
     }
@@ -61,10 +61,10 @@ export const chainSelectorListItemStyle = css`
     .active:hover .list-icon-delete {
       transform: scale(1);
     }
-  }
 
-  .container:active {
-    background-color: var(--color-background-bg-secondary);
+    .container:active {
+      background-color: var(--color-background-bg-secondary);
+    }
   }
 
   ${mobileMediaCSS(css`

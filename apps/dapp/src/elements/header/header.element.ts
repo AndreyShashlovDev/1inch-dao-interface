@@ -71,6 +71,12 @@ export class HeaderElement extends LitElement {
     return html`
       <div class="header-container mobile-header">
         <inch-icon icon="logoFull"></inch-icon>
+        <inch-chain-selector
+          .selectedChainIdList="${chainList.map((item) => item.chainId)}"
+          @changeSelectedChainIdList="${(event: CustomEvent) =>
+            this.onChangeSelectedChainIdList(event.detail.value as ChainId[])}"
+        >
+        </inch-chain-selector>
       </div>
     `
   }

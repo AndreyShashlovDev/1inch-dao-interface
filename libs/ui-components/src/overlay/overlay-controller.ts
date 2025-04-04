@@ -29,6 +29,7 @@ export class OverlayController implements IOverlayController {
     if (this.mobileMedia.matches) {
       return this.mobileOverlay.isOpenOverlay(overlayId)
     }
+
     return this.desktopOverlay.isOpenOverlay(overlayId)
   }
 
@@ -40,6 +41,7 @@ export class OverlayController implements IOverlayController {
     if (this.mobileMedia.matches) {
       return await this.mobileOverlay.open(openTarget)
     }
+
     return await this.desktopOverlay.open(openTarget)
   }
 
@@ -47,6 +49,7 @@ export class OverlayController implements IOverlayController {
     if (this.mobileMedia.matches) {
       return await this.mobileOverlay.close(overlayId)
     }
+
     return await this.desktopOverlay.close(overlayId)
   }
 

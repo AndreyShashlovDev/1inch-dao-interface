@@ -1,4 +1,4 @@
-import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
+import { dispatchEvent } from '@1inch-community/core/lit-utils'
 import { ChainViewFull } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
@@ -17,35 +17,7 @@ export class ChainSelectorListElement extends LitElement {
 
   @property({ type: Array, attribute: false }) selectedChainViewList: ChainViewFull[] = []
 
-  private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
-
   protected override render() {
-    return this.mobileMedia.matches ? this.getMobileList() : this.getDesktopList()
-  }
-
-  private getList() {
-    return chainList.map(
-      (info) => html`
-        <inch-chain-selector-list-item
-          .info="${info}"
-          .isActiveChain="${this.selectedChainViewList.includes(info)}"
-          @chainItemClick="${(event: CustomEvent) =>
-            this.onChainItemClick(event.detail.value as ChainViewFull)}"
-        ></inch-chain-selector-list-item>
-      `
-    )
-  }
-
-  private getMobileList() {
-    return html`
-      <inch-card class="card" forMobileView>
-        <inch-card-header closeButton headerText="Select chain"></inch-card-header>
-        <inch-scroll-view-consumer> ${this.getList()} </inch-scroll-view-consumer>
-      </inch-card>
-    `
-  }
-
-  private getDesktopList() {
     return html`
       <inch-card class="card">
         <header class="header">
@@ -59,6 +31,19 @@ export class ChainSelectorListElement extends LitElement {
         ${this.getList()}
       </inch-card>
     `
+  }
+
+  private getList() {
+    return chainList.map(
+      (info) => html`
+        <inch-chain-selector-list-item
+          .info="${info}"
+          .isActiveChain="${this.selectedChainViewList.includes(info)}"
+          @chainItemClick="${(event: CustomEvent) =>
+            this.onChainItemClick(event.detail.value as ChainViewFull)}"
+        ></inch-chain-selector-list-item>
+      `
+    )
   }
 
   private resetSelectedChainViewList() {
