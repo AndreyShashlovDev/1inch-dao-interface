@@ -19,7 +19,7 @@ export class ChainSelectorElement extends LitElement {
 
   static override styles = chainSelectorStyle
 
-  @state() selectedChainViewInfoList: ChainViewFull[] = []
+  @state() selectedChainViewList: ChainViewFull[] = []
   @property({ type: Array, attribute: false }) selectedChainIdList: ChainId[] = []
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
@@ -35,8 +35,8 @@ export class ChainSelectorElement extends LitElement {
 
   protected override render() {
     const text =
-      this.selectedChainViewInfoList.length > 1
-        ? this.selectedChainViewInfoList.length === chainList.length
+      this.selectedChainViewList.length > 1
+        ? this.selectedChainViewList.length === chainList.length
           ? 'All Networks'
           : 'Some Networks'
         : chainList[0].name
@@ -62,24 +62,30 @@ export class ChainSelectorElement extends LitElement {
 
     this.overlayId = await this.overlay.openPopup(html`
       <inch-chain-selector-list
-        .selectedChainList="${this.selectedChainViewInfoList}"
-        @changeSelectedChainList="${(event: CustomEvent) =>
-          this.onChangeSelectedChainList(event.detail.value as ChainViewFull[])}"
+        .selectedChainViewList="${this.selectedChainViewList}"
+        @changeSelectedChainViewList="${(event: CustomEvent) =>
+          this.onChangeSelectedChainViewList(event.detail.value as ChainViewFull[])}"
       ></inch-chain-selector-list>
     `)
   }
 
+  private initSelectedChainViewInfoListByIds() {
+    this.selectedChainViewList = chainList.filter((item: ChainViewFull) =>
+      this.selectedChainIdList.includes(item.chainId)
+    )
+  }
+
   private resetSelectedChainViewInfoList() {
-    this.selectedChainViewInfoList = [chainList[0]]
+    this.selectedChainViewList = [chainList[0]]
   }
 
   private updateChainIdList() {
-    this.selectedChainIdList = this.selectedChainViewInfoList.map((item) => item.chainId)
+    this.selectedChainIdList = this.selectedChainViewList.map((item) => item.chainId)
   }
 
   private getChainIcon() {
-    const positions = arrangeIcons(this.selectedChainViewInfoList.length, 24)
-    const selectedChainListSet = new Set(this.selectedChainViewInfoList)
+    const positions = arrangeIcons(this.selectedChainViewList.length, 24)
+    const selectedChainListSet = new Set(this.selectedChainViewList)
     let index = 0
     return html`
       ${map(chainList, (item) => {
@@ -91,7 +97,7 @@ export class ChainSelectorElement extends LitElement {
         if (!hide) {
           index++
         }
-        const hideChainIcon = this.selectedChainViewInfoList.length > 4
+        const hideChainIcon = this.selectedChainViewList.length > 4
         const styleContainer: Record<string, string> = {
           transform: `translate3d(${x}px, ${y}px, 0)`,
           zIndex: index.toString(),
@@ -124,8 +130,8 @@ export class ChainSelectorElement extends LitElement {
     this.overlayId = null
   }
 
-  private onChangeSelectedChainList(chainList: ChainViewFull[]) {
-    this.selectedChainViewInfoList = chainList
+  private onChangeSelectedChainViewList(chainList: ChainViewFull[]) {
+    this.selectedChainViewList = chainList
     this.updateChainIdList()
 
     dispatchEvent(this, 'changeSelectedChainIdList', this.selectedChainIdList)

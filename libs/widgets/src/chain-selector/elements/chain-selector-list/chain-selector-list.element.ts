@@ -15,7 +15,7 @@ export class ChainSelectorListElement extends LitElement {
 
   static override styles = [chainSelectorListStyle]
 
-  @property({ type: Array, attribute: false }) selectedChainList: ChainViewFull[] = []
+  @property({ type: Array, attribute: false }) selectedChainViewList: ChainViewFull[] = []
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
@@ -28,8 +28,7 @@ export class ChainSelectorListElement extends LitElement {
       (info) => html`
         <inch-chain-selector-list-item
           .info="${info}"
-          .selectedChainList="${this.selectedChainList}"
-          .isActiveChain="${this.selectedChainList.includes(info)}"
+          .isActiveChain="${this.selectedChainViewList.includes(info)}"
           @chainItemClick="${(event: CustomEvent) =>
             this.onChainItemClick(event.detail.value as ChainViewFull)}"
         ></inch-chain-selector-list-item>
@@ -52,7 +51,7 @@ export class ChainSelectorListElement extends LitElement {
         <header class="header">
           <h2 class="title">Networks</h2>
           <inch-button size="xl" type="link" @click="${this.onSelectAllClick}"
-            >${this.selectedChainList.length === chainList.length
+            >${this.selectedChainViewList.length === chainList.length
               ? 'Deselect All'
               : 'Select All'}</inch-button
           >
@@ -62,32 +61,32 @@ export class ChainSelectorListElement extends LitElement {
     `
   }
 
-  private resetSelectedChainList() {
-    this.selectedChainList = [chainList[0]]
+  private resetSelectedChainViewList() {
+    this.selectedChainViewList = [chainList[0]]
   }
 
   private onSelectAllClick(): void {
-    if (this.selectedChainList.length === chainList.length) {
-      this.resetSelectedChainList()
+    if (this.selectedChainViewList.length === chainList.length) {
+      this.resetSelectedChainViewList()
     } else {
-      this.selectedChainList = chainList
+      this.selectedChainViewList = chainList
     }
 
-    dispatchEvent(this, 'changeSelectedChainList', this.selectedChainList)
+    dispatchEvent(this, 'changeSelectedChainViewList', this.selectedChainViewList)
   }
 
   private onChainItemClick(chainInfo: ChainViewFull) {
-    if (this.selectedChainList.includes(chainInfo)) {
-      this.selectedChainList = this.selectedChainList.filter((item) => item !== chainInfo)
+    if (this.selectedChainViewList.includes(chainInfo)) {
+      this.selectedChainViewList = this.selectedChainViewList.filter((item) => item !== chainInfo)
     } else {
-      this.selectedChainList = [...this.selectedChainList, chainInfo]
+      this.selectedChainViewList = [...this.selectedChainViewList, chainInfo]
     }
 
-    if (this.selectedChainList.length === 0) {
-      this.resetSelectedChainList()
+    if (this.selectedChainViewList.length === 0) {
+      this.resetSelectedChainViewList()
     }
 
-    dispatchEvent(this, 'changeSelectedChainList', this.selectedChainList)
+    dispatchEvent(this, 'changeSelectedChainViewList', this.selectedChainViewList)
   }
 }
 
