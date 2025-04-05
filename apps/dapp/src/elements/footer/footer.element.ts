@@ -58,12 +58,7 @@ export class FooterElement extends LitElement {
   private getMobileFooter() {
     return html`
       <div class="footer-container mobile-footer">
-        <inch-chain-selector
-          .selectedChainIdList="${chainList.map((item) => item.chainId)}"
-          @changeSelectedChainIdList="${(event: CustomEvent) => {
-            // this.onChangeSelectedChainIdList(event.detail.value as ChainId[])
-          }}"
-        >
+        <inch-chain-selector .selectedChainIdList="${chainList.map((item) => item.chainId)}">
         </inch-chain-selector>
         <inch-connect-wallet-view
           .controller="${this.applicationContext.wallet}"
