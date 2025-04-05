@@ -1,11 +1,9 @@
 import { dispatchEvent } from '@1inch-community/core/lit-utils'
-import { ChainViewFull, IOverlayContext } from '@1inch-community/models'
+import { ChainViewFull } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
-import { overlayContextToken } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/ui-components/scroll'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import '../chain-selector-list-item'
@@ -18,9 +16,6 @@ export class ChainSelectorListElement extends LitElement {
   static override styles = [chainSelectorListStyle]
 
   @property({ type: Array, attribute: false }) selectedChainViewList: ChainViewFull[] = []
-
-  @consume({ context: overlayContextToken })
-  private overlayContext?: IOverlayContext
 
   protected override render() {
     return html`
