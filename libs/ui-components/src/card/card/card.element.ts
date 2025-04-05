@@ -34,6 +34,6 @@ export class CardElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-card': CardElement
+    [CardElement.tagName]: CardElement
   }
 }

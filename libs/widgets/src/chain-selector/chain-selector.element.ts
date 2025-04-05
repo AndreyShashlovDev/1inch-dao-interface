@@ -1,5 +1,5 @@
 import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
-import { ChainId, ChainViewFull } from '@1inch-community/models'
+import { ChainId, ChainViewFull, OverlayViewMode } from '@1inch-community/models'
 import { chainList } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
@@ -39,7 +39,7 @@ export class ChainSelectorElement extends LitElement {
           : 'Some Networks'
         : this.defaultChainView.name
     return html`
-      <inch-button class="button" @click="${() => this.onClick()}" size="l" type="primary-gray">
+      <inch-button @click="${() => this.onClick()}" size="l" type="tertiary-gray">
         <div class="icon-container">${this.getChainIcon()}</div>
         ${when(
           !this.mobileMedia.matches,
@@ -53,18 +53,22 @@ export class ChainSelectorElement extends LitElement {
   }
 
   private async onClick() {
-    if (this.overlayId !== null && this.overlay.isPopupOpen(this.overlayId)) {
-      await this.closePopup()
+    if (this.overlay.isOpenOverlay(this.overlayId)) {
+      await this.overlay.close(this.overlayId)
+      this.overlayId = null
       return
     }
 
-    this.overlayId = await this.overlay.openPopup(html`
-      <inch-chain-selector-list
-        .selectedChainViewList="${this.getSelectedChainViewList()}"
-        @changeSelectedChainViewList="${(event: CustomEvent) =>
-          this.onChangeSelectedChainViewList(event.detail.value as ChainViewFull[])}"
-      ></inch-chain-selector-list>
-    `)
+    this.overlayId = await this.overlay.open(
+      html`
+        <inch-chain-selector-list
+          .selectedChainViewList="${this.getSelectedChainViewList()}"
+          @changeSelectedChainViewList="${(event: CustomEvent) =>
+            this.onChangeSelectedChainViewList(event.detail.value as ChainViewFull[])}"
+        ></inch-chain-selector-list>
+      `,
+      { mode: OverlayViewMode.popupAuto }
+    )
   }
 
   private updateChainIdList(chainViewList: ChainViewFull[]) {
@@ -117,12 +121,6 @@ export class ChainSelectorElement extends LitElement {
         `
       })}
     `
-  }
-
-  private async closePopup() {
-    if (!this.overlayId) return
-    await this.overlay.closePopup(this.overlayId)
-    this.overlayId = null
   }
 
   private onChangeSelectedChainViewList(chainList: ChainViewFull[]) {

@@ -20,31 +20,29 @@ export class SceneWrapperElement extends LitElement {
     }
   `
 
-  private context = new ContextProvider(this, { context: sceneContext })
-
-  constructor() {
-    super()
-    this.context.setValue(new SceneContext())
+  private get contextValue(): SceneContext {
+    return this.context.value as SceneContext
   }
 
+  private context = new ContextProvider(this, {
+    context: sceneContext,
+    initialValue: new SceneContext(),
+  })
+
   animationInStart() {
-    const context = this.context.value
-    context.animationInStartNext()
+    this.contextValue.animationInStartNext()
   }
 
   animationInEnd() {
-    const context = this.context.value
-    context.animationInEndNext()
+    this.contextValue.animationInEndNext()
   }
 
   animationOutStart() {
-    const context = this.context.value
-    context.animationOutStartNext()
+    this.contextValue.animationOutStartNext()
   }
 
   animationOutEnd() {
-    const context = this.context.value
-    context.animationOutEndNext()
+    this.contextValue.animationOutEndNext()
   }
 
   protected override render() {

@@ -69,6 +69,6 @@ export class ButtonElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-button': ButtonElement
+    [ButtonElement.tagName]: ButtonElement
   }
 }

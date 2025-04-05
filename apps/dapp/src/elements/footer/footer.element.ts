@@ -1,6 +1,7 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { changeMobileMatchMedia, getMobileMatchMedia } from '@1inch-community/core/lit-utils'
 import { IApplicationContext } from '@1inch-community/models'
+import { chainList } from '@1inch-community/sdk/chain'
 import { OverlayMobileController } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/widgets/notifications'
 import '@1inch-community/widgets/wallet-manage'
@@ -57,6 +58,13 @@ export class FooterElement extends LitElement {
   private getMobileFooter() {
     return html`
       <div class="footer-container mobile-footer">
+        <inch-chain-selector
+          .selectedChainIdList="${chainList.map((item) => item.chainId)}"
+          @changeSelectedChainIdList="${(event: CustomEvent) => {
+            // this.onChangeSelectedChainIdList(event.detail.value as ChainId[])
+          }}"
+        >
+        </inch-chain-selector>
         <inch-connect-wallet-view
           .controller="${this.applicationContext.wallet}"
         ></inch-connect-wallet-view>
