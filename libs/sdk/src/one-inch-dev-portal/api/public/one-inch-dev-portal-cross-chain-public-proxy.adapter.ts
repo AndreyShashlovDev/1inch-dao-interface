@@ -1,4 +1,5 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
+import { lazyAppContext } from '@1inch-community/core/utils'
 import {
   ChainId,
   GasPriceDto,
@@ -23,11 +24,13 @@ import { PublicProxyClient } from './public-proxy-client'
 export class OneInchDevPortalCrossChainPublicProxyAdapter
   implements IOneInchDevPortalCrossChainAdapter
 {
+  private readonly context = lazyAppContext('OneInchDevPortalCrossChainPublicProxyAdapter')
   private readonly client = new PublicProxyClient()
   private readonly sdkFacade = new CrossChainSDKFacade()
   private readonly fallBackAdapter = new OneInchDevPortalCrossChainOnChainAdapter()
 
   async init(context: IApplicationContext): Promise<void> {
+    this.context.set(context)
     await Promise.all([
       this.client.init(context),
       this.sdkFacade.init(context),
@@ -78,7 +81,16 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
 
   @CacheActivePromise()
   async getTokenList(): Promise<ITokenV2Dto[]> {
-    return this.client.get('/token/v1.2/multi-chain')
+    debugger
+    const walletIsConnected = await this.walletIsConnected()
+    if (!walletIsConnected) {
+      return await this.fallBackAdapter.getTokenList()
+    }
+    try {
+      return this.client.get('/token/v1.2/multi-chain')
+    } catch {
+      return await this.fallBackAdapter.getTokenList()
+    }
   }
 
   @CacheActivePromise()
@@ -132,5 +144,9 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
 
   getProxyClient(): IProxyClient {
     return this.client
+  }
+
+  private walletIsConnected() {
+    return this.context.value.wallet.data.isConnected()
   }
 }
