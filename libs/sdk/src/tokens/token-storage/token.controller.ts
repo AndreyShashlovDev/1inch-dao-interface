@@ -48,7 +48,16 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getSymbolDataWithoutWalletAddress(): Promise<ITokenListViewData> {
+  async getSymbolDataWithFilter(filter: string, walletAddress?: Address): Promise<TokenRecordId[]> {
+    await this.updateDatabase(walletAddress)
+    if (walletAddress) {
+      // return this.getSymbolDataByWalletAddress(walletAddress)
+    }
+    // return this.getSymbolDataWithoutWalletAddress()
+  }
+
+  @CacheActivePromise()
+  private async getSymbolDataWithoutWalletAddress(): Promise<ITokenListViewData> {
     await this.updateDatabase()
     const { crossChainTokensBinding } = this.schema
     const allTokensInfo = await crossChainTokensBinding.orderBy('priority').reverse().toArray()
@@ -59,7 +68,7 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getSymbolDataByWalletAddress(walletAddress: Address): Promise<ITokenListViewData> {
+  private async getSymbolDataByWalletAddress(walletAddress: Address): Promise<ITokenListViewData> {
     await this.updateDatabase(walletAddress)
     const { balances, tokens, crossChainTokensBinding, tokenPrice } = this.schema
     const crossChainTokensBindingSortedSymbols = crossChainTokensBinding

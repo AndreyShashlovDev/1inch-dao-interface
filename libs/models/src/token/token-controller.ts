@@ -19,6 +19,7 @@ export interface ITokenStorage extends InitializingEntity {
   getCrossChainTotalFiatBalance(walletAddress: Address): Promise<IBigFloat>
 
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
+  getSymbolDataWithFilter(filter: string, walletAddress?: Address): Promise<TokenRecordId[]>
   getSymbolData(walletAddress?: Address): Promise<ITokenListViewData>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
   getTokenById(id: TokenRecordId): Promise<IToken | null>

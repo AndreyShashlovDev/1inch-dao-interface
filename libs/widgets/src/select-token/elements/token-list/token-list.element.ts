@@ -1,7 +1,6 @@
 import { asyncTimeout } from '@1inch-community/core/async'
 import { LitCustomEvent, observe, subscribe } from '@1inch-community/core/lit-utils'
-import { ChainId, ISelectTokenContext, ITokenListViewData } from '@1inch-community/models'
-import { getChainById, isChainId } from '@1inch-community/sdk/chain'
+import { ISelectTokenContext, ITokenListViewData } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import { ISceneContext, sceneContext } from '@1inch-community/ui-components/scene'
 import '@1inch-community/ui-components/scroll'
@@ -27,18 +26,15 @@ export class TokenListElement extends LitElement {
 
   @property({ type: Object }) header?: () => TemplateResult<1>
 
-  @consume({ context: selectTokenContext })
-  context?: ISelectTokenContext
+  @consume({ context: selectTokenContext }) context?: ISelectTokenContext
 
-  @consume({ context: sceneContext })
-  sceneContext?: ISceneContext
-  @state() private chainId: ChainId | null = null
-  @state() private walletAddress: Address | null = null
+  @consume({ context: sceneContext }) sceneContext?: ISceneContext
 
   private readonly virtualizedRef = createRef<ScrollViewVirtualizerConsumerElement>()
 
-  @state()
-  private tokenViewDataSnapshot: ITokenListViewData | null = null
+  @state() private tokenViewDataSnapshot: ITokenListViewData | null = null
+
+  @state() private walletAddress: Address | null = null
 
   private readonly tokenViewData$ = defer(() => this.getTokenViewData())
 
@@ -59,23 +55,13 @@ export class TokenListElement extends LitElement {
   protected override render() {
     const searchValue = this.context?.getSearchTokenValue() ?? ''
     const searchValueExist = searchValue !== ''
-    const unsupportedChainId = !isChainId(this.chainId)
-    const chain = getChainById(this.chainId ?? ChainId.eth)
     return html`
       ${when(
-        unsupportedChainId,
-        () => html`
-          <div class="overlay-message">
-            <h3>Unsupported chain</h3>
-          </div>
-        `
-      )}
-      ${when(
-        this.isEmpty && searchValueExist && !unsupportedChainId,
+        this.isEmpty && searchValueExist,
         () => html`
           <div class="overlay-message">
             <inch-icon icon="emptySearch"></inch-icon>
-            <h3>Token not found on ${chain.name} Network</h3>
+            <h3>Token not found on Network</h3>
             <span>Try changing your search query, or switch to another Network</span>
           </div>
         `
@@ -116,10 +102,7 @@ export class TokenListElement extends LitElement {
   protected override async firstUpdated() {
     subscribe(
       this,
-      [
-        this.getConnectedWalletAddress().pipe(tap((address) => (this.walletAddress = address))),
-        this.getChainId().pipe(tap((chainId) => (this.chainId = chainId))),
-      ],
+      [this.getConnectedWalletAddress().pipe(tap((address) => (this.walletAddress = address)))],
       { requestUpdate: false }
     )
     subscribe(this, [
@@ -135,11 +118,6 @@ export class TokenListElement extends LitElement {
   private getTokenViewData() {
     if (!this.context) throw new Error('')
     return this.context.tokenViewData$
-  }
-
-  private getChainId() {
-    if (!this.context) throw new Error('')
-    return this.context.chainId$
   }
 
   private getFavoriteTokens() {
