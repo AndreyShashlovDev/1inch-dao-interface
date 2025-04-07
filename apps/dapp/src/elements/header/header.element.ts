@@ -1,6 +1,6 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { getMobileMatchMediaAndSubscribe, subscribe } from '@1inch-community/core/lit-utils'
-import { ChainId, IApplicationContext } from '@1inch-community/models'
+import { IApplicationContext } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/chain-selector'
 import '@1inch-community/widgets/notifications'
@@ -66,13 +66,6 @@ export class HeaderElement extends LitElement {
         <inch-icon icon="logoFull"></inch-icon>
       </div>
     `
-  }
-
-  private onChangeSelectedChainIdList(value: ChainId[]) {
-    /**
-     * TODO: onChangeSelectedChainList handler
-     */
-    console.log(value)
   }
 }
 
