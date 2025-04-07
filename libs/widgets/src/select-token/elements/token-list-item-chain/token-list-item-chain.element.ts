@@ -1,11 +1,11 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { IApplicationContext, IBigFloat, IToken, TokenRecordId } from '@1inch-community/models'
+import { chainViewConfig } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import { consume } from '@lit/context'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { chainViewConfig } from '../../../wallet-manage/chain-view-config'
 import { tokenListItemChainStyle } from './token-list-item-chain.style'
 
 @customElement(TokenListItemChainElement.tagName)

@@ -99,6 +99,6 @@ export class CardHeaderElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-card-header': CardHeaderElement
+    [CardHeaderElement.tahName]: CardHeaderElement
   }
 }

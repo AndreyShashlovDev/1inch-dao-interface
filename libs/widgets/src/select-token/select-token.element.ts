@@ -1,6 +1,7 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import { subscribe } from '@1inch-community/core/lit-utils'
+import { LitCustomEvent, observe, subscribe } from '@1inch-community/core/lit-utils'
 import {
+  ChainId,
   IApplicationContext,
   ISelectTokenContext,
   ISwapContext,
@@ -12,7 +13,8 @@ import { consume, provide } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
-import { tap } from 'rxjs'
+import { defer, tap } from 'rxjs'
+import '../chain-selector'
 import { selectTokenContext } from './context'
 import './elements/favorite-tokens'
 import './elements/search-token-input'
@@ -40,6 +42,8 @@ export class SelectTokenElement extends LitElement {
 
   private isEmpty = true
 
+  private readonly chainFilter$ = defer(() => this.getChainFilter())
+
   protected override render() {
     const classes = {
       empty: this.isEmpty,
@@ -50,7 +54,14 @@ export class SelectTokenElement extends LitElement {
         class="${classMap(classes)}"
         .header="${() => html`
           <div style="margin-left: 1px; margin-right: 1px; pointer-events: auto;">
-            <inch-card-header backButton headerText="Select token"></inch-card-header>
+            <inch-card-header backButton>
+              <inch-chain-selector
+                slot="center-container"
+                .selectedChainIdList="${observe(this.chainFilter$)}"
+                @changeSelectedChainIdList="${(event: LitCustomEvent<ChainId[]>) =>
+                  this.selectTokenContext.onChangeChainFilter(event.detail.value)}"
+              ></inch-chain-selector>
+            </inch-card-header>
             <inch-search-token-input></inch-search-token-input>
             <inch-favorite-tokens></inch-favorite-tokens>
           </div>
@@ -81,6 +92,11 @@ export class SelectTokenElement extends LitElement {
   private getTokenViewData() {
     if (!this.selectTokenContext) throw new Error('')
     return this.selectTokenContext.tokenViewData$
+  }
+
+  private getChainFilter() {
+    if (!this.selectTokenContext) throw new Error('')
+    return this.selectTokenContext.chainFilter$
   }
 }
 

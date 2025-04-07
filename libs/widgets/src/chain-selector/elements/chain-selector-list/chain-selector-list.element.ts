@@ -18,15 +18,15 @@ export class ChainSelectorListElement extends LitElement {
   @property({ type: Array, attribute: false }) selectedChainViewList: ChainViewFull[] = []
 
   protected override render() {
+    const text =
+      this.selectedChainViewList.length === chainList.length ? 'Deselect All' : 'Select All'
     return html`
       <inch-card overlayView>
         <header class="header">
           <h2 class="title">Networks</h2>
-          <inch-button size="xl" type="link" @click="${this.onSelectAllClick}"
-            >${this.selectedChainViewList.length === chainList.length
-              ? 'Deselect All'
-              : 'Select All'}</inch-button
-          >
+          <inch-button size="xl" type="link" @click="${this.onSelectAllClick}">
+            <inch-text-animate text="${text}"></inch-text-animate>
+          </inch-button>
         </header>
         ${this.getList()}
       </inch-card>

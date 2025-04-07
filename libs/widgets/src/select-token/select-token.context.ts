@@ -1,3 +1,4 @@
+import { JsonParser } from '@1inch-community/core/storage'
 import {
   ChainId,
   IApplicationContext,
@@ -6,6 +7,7 @@ import {
   IToken,
   TokenType,
 } from '@1inch-community/models'
+import { getChainIdList } from '@1inch-community/sdk/chain'
 import {
   BehaviorSubject,
   combineLatest,
@@ -33,6 +35,7 @@ export class SelectTokenContext implements ISelectTokenContext {
   readonly changeFavoriteTokenState$: Subject<[ChainId, Address]> = new Subject()
   readonly searchInProgress$: Subject<boolean> = new BehaviorSubject(false)
   readonly openCrossChainView$ = new BehaviorSubject<[string, boolean]>(['', false])
+  readonly chainFilter$ = new BehaviorSubject<ChainId[]>([])
 
   readonly favoriteTokens$ = this.chainId$.pipe(
     mergeMap((chainId) => {
@@ -47,9 +50,9 @@ export class SelectTokenContext implements ISelectTokenContext {
     this.connectedWalletAddress$,
     this.searchToken$.pipe(debounceTime(300), startWith(''), distinctUntilChanged()),
   ]).pipe(
-    switchMap(([address, searchFilter]: [Address | null, string]) => {
+    switchMap(([address]: [Address | null, string]) => {
       return this.applicationContext.tokenStorage.liveQuery(() =>
-        this.applicationContext.tokenStorage.getSymbolData(searchFilter, address ?? undefined)
+        this.applicationContext.tokenStorage.getSymbolData(address ?? undefined)
       )
     }),
     tap(() => this.searchInProgress$.next(false)),
@@ -60,7 +63,14 @@ export class SelectTokenContext implements ISelectTokenContext {
     private readonly tokenType: TokenType,
     private readonly applicationContext: IApplicationContext,
     private readonly swapContext: ISwapContext
-  ) {}
+  ) {
+    const chainFilter =
+      this.applicationContext.storage.get<ChainId[]>(
+        'inch-select-token_chain-filter',
+        JsonParser
+      ) ?? getChainIdList()
+    this.chainFilter$.next(chainFilter)
+  }
 
   async setFavoriteTokenState(chainId: ChainId, address: Address, state: boolean): Promise<void> {
     await this.applicationContext.tokenStorage.setFavoriteState(chainId, address, state)
@@ -78,6 +88,11 @@ export class SelectTokenContext implements ISelectTokenContext {
 
   onSelectToken(token: IToken) {
     this.swapContext.setToken(this.tokenType, token)
+  }
+
+  onChangeChainFilter(chainIdList: ChainId[]): void {
+    this.chainFilter$.next(chainIdList)
+    this.applicationContext.storage.set('inch-select-token_chain-filter', chainIdList)
   }
 
   getOpenCrossChainView() {

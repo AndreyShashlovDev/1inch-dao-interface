@@ -71,6 +71,6 @@ export class ChainSelectorListItemElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-chain-selector-list-item': ChainSelectorListItemElement
+    [ChainSelectorListItemElement.tagName]: ChainSelectorListItemElement
   }
 }

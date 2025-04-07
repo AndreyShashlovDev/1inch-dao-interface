@@ -54,6 +54,8 @@ export class TokenController implements ITokenStorage {
       // return this.getSymbolDataByWalletAddress(walletAddress)
     }
     // return this.getSymbolDataWithoutWalletAddress()
+
+    return []
   }
 
   @CacheActivePromise()
