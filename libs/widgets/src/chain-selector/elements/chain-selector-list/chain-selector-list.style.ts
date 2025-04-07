@@ -1,15 +1,10 @@
 import { css } from 'lit'
 
 export const chainSelectorListStyle = css`
-  .card {
+  :host {
+    display: flex;
+    width: 100%;
     min-width: 320px;
-
-    border-radius: 24px;
-  }
-
-  .card {
-    height: 100%;
-    width: 320px;
   }
 
   .scroll-container {

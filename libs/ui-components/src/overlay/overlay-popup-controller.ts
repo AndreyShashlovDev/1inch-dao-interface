@@ -1,16 +1,16 @@
+import { asyncFrame } from '@1inch-community/core/async'
 import { appendStyle, isRTLCurrentLocale } from '@1inch-community/core/lit-utils'
+import { IOverlayController, OverlayViewConfig } from '@1inch-community/models'
 import { ScrollViewProviderElement } from '@1inch-community/ui-components/scroll'
+import { ContextProvider } from '@lit/context'
 import { html, render, TemplateResult } from 'lit'
 import { fromEvent, Subscription } from 'rxjs'
 import { getContainer } from './overlay-container'
-import { IOverlayController } from './overlay-controller.interface'
+import { overlayContextToken } from './overlay-context.token'
 import { getOverlayId } from './overlay-id-generator'
+import { viewConfigDefault } from './overlay-view-config-default'
 
 export class OverlayPopupController implements IOverlayController {
-  get isOpen() {
-    return this.activeOverlayMap.size > 0
-  }
-
   private readonly activeOverlayMap = new Map<number, HTMLElement>()
   private readonly subscriptions = new Map<number, Subscription>()
 
@@ -21,13 +21,17 @@ export class OverlayPopupController implements IOverlayController {
     private readonly rootNodeName: string
   ) {}
 
-  isOpenOverlay(overlayId: number): boolean {
+  isOpenOverlay(overlayId: number): overlayId is number {
     return this.activeOverlayMap.has(overlayId)
   }
 
-  async open(openTarget: TemplateResult | HTMLElement): Promise<number> {
-    const position = await this.getPosition(openTarget)
-    const overlayContainer = this.createOverlayContainer(openTarget)
+  async open(
+    openTarget: TemplateResult | HTMLElement,
+    viewConfig: OverlayViewConfig = viewConfigDefault
+  ): Promise<number> {
+    const overlayContainer = this.createOverlayContainer(openTarget, viewConfig)
+    await asyncFrame()
+    const position = await this.getPosition(overlayContainer)
     overlayContainer.maxHeight = position[2]
     appendStyle(overlayContainer, {
       top: `${position[1]}px`,
@@ -58,11 +62,11 @@ export class OverlayPopupController implements IOverlayController {
   }
 
   private async getPosition(
-    openTarget: TemplateResult | HTMLElement
+    openTarget: HTMLElement
   ): Promise<[number, number, number, DOMRect | null]> {
     const offset = 8
     const rect = this.targetFactory()!.getBoundingClientRect()
-    const rectContent = await this.getRect(openTarget)
+    const rectContent = openTarget.getBoundingClientRect()
     let left = rect.right - rectContent.width
     if (left <= 0) {
       left = rect.left
@@ -72,19 +76,10 @@ export class OverlayPopupController implements IOverlayController {
     return [left, top, maxHeight, rect]
   }
 
-  private async getRect(openTarget: TemplateResult | HTMLElement) {
-    const el = this.createOverlayContainer(openTarget)
-    appendStyle(el, {
-      visibility: 'hidden',
-    })
-    document.body.appendChild(el)
-    await new Promise((resolve) => requestAnimationFrame(resolve))
-    const rect = el.getBoundingClientRect()
-    el.remove()
-    return rect
-  }
-
-  private createOverlayContainer(openTarget: TemplateResult | HTMLElement) {
+  private createOverlayContainer(
+    openTarget: TemplateResult | HTMLElement,
+    viewConfig: OverlayViewConfig
+  ) {
     const overlayContainer = document.createElement(ScrollViewProviderElement.tagName)
     appendStyle(overlayContainer, {
       position: 'absolute',
@@ -94,6 +89,10 @@ export class OverlayPopupController implements IOverlayController {
       width: 'fit-content',
       height: 'fit-content',
       zIndex: '2000',
+    })
+    new ContextProvider(overlayContainer, {
+      context: overlayContextToken,
+      initialValue: { config: viewConfig },
     })
     render(html`${openTarget}`, overlayContainer)
     this.container.appendChild(overlayContainer)
