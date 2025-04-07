@@ -79,7 +79,6 @@ export class WebFallbackTransportController implements InitializingEntity {
       return result
     } catch (error) {
       if (error instanceof AggregateError) {
-        debugger
         return
       }
       throw error
