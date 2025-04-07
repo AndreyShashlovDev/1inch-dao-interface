@@ -25,7 +25,6 @@ export class PrivateProxyClient implements IProxyClient {
     this.expirationTime =
       this.context.value.storage.get('private-proxy-client-expiration-time', Number) ?? null
     this.token = this.context.value.storage.get('private-proxy-client-token', String) ?? null
-    this.auth().catch(console.error)
   }
 
   async get<T>(url: string): Promise<T> {
@@ -56,15 +55,7 @@ export class PrivateProxyClient implements IProxyClient {
   @CacheActivePromise()
   private async auth() {
     if (this.isAuth) return
-    let turnstileToken = this.context.value.turnstile.getToken()
-    if (turnstileToken === null) {
-      if (!this.context.value.turnstile.getVerificationInProgress()) {
-        this.context.value.turnstile.startTurnstile()
-      }
-      await this.context.value.turnstile.turnstileComplete()
-      turnstileToken = this.context.value.turnstile.getToken()
-    }
-    if (turnstileToken === null) return
+    const turnstileToken = await this.context.value.turnstile.getToken()
     const response = await fetch(`${this.host}/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
