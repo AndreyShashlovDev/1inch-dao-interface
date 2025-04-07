@@ -1,16 +1,15 @@
 import { appendStyle } from '@1inch-community/core/lit-utils'
+import { IOverlayController, OverlayViewConfig } from '@1inch-community/models'
+import { ContextProvider } from '@lit/context'
 import { html, render, TemplateResult } from 'lit'
 import { fromEvent, Subscription } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
 import { getContainer } from './overlay-container'
-import { IOverlayController } from './overlay-controller.interface'
+import { overlayContextToken } from './overlay-context.token'
 import { getOverlayId } from './overlay-id-generator'
+import { viewConfigDefault } from './overlay-view-config-default'
 
 export class OverlayDesktopController implements IOverlayController {
-  get isOpen() {
-    return this.activeOverlayMap.size > 0
-  }
-
   private readonly activeOverlayMap = new Map<number, HTMLElement>()
   private readonly subscriptions = new Map<number, Subscription>()
 
@@ -29,12 +28,15 @@ export class OverlayDesktopController implements IOverlayController {
     private readonly rootNodeName: string
   ) {}
 
-  isOpenOverlay(overlayId: number): boolean {
+  isOpenOverlay(overlayId: number): overlayId is number {
     return this.activeOverlayMap.has(overlayId)
   }
 
-  async open(openTarget: TemplateResult | HTMLElement): Promise<number> {
-    const overlayContainer = this.createOverlayContainer(openTarget)
+  async open(
+    openTarget: TemplateResult | HTMLElement,
+    viewConfig: OverlayViewConfig = viewConfigDefault
+  ): Promise<number> {
+    const overlayContainer = this.createOverlayContainer(openTarget, viewConfig)
     const targetOffset = this.calculateTargetOffset()
     await this.transition(overlayContainer, targetOffset)
     const id = getOverlayId()
@@ -116,7 +118,10 @@ export class OverlayDesktopController implements IOverlayController {
     }
   }
 
-  private createOverlayContainer(openTarget: TemplateResult | HTMLElement) {
+  private createOverlayContainer(
+    openTarget: TemplateResult | HTMLElement,
+    viewConfig: OverlayViewConfig
+  ) {
     const overlayContainer = document.createElement(ScrollViewProviderElement.tagName)
     const overlayIndex = this.activeOverlayMap.size + 1
     const padding = this.overlayPadding
@@ -136,6 +141,10 @@ export class OverlayDesktopController implements IOverlayController {
       boxSizing: 'border-box',
       boxShadow: '0px 4px 4px -2px rgba(24, 39, 75, 0.08), 0px 2px 4px -2px rgba(24, 39, 75, 0.12)',
       transform: `translate3d(${this.overlayStartPositionPercent}%, 0, 0)`,
+    })
+    new ContextProvider(overlayContainer, {
+      context: overlayContextToken,
+      initialValue: { config: viewConfig },
     })
     render(html`${openTarget}`, overlayContainer)
     this.container.appendChild(overlayContainer)

@@ -1,29 +1,65 @@
-import { ChainId } from '@1inch-community/models'
+import { ChainId, ChainViewFull, ChainViewInfo } from '@1inch-community/models'
 import { isSupportFusion } from '../swap'
 import { isL2Chain } from './layer2-chain'
 
-type ChainViewInfo = {
-  name: string
-  iconName: string
-  priority?: number
-}
-
-type ChainViewFull = {
-  chainId: ChainId
-} & ChainViewInfo
-
 export const chainViewConfig: Record<ChainId, ChainViewInfo> = {
-  [ChainId.eth]: { name: 'Ethereum', iconName: 'eth24' },
-  [ChainId.arbitrum]: { name: 'Arbitrum', iconName: 'arbitrum24' },
-  [ChainId.op]: { name: 'Optimism', iconName: 'op24' },
-  [ChainId.zkSyncEra]: { name: 'zkSync Era', iconName: 'zkSyncEra24' },
-  [ChainId.bnb]: { name: 'BNB Smart Chain', iconName: 'bnb24', priority: 1 },
-  [ChainId.matic]: { name: 'Polygon', iconName: 'matic24', priority: 1 },
-  [ChainId.gnosis]: { name: 'Gnosis', iconName: 'gnosis24' },
-  [ChainId.avalanche]: { name: 'Avalanche', iconName: 'avalanche24' },
-  [ChainId.fantom]: { name: 'Fantom', iconName: 'fantom24' },
-  [ChainId.aurora]: { name: 'Aurora', iconName: 'aurora24' },
-  [ChainId.klaytn]: { name: 'Klaytn', iconName: 'klaytn24' },
+  [ChainId.eth]: {
+    name: 'Ethereum',
+    iconName: 'eth24',
+    color: ['#627EEA', '#A3B9FD'],
+  },
+  [ChainId.arbitrum]: {
+    name: 'Arbitrum',
+    iconName: 'arbitrum24',
+    color: ['#2C374B', '#28A0F0'],
+  },
+  [ChainId.op]: {
+    name: 'Optimism',
+    iconName: 'op24',
+    color: ['#FF0420', '#FF758C'],
+  },
+  [ChainId.zkSyncEra]: {
+    name: 'zkSync Era',
+    iconName: 'zkSyncEra24',
+    color: ['#8C8DFC', '#C8C8FE'],
+  },
+  [ChainId.bnb]: {
+    name: 'BNB Smart Chain',
+    iconName: 'bnb24',
+    priority: 1,
+    color: ['#F3BA2F', '#FFDD7A'],
+  },
+  [ChainId.matic]: {
+    name: 'Polygon',
+    iconName: 'matic24',
+    priority: 1,
+    color: ['#8247E5', '#C49BFF'],
+  },
+  [ChainId.gnosis]: {
+    name: 'Gnosis',
+    iconName: 'gnosis24',
+    color: ['#04795B', '#4DC5A3'],
+  },
+  [ChainId.avalanche]: {
+    name: 'Avalanche',
+    iconName: 'avalanche24',
+    color: ['#E84142', '#FF8A7C'],
+  },
+  [ChainId.fantom]: {
+    name: 'Fantom',
+    iconName: 'fantom24',
+    color: ['#1969FF', '#77AFFF'],
+  },
+  [ChainId.aurora]: {
+    name: 'Aurora',
+    iconName: 'aurora24',
+    color: ['#70D44B', '#B8F59E'],
+  },
+  [ChainId.klaytn]: {
+    name: 'Klaytn',
+    iconName: 'klaytn24',
+    color: ['#FF5100', '#FF9F6A'],
+  },
 }
 
 export const chainList: ChainViewFull[] = Object.keys(chainViewConfig)

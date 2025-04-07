@@ -5,11 +5,11 @@ export const chainSelectorListItemStyle = css`
   :host {
     width: 100%;
     height: 100%;
+    cursor: pointer;
   }
 
   .container {
     position: relative;
-
     display: flex;
     align-items: center;
     gap: 8px;
@@ -26,7 +26,7 @@ export const chainSelectorListItemStyle = css`
     margin-left: auto;
     transition: transform 0.2s;
     transform: scale(0);
-    stroke: transparent;
+    color: transparent;
   }
 
   .list-icon-delete {
@@ -36,22 +36,22 @@ export const chainSelectorListItemStyle = css`
     margin-left: auto;
     transition: transform 0.2s;
     transform: scale(0);
-    stroke: var(--primary);
+    color: var(--primary);
   }
 
-  @media (hover: hover) {
+  .active .list-icon {
+    transform: scale(1);
+    color: var(--primary);
+  }
+
+  @media (min-width > 1024px) {
     .container:hover {
       background-color: var(--color-background-bg-secondary);
     }
 
     .container:hover .list-icon {
       transform: scale(1);
-      stroke: var(--color-content-content-tertiary);
-    }
-
-    .active .list-icon {
-      transform: scale(1);
-      stroke: var(--primary);
+      color: var(--color-content-content-tertiary);
     }
 
     .active:hover .list-icon {
@@ -61,10 +61,10 @@ export const chainSelectorListItemStyle = css`
     .active:hover .list-icon-delete {
       transform: scale(1);
     }
-  }
 
-  .container:active {
-    background-color: var(--color-background-bg-secondary);
+    .container:active {
+      background-color: var(--color-background-bg-secondary);
+    }
   }
 
   ${mobileMediaCSS(css`

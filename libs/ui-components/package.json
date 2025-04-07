@@ -1,6 +1,6 @@
 {
   "name": "@1inch-community/ui-components",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "license": "MIT",
   "homepage": "https://github.com/1inch-community/interface",
   "author": {
@@ -69,6 +69,10 @@
     "./segmented-control": {
       "types": "./dist/segmented-control/index.d.ts",
       "import": "./dist/segmented-control/index.js"
+    },
+    "./text-animate": {
+      "types": "./dist/text-animate/index.d.ts",
+      "import": "./dist/text-animate/index.js"
     },
     "./timer": {
       "types": "./dist/timer/index.d.ts",

@@ -1,9 +1,10 @@
 import { getMobileMatchMedia } from '@1inch-community/core/lit-utils'
+import { IOverlayController, OverlayViewConfig, OverlayViewMode } from '@1inch-community/models'
 import { TemplateResult } from 'lit'
-import { IOverlayController } from './overlay-controller.interface'
 import { OverlayDesktopController } from './overlay-desktop-controller'
 import { OverlayMobileController } from './overlay-mobile-controller'
 import { OverlayPopupController } from './overlay-popup-controller'
+import { viewConfigDefault } from './overlay-view-config-default'
 
 export class OverlayController implements IOverlayController {
   private readonly mobileOverlay: IOverlayController
@@ -12,49 +13,63 @@ export class OverlayController implements IOverlayController {
 
   private readonly mobileMedia = getMobileMatchMedia()
 
-  get isOpen() {
-    if (this.mobileMedia.matches) {
-      return this.mobileOverlay.isOpen
-    }
-    return this.desktopOverlay.isOpen
-  }
-
   constructor(rootNodeName: string, targetFactory: () => HTMLElement | null) {
     this.mobileOverlay = new OverlayMobileController(rootNodeName)
     this.desktopOverlay = new OverlayDesktopController(targetFactory, rootNodeName)
     this.popupOverlay = new OverlayPopupController(targetFactory, rootNodeName)
   }
 
-  isOpenOverlay(overlayId: number): boolean {
-    if (this.mobileMedia.matches) {
-      return this.mobileOverlay.isOpenOverlay(overlayId)
-    }
-    return this.desktopOverlay.isOpenOverlay(overlayId)
+  isOpenOverlay(overlayId: number | null | undefined): overlayId is number {
+    if (typeof overlayId !== 'number') return false
+    const isOpenDesktopOverlay = this.desktopOverlay.isOpenOverlay(overlayId)
+    const isOpenMobileOverlay = this.mobileOverlay.isOpenOverlay(overlayId)
+    const isOpenPopupOverlay = this.popupOverlay.isOpenOverlay(overlayId)
+    return isOpenDesktopOverlay || isOpenMobileOverlay || isOpenPopupOverlay
   }
 
-  isPopupOpen(overlayId: number): boolean {
-    return this.popupOverlay.isOpenOverlay(overlayId)
-  }
+  async open(
+    openTarget: TemplateResult | HTMLElement,
+    viewConfig: OverlayViewConfig = viewConfigDefault
+  ): Promise<number> {
+    const [overlay, mode] = this.resolveControllerByMode(viewConfig.mode)
 
-  async open(openTarget: TemplateResult | HTMLElement): Promise<number> {
-    if (this.mobileMedia.matches) {
-      return await this.mobileOverlay.open(openTarget)
-    }
-    return await this.desktopOverlay.open(openTarget)
+    return await overlay.open(openTarget, { ...viewConfig, mode })
   }
 
   async close(overlayId: number): Promise<void> {
-    if (this.mobileMedia.matches) {
+    if (this.desktopOverlay.isOpenOverlay(overlayId)) {
+      return await this.desktopOverlay.close(overlayId)
+    }
+    if (this.mobileOverlay.isOpenOverlay(overlayId)) {
       return await this.mobileOverlay.close(overlayId)
     }
-    return await this.desktopOverlay.close(overlayId)
+    if (this.popupOverlay.isOpenOverlay(overlayId)) {
+      return await this.popupOverlay.close(overlayId)
+    }
   }
 
-  async openPopup(openTarget: TemplateResult | HTMLElement): Promise<number> {
-    return await this.popupOverlay.open(openTarget)
-  }
-
-  async closePopup(overlayId: number): Promise<void> {
-    return await this.popupOverlay.close(overlayId)
+  private resolveControllerByMode(mode: OverlayViewMode) {
+    let resolvedMode = mode
+    if (mode === OverlayViewMode.auto) {
+      resolvedMode = this.mobileMedia.matches ? OverlayViewMode.mobile : OverlayViewMode.desktop
+    }
+    if (mode === OverlayViewMode.popupAuto) {
+      resolvedMode = this.mobileMedia.matches ? OverlayViewMode.mobile : OverlayViewMode.popup
+    }
+    let overlay: IOverlayController
+    switch (resolvedMode) {
+      case OverlayViewMode.desktop:
+        overlay = this.desktopOverlay
+        break
+      case OverlayViewMode.mobile:
+        overlay = this.mobileOverlay
+        break
+      case OverlayViewMode.popup:
+        overlay = this.popupOverlay
+        break
+      default:
+        throw new Error(`Unsupported overlay mode: ${resolvedMode}`)
+    }
+    return [overlay, resolvedMode] as const
   }
 }

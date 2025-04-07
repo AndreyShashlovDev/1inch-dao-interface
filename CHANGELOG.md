@@ -1,3 +1,46 @@
+# [1.0.0-rc.2](https://github.com/1inch-community/interface/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2025-04-07)
+
+
+### Bug Fixes
+
+* chain icon border color ([b78cca9](https://github.com/1inch-community/interface/commit/b78cca93b6579c2137652d995273a2d931e1769b))
+* **core:** correct property name in cache-active-promise decorator ([687f235](https://github.com/1inch-community/interface/commit/687f235bc0f6c5082d52334dfc02827c73f8529f))
+* overlay id check ([b72901e](https://github.com/1inch-community/interface/commit/b72901e89f31b95a03c023840762823352678224))
+* prettier ([a2c8670](https://github.com/1inch-community/interface/commit/a2c86706be0cdfd74f1520b49fe1527ce31bd2fa))
+* remove unused hook ([fad7fdf](https://github.com/1inch-community/interface/commit/fad7fdf7445e12a82a07f0b74ce96d2aa6d5a6af))
+
+
+### Code Refactoring
+
+* **chain-selector:** simplify icon rendering logic ([a86e082](https://github.com/1inch-community/interface/commit/a86e08253d162ea5bb910233326b3aa39086bc0f))
+* **overlay:** migrate and enhance overlay controller functionality ([591f10b](https://github.com/1inch-community/interface/commit/591f10ba9eddf9110e5d853619738eee2fd472bc))
+* **token-storage:** remove unused methods and variables ([a967de6](https://github.com/1inch-community/interface/commit/a967de6b8a4a5b80527fe8fb0765c59093c31f87))
+* **ui-components:** rename and enhance text to text-animate ([2cf833e](https://github.com/1inch-community/interface/commit/2cf833edd92aa0eb1318faf0cdf5f3683d543a82))
+* **widgets:** unify `ChainViewInfo` and move to `@1inch-community/models` ([8281851](https://github.com/1inch-community/interface/commit/82818518e9d2276e3e41a82588694fc7d55bfcfd))
+
+
+### Features
+
+* chain default value ([fe6a27a](https://github.com/1inch-community/interface/commit/fe6a27a28b92be30b635ce5b3d4c7a4e38c1090d))
+* ChainViewInfo[] -> ChainId[] ([73823f3](https://github.com/1inch-community/interface/commit/73823f3d1d409028d513ee5425778999c70e1d41))
+* ChainViewInfo[] -> ChainId[] ([614f5e1](https://github.com/1inch-community/interface/commit/614f5e1cfecb96dc2f76f0c29fbe953b2855526e))
+* currentColor attribute ([40a0b74](https://github.com/1inch-community/interface/commit/40a0b740649423aede1e1c318b1923a58f4b052e))
+* mobile view ([bfee83a](https://github.com/1inch-community/interface/commit/bfee83a5589697b5f9f1a5306da2cd4b2678f9e8))
+* remove inch-chain-selector from header and footer ([d3bb6d1](https://github.com/1inch-community/interface/commit/d3bb6d10a588bd37e61478e104d08f4dff3eb6fd))
+* remove unused handlers ([f5a9833](https://github.com/1inch-community/interface/commit/f5a98330008719526ee7a063a99234c55c355d1a))
+* selected chain list for chain selector element and event ([e49420c](https://github.com/1inch-community/interface/commit/e49420cfe021a2b160911e4e24907b65e20d85cb))
+* **ui-components:** add new `inch-text` element for text transitions ([2d05783](https://github.com/1inch-community/interface/commit/2d05783b7b2dae075e2469c9abc8c9c36494385f))
+* **widgets:** update chain-selector logic for network labels ([aa7174f](https://github.com/1inch-community/interface/commit/aa7174fc29105118b63115da32a39d9c1940dbdc))
+
+
+### BREAKING CHANGES
+
+* **overlay:** Updates to `IOverlayController` and overlay APIs necessitate migration to new configuration and usage models.
+* **ui-components:** Replaces `inch-text` component with `inch-text-animate`. Consumers need to update their code to use the new tag and API.
+* **widgets:** `ChainViewInfo` imports and structure have changed.
+* **chain-selector:** The previous specific styles and logic for rendering chain icons based on capacity have been replaced with a dynamic calculation, requiring updates if dependent functionality relies on the old styles.
+* **token-storage:** Removed `getZeroBalanceChainId` method from `token.schema`.
+
 # 1.0.0-rc.1 (2025-04-01)
 
 

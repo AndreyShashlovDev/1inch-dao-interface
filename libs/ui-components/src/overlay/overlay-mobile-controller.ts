@@ -12,6 +12,8 @@ import {
   interpolateColorRange,
   setBrowserMetaColorFilter,
 } from '@1inch-community/core/theme'
+import { IOverlayController, OverlayViewConfig } from '@1inch-community/models'
+import { ContextProvider } from '@lit/context'
 import { html, render, TemplateResult } from 'lit'
 import {
   distinctUntilChanged,
@@ -27,8 +29,9 @@ import {
 } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
 import { getContainer } from './overlay-container'
-import { IOverlayController } from './overlay-controller.interface'
+import { overlayContextToken } from './overlay-context.token'
 import { getOverlayId } from './overlay-id-generator'
+import { viewConfigDefault } from './overlay-view-config-default'
 
 export class OverlayMobileController implements IOverlayController {
   private readonly borderRadius = '8px'
@@ -40,22 +43,21 @@ export class OverlayMobileController implements IOverlayController {
 
   private readonly container = getContainer()
 
-  get isOpen() {
-    return this.activeOverlayMap.size > 0
-  }
-
   private readonly activeOverlayMap = new Map<number, ScrollViewProviderElement>()
   private readonly subscriptions = new Map<number, Subscription>()
 
   constructor(private readonly rootNodeName: string) {}
 
-  isOpenOverlay(overlayId: number): boolean {
+  isOpenOverlay(overlayId: number): overlayId is number {
     return this.activeOverlayMap.has(overlayId)
   }
 
-  async open(openTarget: TemplateResult | HTMLElement): Promise<number> {
+  async open(
+    openTarget: TemplateResult | HTMLElement,
+    viewConfig: OverlayViewConfig = viewConfigDefault
+  ): Promise<number> {
     const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-    const overlayContainer = this.createOverlayContainer(openTarget)
+    const overlayContainer = this.createOverlayContainer(openTarget, viewConfig)
     await asyncFrame()
     const halfView = this.calculateIsHalfView(overlayContainer)
     this.appendStyleBeforeTransition(rootNode)
@@ -82,7 +84,10 @@ export class OverlayMobileController implements IOverlayController {
     setBrowserMetaColorFilter(null)
   }
 
-  private createOverlayContainer(openTarget: TemplateResult | HTMLElement) {
+  private createOverlayContainer(
+    openTarget: TemplateResult | HTMLElement,
+    viewConfig: OverlayViewConfig
+  ) {
     const overlayContainer = document.createElement(ScrollViewProviderElement.tagName)
     const overlayIndex = this.activeOverlayMap.size + 1
     const offsetStep = 2
@@ -107,6 +112,10 @@ export class OverlayMobileController implements IOverlayController {
         bottom: '10px',
       })
     }
+    new ContextProvider(overlayContainer, {
+      context: overlayContextToken,
+      initialValue: { config: viewConfig },
+    })
     render(html`${openTarget}`, overlayContainer)
     this.container.appendChild(overlayContainer)
     return overlayContainer
