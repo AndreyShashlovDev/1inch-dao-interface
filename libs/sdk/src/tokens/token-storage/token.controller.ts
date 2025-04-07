@@ -40,6 +40,7 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   async getSymbolData(walletAddress?: Address): Promise<ITokenListViewData> {
+    await this.updateDatabase(walletAddress)
     if (walletAddress) {
       return this.getSymbolDataByWalletAddress(walletAddress)
     }
@@ -48,6 +49,7 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   async getSymbolDataWithoutWalletAddress(): Promise<ITokenListViewData> {
+    await this.updateDatabase()
     const { crossChainTokensBinding } = this.schema
     const allTokensInfo = await crossChainTokensBinding.orderBy('priority').reverse().toArray()
     return {
@@ -457,7 +459,8 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   private async updateTokenPrice() {
-    if (!this.schema.tokenPriceIsExpired()) return
+    const walletConnected = await this.context.value.wallet.data.isConnected()
+    if (!this.schema.tokenPriceIsExpired() || !walletConnected) return
 
     const update = async () => {
       const chainIdList = getChainIdList()
