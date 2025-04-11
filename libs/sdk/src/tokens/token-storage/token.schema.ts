@@ -101,6 +101,7 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
       crossChainTokensBinding: buildDatabaseSchema<ICrossChainTokensBindingRecord>(
         '&symbol',
         '*tokenRecordIds',
+        'chainCount',
         'priority'
       ),
     })

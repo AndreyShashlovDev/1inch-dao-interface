@@ -39,12 +39,12 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getSymbolData(walletAddress?: Address): Promise<ITokenListViewData> {
+  async getSymbolData(chainIds: ChainId[], walletAddress?: Address): Promise<ITokenListViewData> {
     await this.updateDatabase(walletAddress)
     if (walletAddress) {
-      return this.getSymbolDataByWalletAddress(walletAddress)
+      return this.getSymbolDataByWalletAddress(chainIds, walletAddress)
     }
-    return this.getSymbolDataWithoutWalletAddress()
+    return this.getSymbolDataWithoutWalletAddress(chainIds)
   }
 
   @CacheActivePromise()
@@ -59,10 +59,27 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  private async getSymbolDataWithoutWalletAddress(): Promise<ITokenListViewData> {
+  private async getSymbolDataWithoutWalletAddress(
+    chainIds: ChainId[]
+  ): Promise<ITokenListViewData> {
     await this.updateDatabase()
     const { crossChainTokensBinding } = this.schema
-    const allTokensInfo = await crossChainTokensBinding.orderBy('priority').reverse().toArray()
+    const chainIdSet = new Set<ChainId>(chainIds)
+    const allTokensInfo: ICrossChainTokensBindingRecord[] = []
+    await crossChainTokensBinding
+      .orderBy('priority')
+      .reverse()
+      .each((record) => {
+        const tokenRecordIds = record.tokenRecordIds.filter((id) => {
+          const [chainIdStr] = destructuringId(id)
+          return chainIdSet.has(parseChainId(chainIdStr))
+        })
+        if (!tokenRecordIds.length) return
+        allTokensInfo.push({
+          ...record,
+          tokenRecordIds,
+        })
+      })
     return {
       allTokensInfo,
       userTokensInfo: [],
@@ -70,7 +87,10 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  private async getSymbolDataByWalletAddress(walletAddress: Address): Promise<ITokenListViewData> {
+  private async getSymbolDataByWalletAddress(
+    chainIds: ChainId[],
+    walletAddress: Address
+  ): Promise<ITokenListViewData> {
     await this.updateDatabase(walletAddress)
     const { balances, tokens, crossChainTokensBinding, tokenPrice } = this.schema
     const crossChainTokensBindingSortedSymbols = crossChainTokensBinding
@@ -533,6 +553,7 @@ export class TokenController implements ITokenStorage {
       crossChainTokensBindingTable.push({
         symbol,
         tokenRecordIds: [...tokenRecordIds],
+        chainCount: tokenRecordIds.size,
         priority: crossChainTokensBindingPriorityMap.get(symbol) ?? 0,
       })
     }
