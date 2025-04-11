@@ -7,7 +7,6 @@ import {
   TokenType,
 } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
-import { OverlayController } from '@1inch-community/ui-components/overlay'
 import { SceneController } from '@1inch-community/ui-components/scene'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
@@ -50,8 +49,6 @@ export class SwapFormDesktopElement extends LitElement {
   private targetSelectToken: TokenType | null = null
 
   private swapSnapshot: SwapSnapshot | null = null
-
-  private readonly overlay = new OverlayController('app-root', () => this)
 
   private connectWalletViewId: number | null = null
 
@@ -98,7 +95,6 @@ export class SwapFormDesktopElement extends LitElement {
             swapForm: () => html`
               <inch-swap-form
                 @confirmSwap="${(event: CustomEvent) => this.onOpenConfirmSwap(event)}"
-                @changeChain="${() => this.onOpenChangeChainView()}"
                 @openTokenSelector="${(event: CustomEvent) => this.onOpenSelectToken(event)}"
                 @connectWallet="${() => this.onOpenConnectWalletView()}"
               >
@@ -151,31 +147,27 @@ export class SwapFormDesktopElement extends LitElement {
     await this.desktopScene.nextTo('confirmSwap')
   }
 
-  private async onOpenChangeChainView() {
-    const id = await this.overlay.open(html`
-      <inch-chain-selector-list
-        showShadow
-        @closeCard="${() => this.overlay.close(id)}"
-        .wallet="${this.applicationContext.wallet}"
-      ></inch-chain-selector-list>
-    `)
-  }
-
   private async onOpenConnectWalletView() {
     const close = () => {
       if (!this.connectWalletViewId) return
-      this.overlay.close(this.connectWalletViewId)
+      this.applicationContext.overlay.close(this.connectWalletViewId)
       this.connectWalletViewId = null
     }
-    if (this.connectWalletViewId && this.overlay.isOpenOverlay(this.connectWalletViewId)) {
+    if (
+      this.connectWalletViewId &&
+      this.applicationContext.overlay.isOpenOverlay(this.connectWalletViewId)
+    ) {
       close()
       return
     }
-    this.connectWalletViewId = await this.overlay.open(html`
-      <inch-wallet-manage
-        @closeCard="${close}"
-        .controller="${this.applicationContext.wallet}"
-      ></inch-wallet-manage>
-    `)
+    this.connectWalletViewId = await this.applicationContext.overlay.open(
+      html`
+        <inch-wallet-manage
+          @closeCard="${close}"
+          .controller="${this.applicationContext.wallet}"
+        ></inch-wallet-manage>
+      `,
+      { targetFactory: () => this }
+    )
   }
 }

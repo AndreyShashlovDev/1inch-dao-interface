@@ -12,7 +12,6 @@ import { swapFormStyle } from './swap-form.style'
 import { subscribe } from '@1inch-community/core/lit-utils'
 import { getThemeChange } from '@1inch-community/core/theme'
 import '@1inch-community/ui-components/card'
-import { OverlayMobileController } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/widgets/swap-form'
 import { distinctUntilChanged, map, tap } from 'rxjs'
 import { unicornTouchUpdate } from './unicorn-updater'
@@ -36,8 +35,6 @@ export class SwapFormMobileElement extends LitElement {
   @state() private isRainbowTheme = false
 
   private targetSelectToken: TokenType | null = null
-
-  private readonly mobileOverlay = new OverlayMobileController('app-root')
 
   private readonly swapFormContainerRef = createRef<HTMLElement>()
   private readonly unicornLoaderRef = createRef<HTMLElement>()
@@ -95,13 +92,13 @@ export class SwapFormMobileElement extends LitElement {
 
   private async onOpenMobileConfirmSwap(event: CustomEvent) {
     const swapSnapshot = event.detail.value
-    const id = await this.mobileOverlay.open(html`
+    const id = await this.applicationContext.overlay.open(html`
       <inch-card overlayView style="width: 100%; height: 100%; display: flex;">
         <inch-confirm-swap
           .swapContext="${this.swapContext}"
           .swapSnapshot="${swapSnapshot}"
           @backCard="${async () => {
-            await this.mobileOverlay.close(id)
+            await this.applicationContext.overlay.close(id)
           }}"
         ></inch-confirm-swap>
       </inch-card>
@@ -110,32 +107,32 @@ export class SwapFormMobileElement extends LitElement {
 
   private async onOpenMobileSelectToken(event: CustomEvent) {
     this.targetSelectToken = event.detail.value
-    const id = await this.mobileOverlay.open(html`
+    const id = await this.applicationContext.overlay.open(html`
       <inch-card overlayView style="width: 100%; height: 100%; display: flex;">
         <inch-select-token
           .swapContext="${this.swapContext}"
           tokenType="${this.targetSelectToken!}"
-          @backCard="${() => this.mobileOverlay.close(id)}"
+          @backCard="${() => this.applicationContext.overlay.close(id)}"
         ></inch-select-token>
       </inch-card>
     `)
   }
 
   private async onOpenChangeChainView() {
-    const id = await this.mobileOverlay.open(html`
+    const id = await this.applicationContext.overlay.open(html`
       <inch-chain-selector-list
         showShadow
-        @closeCard="${() => this.mobileOverlay.close(id)}"
+        @closeCard="${() => this.applicationContext.overlay.close(id)}"
         .wallet="${this.applicationContext.wallet}"
       ></inch-chain-selector-list>
     `)
   }
 
   private async onOpenConnectWalletView() {
-    const id = await this.mobileOverlay.open(html`
+    const id = await this.applicationContext.overlay.open(html`
       <inch-wallet-manage
         showShadow
-        @closeCard="${() => this.mobileOverlay.close(id)}"
+        @closeCard="${() => this.applicationContext.overlay.close(id)}"
         .controller="${this.applicationContext.wallet}"
       ></inch-wallet-manage>
     `)

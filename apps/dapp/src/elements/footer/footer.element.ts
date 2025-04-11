@@ -1,7 +1,6 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { changeMobileMatchMedia, getMobileMatchMedia } from '@1inch-community/core/lit-utils'
 import { IApplicationContext } from '@1inch-community/models'
-import { OverlayMobileController } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/widgets/notifications'
 import '@1inch-community/widgets/wallet-manage'
 import { consume } from '@lit/context'
@@ -24,8 +23,6 @@ export class FooterElement extends LitElement {
   applicationContext!: IApplicationContext
 
   private mobileMedia = getMobileMatchMedia()
-
-  private readonly mobileOverlay = new OverlayMobileController('app-root')
 
   connectedCallback() {
     super.connectedCallback()
@@ -71,9 +68,11 @@ export class FooterElement extends LitElement {
   }
 
   private async onOpenSettings() {
-    const id = await this.mobileOverlay.open(html`
+    const id = await this.applicationContext.overlay.open(html`
       <inch-card overlayView>
-        <inch-settings @closeSettings="${() => this.mobileOverlay.close(id)}"></inch-settings>
+        <inch-settings
+          @closeSettings="${() => this.applicationContext.overlay.close(id)}"
+        ></inch-settings>
       </inch-card>
     `)
   }
