@@ -131,7 +131,6 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
           this.mainViewportContext ? resizeObserver(this.mainViewportContext) : of()
         ).pipe(
           tap(() => {
-            console.warn('ScrollViewVirtualizerConsumerElement update view')
             this.updateView()
           })
         ),

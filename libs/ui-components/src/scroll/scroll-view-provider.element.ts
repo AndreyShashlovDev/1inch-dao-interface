@@ -12,6 +12,7 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
     :host {
       display: flex;
       flex-direction: column;
+      position: relative;
     }
   `
 
@@ -34,6 +35,7 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
   protected override updated() {
     appendStyle(this, {
       maxHeight: this.maxHeight ? `${this.maxHeight}px` : '',
+      height: this.setMaxHeight ? `${this.maxHeight}px` : '',
     })
   }
 

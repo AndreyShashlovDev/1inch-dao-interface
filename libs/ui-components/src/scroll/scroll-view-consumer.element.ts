@@ -1,10 +1,11 @@
+import { asyncFrame } from '@1inch-community/core/async'
 import { resizeObserver, subscribe } from '@1inch-community/core/lit-utils'
 import { getScrollbarStyle } from '@1inch-community/core/theme'
 import { consume } from '@lit/context'
 import { css, html, LitElement } from 'lit'
-import { customElement } from 'lit/decorators.js'
+import { customElement, state } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
-import { fromEvent, merge, tap } from 'rxjs'
+import { fromEvent, merge, shareReplay, tap } from 'rxjs'
 import { type ScrollContext, scrollContext } from './scroll-context'
 
 @customElement(ScrollViewConsumerElement.tagName)
@@ -38,6 +39,11 @@ export class ScrollViewConsumerElement extends LitElement {
   private contentRef = createRef<HTMLElement>()
   private scrollContainerRef = createRef<HTMLElement>()
 
+  get content() {
+    if (!this.contentRef.value) throw new Error('')
+    return this.contentRef.value
+  }
+
   get contentHeight() {
     return this.contentRef.value?.clientHeight ?? 0
   }
@@ -47,14 +53,19 @@ export class ScrollViewConsumerElement extends LitElement {
     return this.scrollContainerRef.value
   }
 
-  private globalOffsetY = 0
+  @state() private globalOffsetY = 0
 
-  protected override firstUpdated() {
+  protected override async firstUpdated() {
+    await asyncFrame()
     this.updateGlobalOffsetY()
+    const contextResize$ = resizeObserver(this.context).pipe(
+      shareReplay({ bufferSize: 1, refCount: true })
+    )
     subscribe(
       this,
       [
-        merge(resizeObserver(this.context), resizeObserver(this.contentRef.value!)).pipe(
+        contextResize$.pipe(tap(() => this.updateGlobalOffsetY())),
+        merge(contextResize$, resizeObserver(this.contentRef.value!)).pipe(
           tap(() => this.updateView())
         ),
         fromEvent<MouseEvent>(this.scrollContainer, 'scroll', { passive: true }).pipe(
@@ -80,8 +91,9 @@ export class ScrollViewConsumerElement extends LitElement {
   private updateGlobalOffsetY() {
     if (!this.context)
       throw new Error('inch-scroll-view-consumer must be used inside inch-scroll-view-provider')
-    const scrollContainerRect = this.scrollContainer.getBoundingClientRect()
-    this.globalOffsetY = scrollContainerRect.top
+    const contextRect = this.context.getBoundingClientRect()
+    const contentRect = this.content.getBoundingClientRect()
+    this.globalOffsetY = contentRect.top - contextRect.top
   }
 
   private updateView() {
