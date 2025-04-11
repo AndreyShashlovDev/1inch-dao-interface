@@ -5,6 +5,10 @@ import { lazyAppContext } from '../utils'
 
 const CALLBACK_NAME = '__turnstile_callback__'
 
+const CONTAINER_ID = 'turnstile-container'
+
+const MAX_RETRY_COUNT = 4
+
 export interface TurnstileOptions {
   sitekey: string
   action?: string
@@ -32,10 +36,6 @@ declare global {
     }
   }
 }
-
-const CONTAINER_ID = 'turnstile-container'
-
-const MAX_RETRY_COUNT = 4
 
 export class TurnstileController implements ITurnstileController {
   private readonly context = lazyAppContext('TurnstileController')
@@ -92,15 +92,15 @@ export class TurnstileController implements ITurnstileController {
           reject(err)
           return
         }
-        window.turnstile!.reset(CONTAINER_ID)
+        window.turnstile!.reset(`#${CONTAINER_ID}`)
         retryCount++
       }
 
       const callback = (token: string) => {
         try {
-          window.turnstile!.remove(CONTAINER_ID)
+          window.turnstile!.remove(`#${CONTAINER_ID}`)
         } catch (error) {
-          console.warn(error)
+          console.error(error)
         }
         resolve(token)
       }
@@ -112,13 +112,6 @@ export class TurnstileController implements ITurnstileController {
       })
     })
   }
-
-  // private clean() {
-  //   if (!this.element || !this.element.parentElement) return
-  //   window.turnstile?.remove(this.element)
-  //   document.body.removeChild(this.element)
-  //   this.element = null
-  // }
 }
 
 const TurnstileRetry: string[] = ['crashed', 'undefined_error', 'challenge_failed']
