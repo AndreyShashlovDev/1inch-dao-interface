@@ -5,6 +5,7 @@ export const themeLight = (targetName = ':root') => css`
   ${unsafeCSS(targetName)} {
     --logo-text-color: #1b314f;
 
+    --color-background-bg-overlay: #000000;
     --color-background-bg-active: #ffffff;
     --color-background-bg-body: #f1f1f1;
     --color-background-bg-critical: #f048322e;
