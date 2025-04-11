@@ -174,7 +174,7 @@ export class OneInchDevPortalCrossChainOnChainAdapter
           }
           const { chainId, tokenAddress, walletAddress } = contracts[i]._resultData
           if (result.status === 'failure') {
-            console.warn(
+            console.error(
               `Load token balance error ${chainId} ${tokenAddress} ${walletAddress} \n`,
               result.error.message
             )
@@ -239,7 +239,7 @@ export class OneInchDevPortalCrossChainOnChainAdapter
           ]
         })
         .catch((err) => {
-          console.warn(`Load balance from helper error`, err)
+          console.error(`Load balance from helper error`, err)
           return [
             {
               id: [chainId, walletAddress].join(':'),

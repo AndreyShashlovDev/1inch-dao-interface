@@ -81,7 +81,6 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
 
   @CacheActivePromise()
   async getTokenList(): Promise<ITokenV2Dto[]> {
-    debugger
     const walletIsConnected = await this.walletIsConnected()
     if (!walletIsConnected) {
       return await this.fallBackAdapter.getTokenList()
