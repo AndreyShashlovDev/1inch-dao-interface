@@ -48,11 +48,12 @@ export class SelectTokenContext implements ISelectTokenContext {
 
   readonly tokenViewData$ = combineLatest([
     this.connectedWalletAddress$,
+    this.chainFilter$,
     this.searchToken$.pipe(debounceTime(300), startWith(''), distinctUntilChanged()),
   ]).pipe(
-    switchMap(([address]: [Address | null, string]) => {
+    switchMap(([address, chainIds]: [Address | null, ChainId[], string]) => {
       return this.applicationContext.tokenStorage.liveQuery(() =>
-        this.applicationContext.tokenStorage.getSymbolData(address ?? undefined)
+        this.applicationContext.tokenStorage.getSymbolData(chainIds, address ?? undefined)
       )
     }),
     tap(() => this.searchInProgress$.next(false)),

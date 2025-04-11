@@ -14,7 +14,7 @@ import { when } from 'lit/directives/when.js'
 import { defer, map, tap } from 'rxjs'
 import { Address } from 'viem'
 import { selectTokenContext } from '../../context'
-import '../token-list-item'
+import '../token-cross-chain-item'
 import '../token-list-stub-item'
 import { tokenListStyle } from './token-list.style'
 
@@ -37,6 +37,7 @@ export class TokenListElement extends LitElement {
   @state() private walletAddress: Address | null = null
 
   private readonly tokenViewData$ = defer(() => this.getTokenViewData())
+  private readonly chainListView$ = defer(() => this.getChainFilter())
 
   private readonly indexList$ = this.tokenViewData$.pipe(
     map((data) => {
@@ -75,8 +76,9 @@ export class TokenListElement extends LitElement {
           const record = this.extractTokenViewDataByIndex(index)
           if (!record) return html``
           return html`
-            <inch-token-list-item
+            <inch-token-cross-chain-item
               .crossChainTokensBindingRecord="${record}"
+              .chainListView="${observe(this.chainListView$)}"
               .walletAddress="${ifDefined(this.walletAddress ?? undefined)}"
               @selectItem="${async (event: LitCustomEvent<[string, boolean]>) => {
                 const [symbol, openMore] = event.detail.value
@@ -92,7 +94,7 @@ export class TokenListElement extends LitElement {
                 await this.virtualizedRef.value?.scrollToIndex(index)
                 this.context?.onOpenCrossChainView(symbol, openMore)
               }}"
-            ></inch-token-list-item>
+            ></inch-token-cross-chain-item>
           `
         }}
       ></inch-scroll-view-virtualizer-consumer>
@@ -130,8 +132,9 @@ export class TokenListElement extends LitElement {
     return this.context.connectedWalletAddress$
   }
 
-  private getStubAddresses() {
-    return Array.from(Array(30)).map((_, index) => `0x${index.toString(16)}`)
+  private getChainFilter() {
+    if (!this.context) throw new Error('')
+    return this.context.chainFilter$
   }
 
   private getListItemKeyByIndex(index: number): string {
@@ -152,6 +155,6 @@ export class TokenListElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-token-list': TokenListElement
+    [TokenListElement.tagName]: TokenListElement
   }
 }

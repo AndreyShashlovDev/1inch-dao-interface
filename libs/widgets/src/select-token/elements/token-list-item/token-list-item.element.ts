@@ -1,32 +1,23 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { formatNumber } from '@1inch-community/core/formatters'
+import { dispatchEvent, subscribe } from '@1inch-community/core/lit-utils'
 import {
-  appendClass,
-  appendStyle,
-  dispatchEvent,
-  subscribe,
-  translate,
-} from '@1inch-community/core/lit-utils'
-import { BigFloat } from '@1inch-community/core/math'
-import {
+  ChainId,
   IApplicationContext,
-  IBigFloat,
-  ICrossChainTokensBindingRecord,
+  IBalancesTokenRecord,
   ISelectTokenContext,
-  TokenRecordId,
+  IToken,
 } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/token-icon'
 import { consume } from '@lit/context'
 import { Task } from '@lit/task'
-import { html, LitElement } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { html, LitElement, TemplateResult } from 'lit'
+import { customElement, property } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
-import { map as litMap } from 'lit/directives/map.js'
-import { when } from 'lit/directives/when.js'
-import { merge, switchMap, tap } from 'rxjs'
-import { Address } from 'viem'
+import { filter, merge, Observable, switchMap, timer } from 'rxjs'
+import { Address, formatUnits, isAddressEqual } from 'viem'
 import { selectTokenContext } from '../../context'
-import '../token-list-item-chain'
 import '../token-list-stub-item'
 import { tokenListItemStyle } from './token-list-item.style'
 
@@ -36,10 +27,9 @@ export class TokenListItemElement extends LitElement {
 
   static override styles = tokenListItemStyle
 
-  @property({ type: Object, attribute: false })
-  crossChainTokensBindingRecord?: ICrossChainTokensBindingRecord
-
-  @property({ type: String, attribute: false }) walletAddress?: Address
+  @property({ type: String, attribute: true }) tokenAddress?: Address
+  @property({ type: String, attribute: true }) walletAddress?: Address
+  @property({ type: Number, attribute: true }) chainId?: ChainId
 
   @consume({ context: selectTokenContext })
   context?: ISelectTokenContext
@@ -47,60 +37,43 @@ export class TokenListItemElement extends LitElement {
   @consume({ context: ApplicationContextToken })
   applicationContext!: IApplicationContext
 
-  @state()
-  expanded = false
-
-  @state()
-  expandedMore = false
-
   private isDestroy = false
+
+  private preRenderTemplate: TemplateResult | null = null
+
+  private isFavorite = false
 
   private task = new Task(
     this,
-    async ([crossChainTokensBindingRecord, walletAddress, fastUpdate]) => {
+    async ([chainId, tokenAddress, walletAddress, fastUpdate]) => {
       if (fastUpdate) {
         const result = this.task.value as unknown
-        if (result)
-          return result as [
-            ICrossChainTokensBindingRecord,
-            string,
-            IBigFloat,
-            IBigFloat,
-            TokenRecordId[],
-          ]
+        if (result) return result as [IToken, IBalancesTokenRecord | null, number | null, boolean]
       }
-      if (!crossChainTokensBindingRecord) throw new Error('')
+      if (!chainId || !tokenAddress) return []
       if (this.isDestroy) throw new Error('')
-      const { symbol } = crossChainTokensBindingRecord
-      const [tokenName, tokenBalance, tokenFiatBalance, tokenIdListWithBalance] = await Promise.all(
-        [
-          this.applicationContext.tokenStorage.getCrossChainTokenName(symbol),
+      const token = await this.applicationContext.tokenStorage.getToken(chainId, tokenAddress)
+      let balance = null
+      let balanceUsd = null
+      if (walletAddress && token) {
+        balance = await this.applicationContext.tokenStorage.getTokenBalance(
+          chainId,
+          tokenAddress,
           walletAddress
-            ? this.applicationContext.tokenStorage.getCrossChainTokenBalance(symbol, walletAddress)
-            : Promise.resolve(BigFloat.zero()),
-          walletAddress
-            ? this.applicationContext.tokenStorage.getCrossChainTokenFiatBalance(
-                symbol,
-                walletAddress
-              )
-            : Promise.resolve(BigFloat.zero()),
-          walletAddress
-            ? this.applicationContext.tokenStorage.getCrossChainTokenIdListWithBalance(
-                symbol,
-                walletAddress
-              )
-            : Promise.resolve([]),
-        ]
-      )
-      return [
-        crossChainTokensBindingRecord,
-        tokenName,
-        tokenBalance,
-        tokenFiatBalance,
-        tokenIdListWithBalance,
-      ] as const
+        )
+        const tokenPrice = await this.applicationContext.tokenStorage.getTokenUSDPrice(
+          chainId,
+          tokenAddress
+        )
+        const balanceFormatted = formatUnits(BigInt(balance?.amount ?? 0), token.decimals)
+        balanceUsd = Number(balanceFormatted) * Number(tokenPrice)
+      }
+      const isFavoriteToken = token
+        ? await this.applicationContext.tokenStorage.isFavoriteToken(chainId, token.address)
+        : false
+      return [token, balance, balanceUsd, isFavoriteToken] as const
     },
-    () => [this.crossChainTokensBindingRecord, this.walletAddress, false as boolean] as const
+    () => [this.chainId, this.tokenAddress, this.walletAddress, false as boolean] as const
   )
 
   override disconnectedCallback() {
@@ -109,24 +82,11 @@ export class TokenListItemElement extends LitElement {
   }
 
   protected override firstUpdated() {
-    if (!this.context) {
-      throw new Error('Context not init')
-    }
     subscribe(
       this,
-      [
-        merge(this.applicationContext.onChain.crossChainEmitter).pipe(
-          switchMap(() =>
-            this.task.run([this.crossChainTokensBindingRecord, this.walletAddress, false])
-          )
-        ),
-        this.context.openCrossChainView$.pipe(
-          tap(([symbol, more]) => {
-            this.expanded = this.crossChainTokensBindingRecord?.symbol === symbol
-            this.expandedMore = this.expanded ? more : false
-          })
-        ),
-      ],
+      merge(timer(12_000), this.getTokenUpdateEmitter()).pipe(
+        switchMap(() => this.task.run([this.chainId, this.tokenAddress, this.walletAddress, false]))
+      ),
       { requestUpdate: false }
     )
   }
@@ -134,171 +94,103 @@ export class TokenListItemElement extends LitElement {
   protected override render() {
     return html`
       ${this.task.render({
-        complete: ([
-          crossChainTokensBindingRecord,
-          tokenName,
-          balance,
-          fiatBalance,
-          tokenIdListWithBalance,
-        ]) =>
-          this.getTokenView(
-            crossChainTokensBindingRecord,
-            balance,
-            fiatBalance,
-            tokenIdListWithBalance,
-            tokenName
-          ),
+        complete: ([token, balance, balanceUsd, isFavoriteToken]) =>
+          this.getTokenView(token, balance, balanceUsd, isFavoriteToken),
         pending: () => {
-          return this.preRender()
+          if (this.preRenderTemplate) return this.preRenderTemplate
+          return this.getStub()
         },
         error: () => {
-          return this.preRender()
+          if (this.preRenderTemplate) return this.preRenderTemplate
+          return this.getStub()
         },
       })}
     `
   }
 
-  private preRender() {
-    if (!this.task.value) {
-      return this.getStub()
-    }
-    const [crossChainTokensBindingRecord, tokenName, balance, fiatBalance, tokenIdListWithBalance] =
-      this.task.value
-    return this.getTokenView(
-      crossChainTokensBindingRecord,
-      balance,
-      fiatBalance,
-      tokenIdListWithBalance,
-      tokenName
-    )
-  }
-
   private getTokenView(
-    crossChainTokensBindingRecord: ICrossChainTokensBindingRecord,
-    balance: IBigFloat,
-    fiatBalance: IBigFloat,
-    tokenIdListWithBalance: TokenRecordId[],
-    tokenName: string
+    token: IToken | null,
+    balance: IBalancesTokenRecord | null,
+    balanceUsd: number | null,
+    isFavoriteToken: boolean
   ) {
-    if (!crossChainTokensBindingRecord) {
+    if (!token) {
       return this.getStub()
     }
+    this.isFavorite = isFavoriteToken
+    let balanceFormat = '0'
+    if (balance) {
+      balanceFormat = formatNumber(formatUnits(BigInt(balance.amount), token.decimals), 6)
+    }
+    let balanceUsdFormat = '$0'
+    if (balanceUsd) {
+      balanceUsdFormat = '$' + formatNumber(balanceUsd.toString(), 2)
+    }
+    let startColor = { border: 'var(--color-border-border-secondary)', body: 'none' }
+    if (this.isFavorite) {
+      startColor = {
+        border: 'var(--color-core-orange-warning)',
+        body: 'var(--color-core-orange-warning)',
+      }
+    }
 
-    const { symbol, tokenRecordIds } = crossChainTokensBindingRecord
-    const balanceFormat = balance.toFixedSmart(2)
-    const balanceUsdFormat = '$' + fiatBalance.toFixedSmart(2)
     const classes = {
       'item-container': true,
-      'item-container__expanded': this.expanded,
-    }
-    const rightContentClasses = {
-      content: true,
-      'right-content': true,
-      'right-content__expanded': this.expanded,
-    }
-    const moreIconPlusClasses = {
-      'more-icon': true,
-      'more-icon__hide': this.expandedMore,
-    }
-    const moreIconMinusClasses = {
-      'more-icon': true,
-      'more-icon__hide': !this.expandedMore,
-    }
-    const chainViewClasses = {
-      'chain-view': true,
-      'chain-view__hide': !this.expanded,
+      'is-favorite-token': this.isFavorite,
     }
 
-    let tokenIdsList = tokenIdListWithBalance
-    if (this.expandedMore) {
-      tokenIdsList = [
-        ...tokenIdListWithBalance,
-        ...tokenRecordIds.filter((id) => !tokenIdListWithBalance.includes(id)),
-      ]
-    }
-
-    this.updateHostStyle(tokenIdsList.length, tokenIdListWithBalance.length >= 1)
-
-    return html`
+    this.preRenderTemplate = html`
       <div
         class="${classMap(classes)}"
-        @click="${async () => {
-          this.expandedMore = !tokenIdListWithBalance.length
-          dispatchEvent(this, 'selectItem', [symbol, this.expandedMore])
+        @click="${() => {
+          this.context?.onSelectToken(token)
+          dispatchEvent(this, 'backCard', null)
         }}"
       >
-        <inch-token-icon symbol="${symbol}" size="40"></inch-token-icon>
-        <div class="content">
-          <span class="primary-content">${tokenName}</span>
-          <span class="secondary-content"
-            >${tokenRecordIds.length}
-            ${when(
-              tokenRecordIds.length === 1,
-              () => html`${translate('inch-token-list-item.network')}`,
-              () => html`${translate('inch-token-list-item.networks')}`
-            )}</span
-          >
+        <inch-token-icon
+          symbol="${token.symbol}"
+          address="${token.address}"
+          chainId="${token.chainId}"
+          size="40"
+        ></inch-token-icon>
+        <div class="name-and-balance">
+          <span class="name">${token.name}</span>
+          <span class="balance">${balanceFormat} ${token.symbol}</span>
         </div>
 
-        <div class="${classMap(rightContentClasses)}">
-          <span class="primary-content">${balanceFormat} ${symbol}</span>
-          <span class="secondary-content">${balanceUsdFormat}</span>
+        <div class="usd-balance-and-favorite-start">
+          <span class="usd-balance">${balanceUsdFormat}</span>
+          <inch-icon
+            class="is-favorite-start"
+            @click="${(event: UIEvent) => this.onMarkFavoriteToken(event, token)}"
+            icon="startDefault16"
+            .props="${startColor}"
+          ></inch-icon>
         </div>
-      </div>
-
-      <div class="${classMap(chainViewClasses)}">
-        ${litMap(
-          tokenIdsList,
-          (id) =>
-            html`<inch-token-list-item-chain tokenRecordId="${id}"></inch-token-list-item-chain>`
-        )}
-        ${when(
-          tokenIdListWithBalance.length,
-          () => html`
-            <div
-              class="full-chain-view-button"
-              @click="${() => {
-                this.context?.onOpenCrossChainView(symbol, !this.expandedMore)
-              }}"
-            >
-              <span class="more-icon-container">
-                <inch-icon class="${classMap(moreIconMinusClasses)}" icon="minus24"></inch-icon>
-                <inch-icon class="${classMap(moreIconPlusClasses)}" icon="plus24"></inch-icon>
-              </span>
-              ${when(
-                this.expandedMore,
-                () => html`<span>Less</span>`,
-                () => html`<span>More</span>`
-              )}
-            </div>
-          `
-        )}
       </div>
     `
+
+    return this.preRenderTemplate
   }
 
-  private updateHostStyle(listLength: number, showMore: boolean) {
-    appendClass(this, {
-      expanded: this.expanded,
-    })
-    const paddingTop = 8
-    const hostBaseSize = 72
-    const chainItemSize = 60
-    const openMoreItemSize = 48
-    let total = listLength * chainItemSize + hostBaseSize + paddingTop
-    if (showMore) {
-      total += openMoreItemSize
-    }
+  private async onMarkFavoriteToken(event: UIEvent, token: IToken) {
+    event.preventDefault()
+    event.stopPropagation()
+    this.isFavorite = !this.isFavorite
+    await Promise.all([
+      this.task.run([this.chainId, this.tokenAddress, this.walletAddress, true]),
+      this.context?.setFavoriteTokenState(token.chainId, token.address, this.isFavorite),
+    ])
+  }
 
-    if (this.expanded) {
-      appendStyle(this, {
-        height: `${total}px`,
-      })
-    } else {
-      appendStyle(this, {
-        height: '',
-      })
-    }
+  private getTokenUpdateEmitter() {
+    if (!this.context) throw new Error('')
+    return (this.context.changeFavoriteTokenState$ as Observable<[ChainId, Address]>).pipe(
+      filter((([chainId, address]: [ChainId, Address]) => {
+        const token = this.task?.value?.[0] ?? null
+        return token && token.chainId === chainId && isAddressEqual(token.address, address)
+      }) as any)
+    )
   }
 
   private getStub() {
@@ -308,6 +200,6 @@ export class TokenListItemElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    [TokenListItemElement.tagName]: TokenListItemElement
+    'inch-token-list-item': TokenListItemElement
   }
 }

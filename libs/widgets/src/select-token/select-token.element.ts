@@ -42,7 +42,7 @@ export class SelectTokenElement extends LitElement {
 
   private isEmpty = true
 
-  private readonly chainFilter$ = defer(() => this.getChainFilter())
+  private readonly chainListView$ = defer(() => this.getChainFilter())
 
   protected override render() {
     const classes = {
@@ -57,7 +57,7 @@ export class SelectTokenElement extends LitElement {
             <inch-card-header backButton>
               <inch-chain-selector
                 slot="center-container"
-                .selectedChainIdList="${observe(this.chainFilter$)}"
+                .selectedChainIdList="${observe(this.chainListView$)}"
                 @changeSelectedChainIdList="${(event: LitCustomEvent<ChainId[]>) =>
                   this.selectTokenContext.onChangeChainFilter(event.detail.value)}"
               ></inch-chain-selector>
