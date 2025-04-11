@@ -13,11 +13,13 @@ export class OverlayController implements IOverlayController {
 
   private readonly mobileMedia = getMobileMatchMedia()
 
-  constructor(rootNodeName: string, targetFactory: () => HTMLElement | null) {
+  constructor(rootNodeName: string) {
     this.mobileOverlay = new OverlayMobileController(rootNodeName)
-    this.desktopOverlay = new OverlayDesktopController(targetFactory, rootNodeName)
-    this.popupOverlay = new OverlayPopupController(targetFactory, rootNodeName)
+    this.desktopOverlay = new OverlayDesktopController(rootNodeName)
+    this.popupOverlay = new OverlayPopupController(rootNodeName)
   }
+
+  async init(): Promise<void> {}
 
   isOpenOverlay(overlayId: number | null | undefined): overlayId is number {
     if (typeof overlayId !== 'number') return false
@@ -31,7 +33,8 @@ export class OverlayController implements IOverlayController {
     openTarget: TemplateResult | HTMLElement,
     viewConfig: OverlayViewConfig = viewConfigDefault
   ): Promise<number> {
-    const [overlay, mode] = this.resolveControllerByMode(viewConfig.mode)
+    const internalViewConfig = { ...viewConfigDefault, ...viewConfig }
+    const [overlay, mode] = this.resolveControllerByMode(internalViewConfig.mode!)
 
     return await overlay.open(openTarget, { ...viewConfig, mode })
   }
