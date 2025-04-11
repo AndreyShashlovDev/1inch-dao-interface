@@ -65,6 +65,7 @@
     "vite": "^6.2.1",
     "vite-plugin-dts": "^4.5.3",
     "vite-plugin-html": "^3.2.2",
+    "vite-plugin-ngrok": "^1.1.2",
     "vite-plugin-preload": "^0.4.2",
     "vite-plugin-pwa": "^0.21.1",
     "vitest": "^3.0.8"

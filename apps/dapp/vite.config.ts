@@ -3,6 +3,7 @@ import * as process from 'node:process'
 import path from 'path'
 import { defineConfig, UserConfig } from 'vite'
 import { createHtmlPlugin } from 'vite-plugin-html'
+import { ngrok } from 'vite-plugin-ngrok'
 import preload from 'vite-plugin-preload'
 import { VitePWA } from 'vite-plugin-pwa'
 import { version } from '../../package.json'
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => {
     : path.join('dist', 'dapp')
 
   const baseHref = process.env['BASE_HREF'] ?? (electronBundle ? './' : '/')
+  const ngrokToken = process.env['NGROK_AUTH_TOKEN_IN_HERE']
 
   console.log('mode is ', isProduction ? 'production' : 'development')
   console.log('dApp version ', version)
@@ -57,7 +59,7 @@ export default defineConfig(({ mode }) => {
 
     server: {
       port: 4200,
-      host: '127.0.0.1',
+      host: '0.0.0.0',
     },
 
     preview: {
@@ -71,6 +73,7 @@ export default defineConfig(({ mode }) => {
     },
 
     plugins: [
+      ngrokToken ? ngrok(ngrokToken) : undefined,
       electronBundle ? undefined : VitePWA(vitePwaConfig(baseHref, isProduction)),
       electronBundle ? undefined : preload({ mode: 'prefetch' }),
       createHtmlPlugin({
