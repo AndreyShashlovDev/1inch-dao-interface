@@ -15,7 +15,6 @@ import {
   startWith,
   switchMap,
   take,
-  tap,
   timer,
 } from 'rxjs'
 import {
@@ -184,54 +183,19 @@ export class OnChainManager implements IOnChain {
 
   private buildBlockEmitter(chainId: ChainId): Observable<Block> {
     const updateTime$: Observable<number | null> = combineLatest([
-      isWindowVisibleAndFocused$().pipe(
-        map((state) => (state ? averageBlockTime[chainId] : null)),
-        tap((arg) => console.warn('buildBlockEmitter: isWindowVisibleAndFocused$', arg))
-      ),
-      sleepOnMousemove$().pipe(
-        map((state) => (state ? 30 * 1000 : null)),
-        tap((arg) => console.warn('buildBlockEmitter: sleepOnMousemove$', arg))
-      ),
-    ]).pipe(
-      map(([time1, time2]) => time1 ?? time2),
-      tap((arg) => console.warn('buildBlockEmitter: updateTime$', arg))
-    )
+      isWindowVisibleAndFocused$().pipe(map((state) => (state ? averageBlockTime[chainId] : null))),
+      sleepOnMousemove$().pipe(map((state) => (state ? 30 * 1000 : null))),
+    ]).pipe(map(([time1, time2]) => time1 ?? time2))
 
     const client$ = from(this.getClient(chainId))
 
     const block$ = combineLatest([client$, updateTime$]).pipe(
       switchMap(([client, time]) => {
-        console.warn('buildBlockEmitter: restart', chainId, time)
         return blockListener(client, time)
       }),
-      // distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
-      tap((block) => {
-        console.warn('buildBlockEmitter: block', chainId, block.number)
-      }),
+      distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
       shareReplay({ bufferSize: 1, refCount: true })
     )
-
-    // const stream = combineLatest([isWindowVisibleAndFocused$(), sleepOnMousemove$()]).pipe(
-    //   switchMap(([isWindowVisibleAndFocused, isUserNotActive]) => {
-    //     return from(this.getClient(chainId)).pipe(
-    //       switchMap((client) => {
-    //         let time: number | null = averageBlockTime[chainId]
-    //         if (!isWindowVisibleAndFocused) {
-    //           time = null
-    //         }
-    //         if (isUserNotActive) {
-    //           time = 30 * 1000
-    //         }
-    //         return blockListener(client, time)
-    //       })
-    //     )
-    //   }),
-    //   finalize(() => {
-    //     this.blockEmitterMap.delete(chainId)
-    //   }),
-    //   distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
-    //   shareReplay({ bufferSize: 1, refCount: true })
-    // )
     this.blockEmitterMap.set(chainId, block$)
     return block$
   }

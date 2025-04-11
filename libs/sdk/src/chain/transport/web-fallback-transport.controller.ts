@@ -41,12 +41,10 @@ export class WebFallbackTransportController implements InitializingEntity {
 
   @CacheActivePromise()
   async benchMartTransport() {
-    console.warn('RPC bench mart start:', this.chain.name)
     await Promise.all([
       ...this.httpTransportSet.values().toArray().map(benchMartTransport),
       ...this.wsTransportSet.values().toArray().map(benchMartTransport),
     ])
-    console.warn('RPC bench mart done:', this.chain.name)
   }
 
   createTransport(): Transport {
@@ -159,7 +157,6 @@ async function benchMartTransport(transportHolder: TransportHolder): Promise<voi
       .catch(() => _transport.request({ method: 'net_version' }))
       .catch(() => _transport.request({ method: 'eth_syncing' }))
       .then((result) => {
-        console.warn('RPC bench mart success:', rpc, result)
         return !!result
       })
   } catch (error) {
