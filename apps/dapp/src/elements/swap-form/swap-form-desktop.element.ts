@@ -1,11 +1,4 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import {
-  AccentColors,
-  IApplicationContext,
-  ISwapContext,
-  SwapSnapshot,
-  TokenType,
-} from '@1inch-community/models'
+import { AccentColors, ISwapContext, SwapSnapshot, TokenType } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import { SceneController } from '@1inch-community/ui-components/scene'
 import { consume } from '@lit/context'
@@ -15,6 +8,7 @@ import { classMap } from 'lit/directives/class-map.js'
 import { when } from 'lit/directives/when.js'
 import { swapFormStyle } from './swap-form.style'
 
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   registerShadowDomElement,
   subscribe,
@@ -40,8 +34,7 @@ export class SwapFormDesktopElement extends LitElement {
   @consume({ context: SwapContextToken })
   swapContext!: ISwapContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @state()
   private accessor isRainbowTheme = false
@@ -150,21 +143,21 @@ export class SwapFormDesktopElement extends LitElement {
   private async onOpenConnectWalletView() {
     const close = () => {
       if (!this.connectWalletViewId) return
-      this.applicationContext.overlay.close(this.connectWalletViewId)
+      this.applicationContext.value.overlay.close(this.connectWalletViewId)
       this.connectWalletViewId = null
     }
     if (
       this.connectWalletViewId &&
-      this.applicationContext.overlay.isOpenOverlay(this.connectWalletViewId)
+      this.applicationContext.value.overlay.isOpenOverlay(this.connectWalletViewId)
     ) {
       close()
       return
     }
-    this.connectWalletViewId = await this.applicationContext.overlay.open(
+    this.connectWalletViewId = await this.applicationContext.value.overlay.open(
       html`
         <inch-wallet-manage
           @closeCard="${close}"
-          .controller="${this.applicationContext.wallet}"
+          .controller="${this.applicationContext.value.wallet}"
         ></inch-wallet-manage>
       `,
       { targetFactory: () => this }

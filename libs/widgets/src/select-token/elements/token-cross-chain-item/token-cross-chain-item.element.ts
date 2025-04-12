@@ -1,4 +1,4 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   appendClass,
   appendStyle,
@@ -8,7 +8,6 @@ import {
 } from '@1inch-community/core/lit-utils'
 import { BigFloat } from '@1inch-community/core/math'
 import {
-  IApplicationContext,
   IBigFloat,
   ICrossChainTokensBindingRecord,
   ISelectTokenContext,
@@ -44,8 +43,7 @@ export class TokenCrossChainItemElement extends LitElement {
   @consume({ context: selectTokenContext })
   context?: ISelectTokenContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @state()
   expanded = false
@@ -74,18 +72,21 @@ export class TokenCrossChainItemElement extends LitElement {
       const { symbol } = crossChainTokensBindingRecord
       const [tokenName, tokenBalance, tokenFiatBalance, tokenIdListWithBalance] = await Promise.all(
         [
-          this.applicationContext.tokenStorage.getCrossChainTokenName(symbol),
+          this.applicationContext.value.tokenStorage.getCrossChainTokenName(symbol),
           walletAddress
-            ? this.applicationContext.tokenStorage.getCrossChainTokenBalance(symbol, walletAddress)
-            : Promise.resolve(BigFloat.zero()),
-          walletAddress
-            ? this.applicationContext.tokenStorage.getCrossChainTokenFiatBalance(
+            ? this.applicationContext.value.tokenStorage.getCrossChainTokenBalance(
                 symbol,
                 walletAddress
               )
             : Promise.resolve(BigFloat.zero()),
           walletAddress
-            ? this.applicationContext.tokenStorage.getCrossChainTokenIdListWithBalance(
+            ? this.applicationContext.value.tokenStorage.getCrossChainTokenFiatBalance(
+                symbol,
+                walletAddress
+              )
+            : Promise.resolve(BigFloat.zero()),
+          walletAddress
+            ? this.applicationContext.value.tokenStorage.getCrossChainTokenIdListWithBalance(
                 symbol,
                 walletAddress
               )
@@ -115,7 +116,7 @@ export class TokenCrossChainItemElement extends LitElement {
     subscribe(
       this,
       [
-        merge(this.applicationContext.onChain.crossChainEmitter).pipe(
+        merge(this.applicationContext.value.onChain.crossChainEmitter).pipe(
           switchMap(() =>
             this.task.run([this.crossChainTokensBindingRecord, this.walletAddress, false])
           )

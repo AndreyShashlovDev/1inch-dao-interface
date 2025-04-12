@@ -4,13 +4,7 @@ import {
   subscribe,
   translate,
 } from '@1inch-community/core/lit-utils'
-import {
-  AccentColors,
-  ChainId,
-  IApplicationContext,
-  ISwapContext,
-  IToken,
-} from '@1inch-community/models'
+import { AccentColors, ChainId, ISwapContext, IToken } from '@1inch-community/models'
 import {
   getOneInchRouterV6ContractAddress,
   isChainId,
@@ -39,8 +33,8 @@ import {
   withLatestFrom,
 } from 'rxjs'
 
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { CacheActivePromise } from '@1inch-community/core/decorators'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { JsonParser, storage } from '@1inch-community/core/storage'
 import { getThemeChange } from '@1inch-community/core/theme'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
@@ -88,8 +82,7 @@ export class SwapButtonElement extends LitElement {
   @consume({ context: SwapContextToken })
   context?: ISwapContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @state() private isRainbowTheme = false
 
@@ -114,7 +107,7 @@ export class SwapButtonElement extends LitElement {
   private readonly loading$ = defer(() => this.getLoading())
   private readonly block$ = this.chainId$.pipe(
     switchMap((chainId) =>
-      chainId ? this.applicationContext.onChain.getBlockEmitter(chainId) : []
+      chainId ? this.applicationContext.value.onChain.getBlockEmitter(chainId) : []
     )
   )
 
@@ -206,7 +199,7 @@ export class SwapButtonElement extends LitElement {
       if (!chainId || !walletAddress || !srcToken) throw new Error('')
       this.buttonState = SwapButtonState.checkAllowance
       const contract = getOneInchRouterV6ContractAddress(chainId)
-      const allowance = await this.applicationContext.onChain.getAllowance(
+      const allowance = await this.applicationContext.value.onChain.getAllowance(
         chainId,
         srcToken.address,
         walletAddress,
@@ -397,7 +390,7 @@ export class SwapButtonElement extends LitElement {
         this.buttonState = SwapButtonState.approveInWallet
         const hash = await this.context.getApprove()
         this.buttonState = SwapButtonState.waitingApproveTransaction
-        await this.applicationContext.onChain.waitTransaction(this.chainId, hash)
+        await this.applicationContext.value.onChain.waitTransaction(this.chainId, hash)
         this.buttonState = SwapButtonState.readyToSwap
       }
       if (this.buttonState === SwapButtonState.lowAllowanceNeedPermit) {
@@ -406,7 +399,7 @@ export class SwapButtonElement extends LitElement {
         this.buttonState = SwapButtonState.readyToSwap
       }
       if (this.buttonState === SwapButtonState.wrapNativeToken) {
-        await this.applicationContext.notifications.warning(
+        await this.applicationContext.value.notifications.warning(
           html`${translate('widgets.swap-form.swap-button.native-token-not-supported')}`
         )
       }

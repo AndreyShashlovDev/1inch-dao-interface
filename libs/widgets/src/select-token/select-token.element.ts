@@ -1,12 +1,6 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { LitCustomEvent, observe, subscribe } from '@1inch-community/core/lit-utils'
-import {
-  ChainId,
-  IApplicationContext,
-  ISelectTokenContext,
-  ISwapContext,
-  TokenType,
-} from '@1inch-community/models'
+import { ChainId, ISelectTokenContext, ISwapContext, TokenType } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import '@1inch-community/ui-components/card'
 import { consume, provide } from '@lit/context'
@@ -30,8 +24,7 @@ export class SelectTokenElement extends LitElement {
 
   @property({ type: String }) tokenType?: TokenType
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @consume({ context: SwapContextToken, subscribe: true })
   @property({ type: Object })
@@ -84,7 +77,7 @@ export class SelectTokenElement extends LitElement {
     if (this.selectTokenContext || !this.swapContext || !this.tokenType) return
     this.selectTokenContext = new SelectTokenContext(
       this.tokenType,
-      this.applicationContext,
+      this.applicationContext.value,
       this.swapContext
     )
   }

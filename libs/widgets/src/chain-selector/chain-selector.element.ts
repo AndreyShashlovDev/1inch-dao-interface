@@ -1,16 +1,10 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent } from '@1inch-community/core/lit-utils'
-import {
-  ChainId,
-  ChainViewFull,
-  IApplicationContext,
-  OverlayViewMode,
-} from '@1inch-community/models'
+import { ChainId, ChainViewFull, OverlayViewMode } from '@1inch-community/models'
 import { chainList, chainViewConfig } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/ui-components/text-animate'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { map } from 'lit/directives/map.js'
@@ -28,10 +22,7 @@ export class ChainSelectorElement extends LitElement {
 
   @property({ type: Array, attribute: false }) selectedChainIdList: ChainId[] = []
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
-
-  // private readonly overlay = new OverlayController('#app-root', () => this)
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private overlayId: number | null = null
 
@@ -52,13 +43,13 @@ export class ChainSelectorElement extends LitElement {
   }
 
   private async onClick() {
-    if (this.applicationContext.overlay.isOpenOverlay(this.overlayId)) {
-      await this.applicationContext.overlay.close(this.overlayId)
+    if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
+      await this.applicationContext.value.overlay.close(this.overlayId)
       this.overlayId = null
       return
     }
 
-    this.overlayId = await this.applicationContext.overlay.open(
+    this.overlayId = await this.applicationContext.value.overlay.open(
       html`
         <inch-chain-selector-list
           .selectedChainViewList="${this.getSelectedChainViewList()}"

@@ -1,14 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { smartFormatNumber } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { subscribe, translate } from '@1inch-community/core/lit-utils'
-import {
-  ChainId,
-  IApplicationContext,
-  IToken,
-  OrderStatus,
-  OrderStatusResult,
-} from '@1inch-community/models'
-import { consume } from '@lit/context'
+import { ChainId, IToken, OrderStatus, OrderStatusResult } from '@1inch-community/models'
 import { Task, TaskStatus } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
@@ -33,8 +26,7 @@ export class NotificationFusionSwapViewElement extends LitElement {
 
   @property({ type: String }) orderHash?: Hash
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @state() private cancelInProgress = false
 
@@ -43,13 +35,13 @@ export class NotificationFusionSwapViewElement extends LitElement {
   private readonly task = new Task(
     this,
     async ([orderHash]): Promise<TaskResult> => {
-      const chainId = this.chainId ?? (await this.applicationContext.wallet.data.getChainId())
+      const chainId = this.chainId ?? (await this.applicationContext.value.wallet.data.getChainId())
       if (!chainId || !orderHash) throw new Error('')
       if (!this.chainId) {
         this.startUpdate(chainId)
       }
       this.chainId = chainId
-      const status = await this.applicationContext.api.getOrderStatus(orderHash)
+      const status = await this.applicationContext.value.api.getOrderStatus(orderHash)
       if (status === null) {
         return [null, null, null]
       }
@@ -62,8 +54,14 @@ export class NotificationFusionSwapViewElement extends LitElement {
         return [status, sourceToken, destinationToken] as const
       }
       const [sourceToken, destinationToken] = await Promise.all([
-        this.applicationContext.tokenStorage.getToken(chainId, status.fromTokenAddress as Address),
-        this.applicationContext.tokenStorage.getToken(chainId, status.toTokenAddress as Address),
+        this.applicationContext.value.tokenStorage.getToken(
+          chainId,
+          status.fromTokenAddress as Address
+        ),
+        this.applicationContext.value.tokenStorage.getToken(
+          chainId,
+          status.toTokenAddress as Address
+        ),
       ])
       return [status, sourceToken, destinationToken] as const
     },
@@ -180,7 +178,9 @@ export class NotificationFusionSwapViewElement extends LitElement {
               loader="${ifDefined(this.cancelInProgress ? '' : undefined)}"
               @click="${async () => {
                 this.cancelInProgress = true
-                await this.applicationContext.api.cancelOrder(this.orderHash!).catch(() => null)
+                await this.applicationContext.value.api
+                  .cancelOrder(this.orderHash!)
+                  .catch(() => null)
                 await this.task.run([this.orderHash])
               }}"
               >${translate('widgets.notifications.fusion-swap-view.control.cancel')}</inch-button
@@ -195,7 +195,7 @@ export class NotificationFusionSwapViewElement extends LitElement {
     subscribe(
       this,
       [
-        this.applicationContext.onChain.getBlockEmitter(chainId).pipe(
+        this.applicationContext.value.onChain.getBlockEmitter(chainId).pipe(
           tap(() => {
             if (this.task.status !== TaskStatus.COMPLETE || !this.task.value) return
             const status = this.task.value[0]

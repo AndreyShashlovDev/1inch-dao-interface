@@ -1,8 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import { ChainId, IApplicationContext, IToken } from '@1inch-community/models'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { ChainId, IToken } from '@1inch-community/models'
 import { chainViewConfig, getWrapperNativeToken, isNativeToken } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
-import { consume } from '@lit/context'
 import { Task } from '@lit/task'
 import { html, LitElement, TemplateResult } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
@@ -23,8 +22,7 @@ export class TokenIconElement extends LitElement {
   @property({ type: Number, attribute: true }) size = 24
   @property({ type: Boolean, attribute: true }) hideChainIcon = false
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly task = new Task(this, {
     task: ([symbol, address, chainId], { signal }) => {
@@ -80,7 +78,7 @@ export class TokenIconElement extends LitElement {
     if (!data.chainId || !data.address) {
       return null
     }
-    const logoURL = await this.applicationContext.tokenStorage.getTokenLogoURL(
+    const logoURL = await this.applicationContext.value.tokenStorage.getTokenLogoURL(
       data.chainId,
       data.address
     )
@@ -97,7 +95,7 @@ export class TokenIconElement extends LitElement {
 
   private async loadIconFromMultiChain(data: RepositoryPayload): Promise<HTMLImageElement | null> {
     if (data.chainId === ChainId.eth || !data.symbol) return null
-    const tokens: IToken[] = await this.applicationContext.tokenStorage.getTokenBySymbol(
+    const tokens: IToken[] = await this.applicationContext.value.tokenStorage.getTokenBySymbol(
       ChainId.eth,
       data.symbol
     )

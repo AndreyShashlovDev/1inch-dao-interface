@@ -1,13 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { formatNumber } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, subscribe } from '@1inch-community/core/lit-utils'
-import {
-  ChainId,
-  IApplicationContext,
-  IBalancesTokenRecord,
-  ISelectTokenContext,
-  IToken,
-} from '@1inch-community/models'
+import { ChainId, IBalancesTokenRecord, ISelectTokenContext, IToken } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/token-icon'
 import { consume } from '@lit/context'
@@ -34,8 +28,7 @@ export class TokenListItemElement extends LitElement {
   @consume({ context: selectTokenContext })
   context?: ISelectTokenContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private isDestroy = false
 
@@ -52,16 +45,16 @@ export class TokenListItemElement extends LitElement {
       }
       if (!chainId || !tokenAddress) return []
       if (this.isDestroy) throw new Error('')
-      const token = await this.applicationContext.tokenStorage.getToken(chainId, tokenAddress)
+      const token = await this.applicationContext.value.tokenStorage.getToken(chainId, tokenAddress)
       let balance = null
       let balanceUsd = null
       if (walletAddress && token) {
-        balance = await this.applicationContext.tokenStorage.getTokenBalance(
+        balance = await this.applicationContext.value.tokenStorage.getTokenBalance(
           chainId,
           tokenAddress,
           walletAddress
         )
-        const tokenPrice = await this.applicationContext.tokenStorage.getTokenUSDPrice(
+        const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
           chainId,
           tokenAddress
         )
@@ -69,7 +62,7 @@ export class TokenListItemElement extends LitElement {
         balanceUsd = Number(balanceFormatted) * Number(tokenPrice)
       }
       const isFavoriteToken = token
-        ? await this.applicationContext.tokenStorage.isFavoriteToken(chainId, token.address)
+        ? await this.applicationContext.value.tokenStorage.isFavoriteToken(chainId, token.address)
         : false
       return [token, balance, balanceUsd, isFavoriteToken] as const
     },

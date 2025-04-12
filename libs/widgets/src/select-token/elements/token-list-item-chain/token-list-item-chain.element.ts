@@ -1,8 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import { IApplicationContext, IBigFloat, IToken, TokenRecordId } from '@1inch-community/models'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { IBigFloat, IToken, TokenRecordId } from '@1inch-community/models'
 import { chainViewConfig } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
-import { consume } from '@lit/context'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
@@ -16,17 +15,16 @@ export class TokenListItemChainElement extends LitElement {
 
   @property({ type: String, attribute: true }) tokenRecordId?: TokenRecordId
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly task = new Task(
     this,
     async ([tokenRecordId]) => {
       if (!tokenRecordId) throw new Error('')
       const [token, balance, fiatBalance] = await Promise.all([
-        this.applicationContext.tokenStorage.getTokenById(tokenRecordId),
-        this.applicationContext.tokenStorage.getTokenBalanceById(tokenRecordId),
-        this.applicationContext.tokenStorage.getTokenFiatBalanceById(tokenRecordId),
+        this.applicationContext.value.tokenStorage.getTokenById(tokenRecordId),
+        this.applicationContext.value.tokenStorage.getTokenBalanceById(tokenRecordId),
+        this.applicationContext.value.tokenStorage.getTokenFiatBalanceById(tokenRecordId),
       ])
       if (!token) {
         console.error('token not found', tokenRecordId)

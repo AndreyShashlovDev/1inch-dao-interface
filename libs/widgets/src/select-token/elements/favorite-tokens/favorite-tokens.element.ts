@@ -1,5 +1,5 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { asyncFrame } from '@1inch-community/core/async'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   animationMap,
   AnimationMapController,
@@ -9,7 +9,7 @@ import {
   observe,
   subscribe,
 } from '@1inch-community/core/lit-utils'
-import { IApplicationContext, ISelectTokenContext, IToken } from '@1inch-community/models'
+import { ISelectTokenContext, IToken } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/token-icon'
@@ -47,8 +47,7 @@ export class FavoriteTokensElement extends LitElement {
   @consume({ context: selectTokenContext })
   context?: ISelectTokenContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   readonly editAllMode$ = new BehaviorSubject(false)
 
@@ -65,7 +64,10 @@ export class FavoriteTokensElement extends LitElement {
     debounceTime(0),
     switchMap(([tokens, chainId]) => {
       if (!chainId) return []
-      return this.applicationContext.tokenStorage.getTokenListSortedByPriority(chainId, tokens)
+      return this.applicationContext.value.tokenStorage.getTokenListSortedByPriority(
+        chainId,
+        tokens
+      )
     }),
     startWith([]),
     tap((tokens: IToken[]) => {

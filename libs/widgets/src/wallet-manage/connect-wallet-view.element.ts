@@ -1,15 +1,14 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { formatHex } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   getMobileMatchMediaAndSubscribe,
   getShadowDomElement,
   observe,
 } from '@1inch-community/core/lit-utils'
-import { IApplicationContext, IWallet, OverlayViewMode } from '@1inch-community/models'
+import { IWallet, OverlayViewMode } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
@@ -26,8 +25,7 @@ export class ConnectWalletViewElement extends LitElement {
 
   @property({ type: Object, attribute: false }) controller?: IWallet
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly mobileMatchMedia = getMobileMatchMediaAndSubscribe(this)
 
@@ -106,17 +104,17 @@ export class ConnectWalletViewElement extends LitElement {
 
   @CacheActivePromise()
   private async onOpenConnectView() {
-    if (this.applicationContext.overlay.isOpenOverlay(this.overlayId)) {
-      await this.applicationContext.overlay.close(this.overlayId)
+    if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
+      await this.applicationContext.value.overlay.close(this.overlayId)
       this.overlayId = null
       return
     }
-    this.overlayId = await this.applicationContext.overlay.open(
+    this.overlayId = await this.applicationContext.value.overlay.open(
       html`
         <inch-wallet-manage
           @closeCard="${() => {
             if (!this.overlayId) return
-            this.applicationContext.overlay.close(this.overlayId)
+            this.applicationContext.value.overlay.close(this.overlayId)
             this.overlayId = null
           }}"
           .controller="${this.controller}"

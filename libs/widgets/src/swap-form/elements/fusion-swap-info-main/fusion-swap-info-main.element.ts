@@ -1,12 +1,12 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import {
   formatSeconds,
   smartFormatAndShorteningNumber,
   smartFormatNumber,
 } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, observe, translate } from '@1inch-community/core/lit-utils'
 import { BigMath } from '@1inch-community/core/math'
-import { IApplicationContext, ISwapContext, Rate } from '@1inch-community/models'
+import { ISwapContext, Rate } from '@1inch-community/models'
 import { getSymbolFromWrapToken } from '@1inch-community/sdk/chain'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import { isRateEqual, isTokensEqual } from '@1inch-community/sdk/tokens'
@@ -41,8 +41,7 @@ export class FusionSwapInfoMainElement extends LitElement {
   @consume({ context: SwapContextToken })
   context?: ISwapContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   readonly rate$ = defer(() => this.getContext().rate$)
   readonly minReceive$ = defer(() => this.getContext().minReceive$)
@@ -82,17 +81,17 @@ export class FusionSwapInfoMainElement extends LitElement {
     switchMap(async (rateData) => {
       if (rateData === null) return this.getLoadRateView()
       const { chainId, rate, revertedRate, sourceToken, destinationToken } = rateData
-      const primaryToken = await this.applicationContext.tokenStorage.getPriorityToken(chainId, [
-        sourceToken.address,
-        destinationToken.address,
-      ])
+      const primaryToken = await this.applicationContext.value.tokenStorage.getPriorityToken(
+        chainId,
+        [sourceToken.address, destinationToken.address]
+      )
       const secondaryToken = isTokensEqual(primaryToken, sourceToken)
         ? destinationToken
         : sourceToken
       const isRevertedRate = isTokensEqual(primaryToken, sourceToken)
       const targetRate = isRevertedRate ? revertedRate : rate
       const rateFormated = smartFormatNumber(formatUnits(targetRate, secondaryToken.decimals), 2)
-      const tokenPrice = await this.applicationContext.tokenStorage.getTokenUSDPrice(
+      const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
         chainId,
         secondaryToken.address
       )
@@ -113,7 +112,7 @@ export class FusionSwapInfoMainElement extends LitElement {
     withLatestFrom(this.destinationToken$, this.chainId$),
     switchMap(async ([minReceive, dstToken, chainId]) => {
       if (!dstToken || !chainId) return html``
-      const tokenPrice = await this.applicationContext.tokenStorage.getTokenUSDPrice(
+      const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
         chainId,
         dstToken.address
       )

@@ -1,7 +1,5 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { subscribe } from '@1inch-community/core/lit-utils'
-import { IApplicationContext } from '@1inch-community/models'
-import { consume } from '@lit/context'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
@@ -17,15 +15,14 @@ export class WalletViewAddressBalanceElement extends LitElement {
 
   @property({ type: String }) address?: Address
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly task = new Task(
     this,
     async ([address]) => {
       if (!address) throw new Error('')
       const fiatBalance =
-        await this.applicationContext.tokenStorage.getCrossChainTotalFiatBalance(address)
+        await this.applicationContext.value.tokenStorage.getCrossChainTotalFiatBalance(address)
       return fiatBalance.toFixedSmart(2)
     },
     () => [this.address] as const
@@ -35,7 +32,7 @@ export class WalletViewAddressBalanceElement extends LitElement {
     subscribe(
       this,
       [
-        this.applicationContext.onChain.crossChainEmitter.pipe(
+        this.applicationContext.value.onChain.crossChainEmitter.pipe(
           tap(() => {
             this.task.run([this.address])
           })

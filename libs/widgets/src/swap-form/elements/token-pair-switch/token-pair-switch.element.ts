@@ -1,18 +1,12 @@
-import {
-  ApplicationContextToken,
-  EmbeddedConfigToken,
-} from '@1inch-community/core/application-context'
+import { EmbeddedConfigToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   appendStyle,
   getMobileMatchMedia,
   observe,
   subscribe,
 } from '@1inch-community/core/lit-utils'
-import {
-  EmbeddedBootstrapConfigSwapForm,
-  IApplicationContext,
-  ISwapContext,
-} from '@1inch-community/models'
+import { EmbeddedBootstrapConfigSwapForm, ISwapContext } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import '@1inch-community/ui-components/icon'
 import { consume } from '@lit/context'
@@ -28,8 +22,7 @@ export class TokenPairSwitchElement extends LitElement {
 
   static override styles = tokenPairSwitchStyle
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @consume({ context: SwapContextToken })
   swapContext?: ISwapContext
@@ -69,7 +62,7 @@ export class TokenPairSwitchElement extends LitElement {
           switchMap(async () => {
             if (!this.iconRef.value || this.isUp) return
             this.isUp = true
-            await this.applicationContext.animations.animate(
+            await this.applicationContext.value.animations.animate(
               this.iconRef.value,
               [{ transform: 'rotate(0deg)' }, { transform: 'rotate(180deg)' }],
               options
@@ -83,7 +76,7 @@ export class TokenPairSwitchElement extends LitElement {
           switchMap(async () => {
             if (!this.iconRef.value || !this.isUp) return
             this.isUp = false
-            await this.applicationContext.animations.animate(
+            await this.applicationContext.value.animations.animate(
               this.iconRef.value,
               [{ transform: 'rotate(180deg)' }, { transform: 'rotate(360deg)' }],
               options
