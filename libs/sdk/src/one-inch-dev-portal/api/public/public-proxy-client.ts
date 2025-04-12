@@ -1,4 +1,4 @@
-import { lazyAppContext } from '@1inch-community/core/utils'
+import { lazyAppContext } from '@1inch-community/core/lazy'
 import { IApplicationContext, IProxyClient } from '@1inch-community/models'
 
 export class PublicProxyClient implements IProxyClient {

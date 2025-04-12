@@ -1,7 +1,7 @@
 import { IApplicationContext, ITurnstileController } from '@1inch-community/models'
 import { CacheActivePromise } from '../decorators'
+import { lazyAppContext } from '../lazy'
 import { appendStyle } from '../lit-utils'
-import { lazyAppContext } from '../utils'
 
 const CALLBACK_NAME = '__turnstile_callback__'
 

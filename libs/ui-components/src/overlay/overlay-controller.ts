@@ -15,7 +15,7 @@ export class OverlayController implements IOverlayController {
 
   constructor(rootNodeName: string) {
     this.mobileOverlay = new OverlayMobileController(rootNodeName)
-    this.desktopOverlay = new OverlayDesktopController(rootNodeName)
+    this.desktopOverlay = new OverlayDesktopController()
     this.popupOverlay = new OverlayPopupController(rootNodeName)
   }
 

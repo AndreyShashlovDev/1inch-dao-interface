@@ -1,6 +1,6 @@
 import { buildDatabaseSchema } from '@1inch-community/core/database'
+import { lazyAppContext } from '@1inch-community/core/lazy'
 import { TtlMapStorage, TTLStorage } from '@1inch-community/core/storage'
-import { lazyAppContext } from '@1inch-community/core/utils'
 import {
   BalanceTokenRecordId,
   ChainId,

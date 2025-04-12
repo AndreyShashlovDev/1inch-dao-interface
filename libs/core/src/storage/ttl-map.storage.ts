@@ -1,5 +1,5 @@
 import { IApplicationContext, InitializingEntity } from '@1inch-community/models'
-import { lazyAppContext } from '../utils'
+import { lazyAppContext } from '../lazy'
 import { JsonParser } from './storage.manager'
 
 type ExpireFnOrTime<ExpireProps> = number | ((props: ExpireProps) => number)

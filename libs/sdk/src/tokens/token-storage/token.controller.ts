@@ -1,6 +1,6 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
+import { lazyAppContext } from '@1inch-community/core/lazy'
 import { BigFloat } from '@1inch-community/core/math'
-import { lazyAppContext } from '@1inch-community/core/utils'
 import {
   ChainId,
   IApplicationContext,

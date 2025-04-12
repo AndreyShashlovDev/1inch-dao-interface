@@ -1,5 +1,5 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
-import { lazyAppContext } from '@1inch-community/core/utils'
+import { lazyAppContext } from '@1inch-community/core/lazy'
 import { IApplicationContext, InitializingEntity } from '@1inch-community/models'
 import { Chain, createTransport, http, Transport, webSocket } from 'viem'
 

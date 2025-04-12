@@ -1,5 +1,5 @@
 import { IApplicationContext, Ii18nManager, Locale } from '@1inch-community/models'
-import { lazy } from '../../utils'
+import { lazy } from '../../lazy'
 import { changeLocaleAndUpdate, defaultLocaleCode } from './i18n'
 
 export class I18nManager implements Ii18nManager {
