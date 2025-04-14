@@ -1,5 +1,5 @@
+import { lazyProvider } from '@1inch-community/core/lazy'
 import { appendStyle } from '@1inch-community/core/lit-utils'
-import { ContextProvider } from '@lit/context'
 import { css, html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { ScrollContext, scrollContext } from './scroll-context'
@@ -22,14 +22,14 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
 
   @property({ type: Boolean, attribute: false }) setMaxHeight?: boolean
 
-  private readonly context = new ContextProvider(this, { context: scrollContext })
+  private readonly context = lazyProvider(this, { context: scrollContext })
 
   setScrollTopFromConsumer(state: number): void {
     this.scrollTopFromConsumer = state
   }
 
   protected override firstUpdated() {
-    this.context.setValue(this)
+    this.context.set(this)
   }
 
   protected override updated() {

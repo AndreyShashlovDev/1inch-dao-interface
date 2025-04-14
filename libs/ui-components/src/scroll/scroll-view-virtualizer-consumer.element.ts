@@ -16,8 +16,7 @@ import { css, html, LitElement, TemplateResult } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
 import { when } from 'lit/directives/when.js'
-import { fromEvent, merge, of, tap } from 'rxjs'
-import { mainViewportContext } from './main-viewport-context'
+import { fromEvent, merge, tap } from 'rxjs'
 import { scrollContext, type ScrollContext } from './scroll-context'
 
 @customElement(ScrollViewVirtualizerConsumerElement.tagName)
@@ -77,9 +76,6 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   @consume({ context: scrollContext, subscribe: true })
   private context!: ScrollContext
 
-  @consume({ context: mainViewportContext, subscribe: false })
-  private mainViewportContext?: HTMLElement
-
   private globalOffsetY: number | null = null
 
   private readonly virtualizerRef = createRef<LitVirtualizer & VirtualizerHostElement>()
@@ -127,8 +123,7 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
         merge(
           getMobileMatchMediaEmitter(),
           resizeObserver(this.context),
-          resizeObserver(this.virtualizerHost),
-          this.mainViewportContext ? resizeObserver(this.mainViewportContext) : of()
+          resizeObserver(this.virtualizerHost)
         ).pipe(
           tap(() => {
             this.updateView()
@@ -197,9 +192,6 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 
   private getViewPortBoundingClientRect() {
-    if (this.mainViewportContext) {
-      return this.mainViewportContext.getBoundingClientRect()
-    }
     return this.context.getBoundingClientRect()
   }
 
