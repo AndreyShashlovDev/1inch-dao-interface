@@ -32,13 +32,8 @@ export class OverlayDesktopController implements IOverlayController {
     content: TemplateResult | HTMLElement,
     viewConfig: OverlayViewConfig = viewConfigDefault
   ): Promise<number> {
-    if (!viewConfig.targetFactory) {
-      throw new Error(
-        'OverlayDesktopController.open: To use OverlayDesktopController you need to pass targetFactory'
-      )
-    }
     const id = getOverlayId()
-    const target = viewConfig.targetFactory()
+    const target = viewConfig.targetFactory?.() ?? null
     const overlayContainer = this.createOverlayContainer(id, content)
     const [targetOffset, showBackground] = this.calculateTargetOffset(target)
     let overlayBackground: HTMLElement | null = null
