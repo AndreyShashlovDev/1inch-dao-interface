@@ -15,6 +15,10 @@ export class LazyValue<T> implements ILazyValue<T> {
     return this._value
   }
 
+  get isInit() {
+    return this._value !== undefined
+  }
+
   constructor(
     private readonly error: () => Error | string,
     private readonly setter?: () => T | undefined

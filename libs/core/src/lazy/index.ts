@@ -1,5 +1,5 @@
 export * from './lazy-app-context'
-export * from './lazy-app-context-consumer'
 export * from './lazy-consumer'
 export * from './lazy-initializer'
+export * from './lazy-provider'
 export * from './lazy-value'
