@@ -1,5 +1,6 @@
 export interface ILazyValue<T> {
   readonly value: T
+  readonly isInit: boolean
   set(value: T): void
 }
 
