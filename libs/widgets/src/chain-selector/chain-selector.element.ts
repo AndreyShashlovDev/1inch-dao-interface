@@ -1,3 +1,4 @@
+import { throttle } from '@1inch-community/core/decorators'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent } from '@1inch-community/core/lit-utils'
 import { ChainId, ChainViewFull, OverlayViewMode } from '@1inch-community/models'
@@ -42,6 +43,7 @@ export class ChainSelectorElement extends LitElement {
     `
   }
 
+  @throttle(300)
   private async onClick() {
     if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
       await this.applicationContext.value.overlay.close(this.overlayId)
