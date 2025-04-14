@@ -1,7 +1,7 @@
+import { lazyProvider } from '@1inch-community/core/lazy'
 import { getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
 import { IWallet } from '@1inch-community/models'
 import '@1inch-community/ui-components/card'
-import { ContextProvider } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
@@ -22,7 +22,7 @@ export class WalletManageElement extends LitElement {
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
-  private readonly context = new ContextProvider(this, { context: controllerContext })
+  private readonly context = lazyProvider(this, { context: controllerContext })
 
   protected override render() {
     if (!this.controller) {
@@ -30,8 +30,8 @@ export class WalletManageElement extends LitElement {
         'For the inch-wallet-manage widget to work, you need to pass the controller corresponding to the interface in the controller field'
       )
     }
-    if (!this.context.value) {
-      this.context.setValue(this.controller)
+    if (!this.context.isInit) {
+      this.context.set(this.controller)
     }
     const headerText = this.controller.isConnected ? 'Wallet management' : 'Connect wallet'
 
@@ -50,6 +50,6 @@ export class WalletManageElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-wallet-manage': WalletManageElement
+    [WalletManageElement.tagName]: WalletManageElement
   }
 }
