@@ -1,4 +1,4 @@
-import { ContextProvider } from '@lit/context'
+import { lazyProvider } from '@1inch-community/core/lazy'
 import { css, html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { SceneContext } from './scene-context'
@@ -24,7 +24,7 @@ export class SceneWrapperElement extends LitElement {
     return this.context.value as SceneContext
   }
 
-  private context = new ContextProvider(this, {
+  private context = lazyProvider(this, {
     context: sceneContext,
     initialValue: new SceneContext(),
   })
@@ -52,6 +52,6 @@ export class SceneWrapperElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-scene-wrapper': SceneWrapperElement
+    [SceneWrapperElement.tagName]: SceneWrapperElement
   }
 }
