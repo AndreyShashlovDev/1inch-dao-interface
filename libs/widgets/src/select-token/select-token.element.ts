@@ -1,9 +1,9 @@
-import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { lazyAppContextConsumer, lazyProvider } from '@1inch-community/core/lazy'
 import { LitCustomEvent, observe, subscribe } from '@1inch-community/core/lit-utils'
-import { ChainId, ISelectTokenContext, ISwapContext, TokenType } from '@1inch-community/models'
+import { ChainId, ISwapContext, TokenType } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import '@1inch-community/ui-components/card'
-import { consume, provide } from '@lit/context'
+import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
@@ -30,12 +30,11 @@ export class SelectTokenElement extends LitElement {
   @property({ type: Object })
   swapContext?: ISwapContext
 
-  @provide({ context: selectTokenContext })
-  selectTokenContext!: ISelectTokenContext
+  private readonly selectTokenContext = lazyProvider(this, { context: selectTokenContext })
 
   private isEmpty = true
 
-  private readonly chainListView$ = defer(() => this.getChainFilter())
+  private readonly chainListView$ = defer(() => this.selectTokenContext.value.chainFilter$)
 
   protected override render() {
     const classes = {
@@ -52,7 +51,7 @@ export class SelectTokenElement extends LitElement {
                 slot="center-container"
                 .selectedChainIdList="${observe(this.chainListView$)}"
                 @changeSelectedChainIdList="${(event: LitCustomEvent<ChainId[]>) =>
-                  this.selectTokenContext.onChangeChainFilter(event.detail.value)}"
+                  this.selectTokenContext.value.onChangeChainFilter(event.detail.value)}"
               ></inch-chain-selector>
             </inch-card-header>
             <inch-search-token-input></inch-search-token-input>
@@ -65,7 +64,7 @@ export class SelectTokenElement extends LitElement {
 
   protected override firstUpdated() {
     subscribe(this, [
-      this.getTokenViewData().pipe(
+      this.selectTokenContext.value.tokenViewData$.pipe(
         tap((data) => {
           this.isEmpty = data.allTokensInfo.length === 0 && data.userTokensInfo.length === 0
         })
@@ -74,22 +73,13 @@ export class SelectTokenElement extends LitElement {
   }
 
   private initContext() {
-    if (this.selectTokenContext || !this.swapContext || !this.tokenType) return
-    this.selectTokenContext = new SelectTokenContext(
+    if (this.selectTokenContext.isInit || !this.swapContext || !this.tokenType) return
+    const context = new SelectTokenContext(
       this.tokenType,
       this.applicationContext.value,
       this.swapContext
     )
-  }
-
-  private getTokenViewData() {
-    if (!this.selectTokenContext) throw new Error('')
-    return this.selectTokenContext.tokenViewData$
-  }
-
-  private getChainFilter() {
-    if (!this.selectTokenContext) throw new Error('')
-    return this.selectTokenContext.chainFilter$
+    this.selectTokenContext.set(context)
   }
 }
 
