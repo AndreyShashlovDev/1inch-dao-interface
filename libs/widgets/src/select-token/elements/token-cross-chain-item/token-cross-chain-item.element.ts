@@ -8,6 +8,7 @@ import {
 } from '@1inch-community/core/lit-utils'
 import { BigFloat } from '@1inch-community/core/math'
 import {
+  ChainId,
   IBigFloat,
   ICrossChainTokensBindingRecord,
   ISelectTokenContext,
@@ -40,6 +41,8 @@ export class TokenCrossChainItemElement extends LitElement {
 
   @property({ type: String, attribute: false }) walletAddress?: Address
 
+  @property({ type: Array, attribute: false }) showChainIds?: ChainId[]
+
   @consume({ context: selectTokenContext })
   context?: ISelectTokenContext
 
@@ -55,18 +58,7 @@ export class TokenCrossChainItemElement extends LitElement {
 
   private task = new Task(
     this,
-    async ([crossChainTokensBindingRecord, walletAddress, fastUpdate]) => {
-      if (fastUpdate) {
-        const result = this.task.value as unknown
-        if (result)
-          return result as [
-            ICrossChainTokensBindingRecord,
-            string,
-            IBigFloat,
-            IBigFloat,
-            TokenRecordId[],
-          ]
-      }
+    async ([crossChainTokensBindingRecord, walletAddress, showChainIds]) => {
       if (!crossChainTokensBindingRecord) throw new Error('')
       if (this.isDestroy) throw new Error('')
       const { symbol } = crossChainTokensBindingRecord
@@ -87,6 +79,7 @@ export class TokenCrossChainItemElement extends LitElement {
             : Promise.resolve(BigFloat.zero()),
           walletAddress
             ? this.applicationContext.value.tokenStorage.getCrossChainTokenIdListWithBalance(
+                showChainIds ?? [],
                 symbol,
                 walletAddress
               )
@@ -101,7 +94,7 @@ export class TokenCrossChainItemElement extends LitElement {
         tokenIdListWithBalance,
       ] as const
     },
-    () => [this.crossChainTokensBindingRecord, this.walletAddress, false as boolean] as const
+    () => [this.crossChainTokensBindingRecord, this.walletAddress, this.showChainIds] as const
   )
 
   override disconnectedCallback() {
@@ -118,7 +111,11 @@ export class TokenCrossChainItemElement extends LitElement {
       [
         merge(this.applicationContext.value.onChain.crossChainEmitter).pipe(
           switchMap(() =>
-            this.task.run([this.crossChainTokensBindingRecord, this.walletAddress, false])
+            this.task.run([
+              this.crossChainTokensBindingRecord,
+              this.walletAddress,
+              this.showChainIds,
+            ])
           )
         ),
         this.context.openCrossChainView$.pipe(
@@ -219,7 +216,9 @@ export class TokenCrossChainItemElement extends LitElement {
     }
 
     this.updateHostStyle(tokenIdsList.length, tokenIdListWithBalance.length >= 1)
-
+    if (crossChainTokensBindingRecord.symbol === 'USDC') {
+      debugger
+    }
     return html`
       <div
         class="${classMap(classes)}"

@@ -12,6 +12,7 @@ export interface ITokenStorage extends InitializingEntity {
   getCrossChainTokenByPriority(symbol: string): Promise<IToken | null>
   getCrossChainTokenName(symbol: string): Promise<string>
   getCrossChainTokenIdListWithBalance(
+    chainIds: ChainId[],
     symbol: string,
     walletAddress: Address
   ): Promise<TokenRecordId[]>
