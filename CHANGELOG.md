@@ -1,3 +1,73 @@
+# [1.0.0-rc.3](https://github.com/1inch-community/interface/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2025-04-15)
+
+
+### Bug Fixes
+
+* **core:** add error handling for undefined Turnstile siteKey ([e0aa339](https://github.com/1inch-community/interface/commit/e0aa339d78ad9736cce07b0f44bb362c7d9f65ec))
+* **notifications-controller:** log errors with console.error ([aae136c](https://github.com/1inch-community/interface/commit/aae136cb0526bf4c6ba95b42a7b68e44b8e4f65f))
+* **one-inch-dev-portal:** replace console.warn with console.error ([06006bc](https://github.com/1inch-community/interface/commit/06006bc672ec4b88b3d3dfa89b2e1691d8068ac7))
+* **scene:** prevent pointer events during scene transitions ([31362cd](https://github.com/1inch-community/interface/commit/31362cd98acd94986305f8aff5e6002bf5f47007))
+* **storage:** replace console.warn with console.error for error handling ([aea5c33](https://github.com/1inch-community/interface/commit/aea5c3351a842e995f74ca94073df5cd7a4304ad))
+* **token-storage:** ensure database updates only if wallet is connected ([3066859](https://github.com/1inch-community/interface/commit/3066859d7350e8dcd4459721c5ce18a50a40f725))
+* **transport:** remove leftover debugger statement ([0c1baeb](https://github.com/1inch-community/interface/commit/0c1baeb129325d6d6a815779476c683345f8341b))
+
+
+### Code Refactoring
+
+* **chain-selector:** simplify components and optimize overlays ([5158c02](https://github.com/1inch-community/interface/commit/5158c0229d56b441c18a392a0c836971c22954dd))
+* **core:** reorganize lazy utilities into a dedicated module ([bcdea61](https://github.com/1inch-community/interface/commit/bcdea612422a0debcddd5da0c0be1fe93cd73db5))
+* **overlay:** remove overlay-context and improve overlay controllers ([2349fe3](https://github.com/1inch-community/interface/commit/2349fe3f5c5e4e5707036ed07c764b4c43cea605))
+* **scroll:** remove mainViewportContext and update context usage ([eafdb7a](https://github.com/1inch-community/interface/commit/eafdb7a8e01766d5b369d664397546153a3bd54a))
+* **sdk:** update transport and RPC handling, streamline initialization ([8fb702b](https://github.com/1inch-community/interface/commit/8fb702be2940a7c1948af4d8c6a475419506ec3f))
+* **select-token:** add token cross-chain item component ([d34cddf](https://github.com/1inch-community/interface/commit/d34cddf6868091f4286b57e44d5927b077040046))
+* **tokens:** modularize token storage and improve TTL handling ([872351c](https://github.com/1inch-community/interface/commit/872351c7d090d40cc0d9925b079e05de0ec4ff34))
+* **widget-context:** replace ApplicationContextToken with lazyAppContextConsumer ([c34fe4c](https://github.com/1inch-community/interface/commit/c34fe4cc358785f3994aef656ffd66f7b8ce5540))
+
+
+### Features
+
+* **api:** add token list for One Inch dev portal ([903286d](https://github.com/1inch-community/interface/commit/903286de2e7b1ad22b43bed97af509c195732df2))
+* **api:** enhance cross-chain adapter with context and fallback logic ([090394a](https://github.com/1inch-community/interface/commit/090394a6f4d00bfa90104dcd8731dac2820f3dff))
+* **application-context:** add overlay controller to interface ([9e094db](https://github.com/1inch-community/interface/commit/9e094dbde829720ea215c3f10a439f6303a9dc68))
+* **card-header:** add `separator` and `mini` styles and properties ([65eaeec](https://github.com/1inch-community/interface/commit/65eaeec17fa612f5f5b3e9a79f91d0dd4f0b0380))
+* **chain-selector, select-token:** improve chain filtering and UI ([5348c0d](https://github.com/1inch-community/interface/commit/5348c0d6ae6b06167920308212fc0df63cc041e3))
+* **chain-selector:** add throttling to onClick handler ([341df0f](https://github.com/1inch-community/interface/commit/341df0f6c1d5afbe5d35a96599d4e8169600d5da))
+* **core:** add overlay controller initialization in application context ([5fdcb50](https://github.com/1inch-community/interface/commit/5fdcb504fdd405202506489feafa97bb52efc415))
+* **dapp:** integrate vite-plugin-ngrok for easier development ([bcbd56b](https://github.com/1inch-community/interface/commit/bcbd56b9218bacdc3d2790dff1c0c67326f507ae))
+* **decorators:** add throttle decorator ([38eb5b1](https://github.com/1inch-community/interface/commit/38eb5b1f199fd347bf00c37a41e4bf04aed9c3a9))
+* **integration-layer:** add overlayFactory for overlay handling ([8e2dc7f](https://github.com/1inch-community/interface/commit/8e2dc7f360bf94ca7e14025e2a8ee778caff4f8e))
+* **models:** add chainCount to CrossChainTokensBindingRecord ([b1a8166](https://github.com/1inch-community/interface/commit/b1a8166d99f48828f495292d91b72afece0644b5))
+* **models:** enhance overlay controller interface ([f5bbaff](https://github.com/1inch-community/interface/commit/f5bbaffeea738ac66ff00c7a8cb3167c92290723))
+* **models:** extend type utilities and ILazyValue interface ([e6d89bd](https://github.com/1inch-community/interface/commit/e6d89bd7b6920f114dc00f8e7a05b0027f1c582e))
+* **overlay:** add caching mechanism for open/close methods ([7d0a600](https://github.com/1inch-community/interface/commit/7d0a600bdbf5d3060b2e501c283094625affd53c))
+* **scroll:** improve scroll behavior and add state management ([cb52bf7](https://github.com/1inch-community/interface/commit/cb52bf7151c7a17168a1121514e426c87137acd5))
+* **theme:** add background overlay color and improve meta color handling ([eda1a55](https://github.com/1inch-community/interface/commit/eda1a55f4bc50feb128e76010ce99412e8057b8e))
+* **token-controller:** add filtered symbol data retrieval method ([62733c3](https://github.com/1inch-community/interface/commit/62733c375916e8dcc29177c51f0a3d39bcdb7eff))
+* **token:** add chain filtering for cross-chain token operations ([9df2185](https://github.com/1inch-community/interface/commit/9df2185fc5b3295a648346ec9b62e0afa6faa4a3))
+* **tokens:** add chain filtering support in token queries ([17ff263](https://github.com/1inch-community/interface/commit/17ff263303cbe3853b0749da7bcf4f2880d82c99))
+* **tokens:** enhance cross-chain token binding logic ([5492383](https://github.com/1inch-community/interface/commit/54923835c7c06c5f03c015ebb1279bd1d7f63026))
+
+
+### BREAKING CHANGES
+
+* **tokens:** Modifications to ICrossChainTokensBindingRecord and related schema may impact compatibility.
+* **scroll:** `mainViewportContext` is no longer supported. Refactor dependent code accordingly.
+* **widget-context:** The `ApplicationContextToken` is no longer used, which could impact components dependent on the previous implementation.
+* **core:** lazy utilities must now be imported from the "core/lazy" module.
+* **select-token:** Refactored token context to include chain filtering; API and
+dependent components must be updated accordingly.
+* **overlay:** Removed `overlayContext` dependency and changed the initialization of overlay controllers to require `targetFactory`.
+* **tokens:** `getSymbolData` now requires `chainIds` as the first argument.
+* **theme:** Asynchronous behavior added to `setBrowserMetaColorFilter`
+and `setBrowserMetaColorColor`, which might affect existing implementations.
+* **chain-selector:** Modifications in methods and component structure may require updates in dependent implementations.
+* **chain-selector, select-token:** Changes to chain filtering require updates in dependent modules.
+* **token-controller:** Refactored methods and components requiring updates
+to align with the new filtering capabilities.
+* **sdk:** Updated method signatures and transport initialization process. Adjust your integrations accordingly.
+* **tokens:** Refactored token storage methods in schema, requiring
+updates to integration logic with the controller.
+
 # [1.0.0-rc.2](https://github.com/1inch-community/interface/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2025-04-07)
 
 
