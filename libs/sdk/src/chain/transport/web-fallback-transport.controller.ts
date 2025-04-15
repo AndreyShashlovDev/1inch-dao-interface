@@ -159,13 +159,13 @@ async function benchMartTransport(transportHolder: TransportHolder): Promise<voi
       .then((result) => {
         return !!result
       })
-  } catch (error) {
+  } catch {
     transportHolder.success = false
-    console.groupCollapsed('RPC bench mart error', rpc)
-    console.error('chain: ', chain.id, chain.name)
-    console.error('rpc: ', rpc)
-    console.error(error)
-    console.groupEnd()
+    // console.groupCollapsed('RPC bench mart error', rpc)
+    // console.error('chain: ', chain.id, chain.name)
+    // console.error('rpc: ', rpc)
+    // console.error(error)
+    // console.groupEnd()
   } finally {
     end = Date.now()
     transportHolder.time = end - start

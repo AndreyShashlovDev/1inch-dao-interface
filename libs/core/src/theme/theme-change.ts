@@ -8,7 +8,6 @@ import { interpolateColorHex } from './utils/hex-interpolation'
 
 let currentMainColor: MainColors
 let currentBrandColor: AccentColors
-let isEmbeddedMode = false
 
 const browserMetaColors: Record<MainColors, () => string> = {
   [MainColors.systemSync]: () => getBrowserMetaColor(),
@@ -37,7 +36,6 @@ export async function setBrowserMetaColorFilter(filter: typeof metaColorFilter) 
 }
 
 async function setBrowserMetaColorColor(color: string) {
-  if (isEmbeddedMode) return
   const themeMetaElement = document.head.querySelector('#theme-color') as HTMLMetaElement
   if (!themeMetaElement) {
     createAndAppendInHeaderElement('meta', (meta) => {
