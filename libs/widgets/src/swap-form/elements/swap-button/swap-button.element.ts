@@ -242,7 +242,7 @@ export class SwapButtonElement extends LitElement {
       <inch-button
         class="smart-hover"
         @click="${(event: MouseEvent) => this.onClickSwapButton(event)}"
-        type="${this.getButtonType()}"
+        type="secondary"
         size="${size}"
         loader="${ifDefined(this.getLoaderState())}"
         fullSize

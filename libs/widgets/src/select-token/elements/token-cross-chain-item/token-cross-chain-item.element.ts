@@ -216,9 +216,6 @@ export class TokenCrossChainItemElement extends LitElement {
     }
 
     this.updateHostStyle(tokenIdsList.length, tokenIdListWithBalance.length >= 1)
-    if (crossChainTokensBindingRecord.symbol === 'USDC') {
-      debugger
-    }
     return html`
       <div
         class="${classMap(classes)}"

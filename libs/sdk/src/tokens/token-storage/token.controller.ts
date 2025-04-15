@@ -20,8 +20,7 @@ import {
 } from '@1inch-community/models'
 import { from, switchMap } from 'rxjs'
 import { Address, isAddressEqual } from 'viem'
-import { isChainId, parseChainId } from '../../chain'
-import { getChainIdList } from '../../chain/chain-id-list'
+import { getChainIdList, isChainId, parseChainId } from '../../chain'
 import { buildBalanceId, buildTokenId, buildTokenPriceId, destructuringId } from '../token-id'
 import { TokenSchema } from './token.schema'
 
@@ -69,6 +68,7 @@ export class TokenController implements ITokenStorage {
     await crossChainTokensBinding
       .orderBy('priority')
       .reverse()
+      // .filter((record) => record.symbol)
       .each((record) => {
         const tokenRecordIds = record.tokenRecordIds.filter((id) => {
           const [chainIdStr] = destructuringId(id)
@@ -535,8 +535,14 @@ export class TokenController implements ITokenStorage {
   private async setTokens(tokensDto: ITokenV2Dto[]) {
     const { tokens, crossChainTokensBinding } = this.schema
     const tableTokens: ITokenRecord[] = []
-    const crossChainTokensBindingMap = new Map<string, Set<TokenRecordId>>()
-    const crossChainTokensBindingPriorityMap = new Map<string, number>()
+    type crossChainTokensBindingRecord = {
+      priority: number
+      supportedChainIds: Set<ChainId>
+      tokenNames: Set<string>
+      tokenAddresses: Set<Address>
+      tokenRecordIds: Set<TokenRecordId>
+    }
+    const crossChainTokensBindingRecordMap = new Map<string, crossChainTokensBindingRecord>()
     for (const token of tokensDto) {
       const chainId = token.chainId
       if (!isChainId(chainId)) {
@@ -557,29 +563,36 @@ export class TokenController implements ITokenStorage {
         chainId,
         priority,
       })
-      if (!crossChainTokensBindingMap.has(token.symbol)) {
-        crossChainTokensBindingMap.set(token.symbol, new Set())
+      if (!crossChainTokensBindingRecordMap.has(token.symbol)) {
+        crossChainTokensBindingRecordMap.set(token.symbol, {
+          priority: 0,
+          supportedChainIds: new Set(),
+          tokenNames: new Set(),
+          tokenAddresses: new Set(),
+          tokenRecordIds: new Set(),
+        })
       }
-      if (crossChainTokensBindingMap.get(token.symbol)?.has(id)) {
+      const record = crossChainTokensBindingRecordMap.get(token.symbol)!
+      if (record.tokenRecordIds.has(id)) {
         throw new Error('violation of communication integrity')
       }
-      crossChainTokensBindingMap.get(token.symbol)!.add(id)
-      const crossChainTokensBindingPriority =
-        crossChainTokensBindingPriorityMap.get(token.symbol) ?? 0
-      crossChainTokensBindingPriorityMap.set(
-        token.symbol,
-        crossChainTokensBindingPriority + priority
-      )
+      record.priority += priority
+      record.supportedChainIds.add(chainId)
+      record.tokenNames.add(token.name)
+      record.tokenAddresses.add(token.address)
+      record.tokenRecordIds.add(id)
     }
 
     const crossChainTokensBindingTable: ICrossChainTokensBindingRecord[] = []
 
-    for (const [symbol, tokenRecordIds] of crossChainTokensBindingMap) {
+    for (const [symbol, record] of crossChainTokensBindingRecordMap) {
       crossChainTokensBindingTable.push({
         symbol,
-        tokenRecordIds: [...tokenRecordIds],
-        chainCount: tokenRecordIds.size,
-        priority: crossChainTokensBindingPriorityMap.get(symbol) ?? 0,
+        priority: record.priority,
+        tokenRecordIds: record.tokenRecordIds.values().toArray(),
+        tokenAddresses: record.tokenAddresses.values().toArray(),
+        supportedChainIds: record.supportedChainIds.values().toArray(),
+        tokenNames: record.tokenNames.values().toArray(),
       })
     }
 

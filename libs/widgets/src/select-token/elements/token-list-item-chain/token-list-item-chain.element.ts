@@ -1,10 +1,13 @@
-import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { lazyAppContextConsumer, lazyConsumer } from '@1inch-community/core/lazy'
+import { dispatchEvent, subscribe } from '@1inch-community/core/lit-utils'
 import { IBigFloat, IToken, TokenRecordId } from '@1inch-community/models'
 import { chainViewConfig } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
+import { fromEvent, tap } from 'rxjs'
+import { selectTokenContext } from '../../context'
 import { tokenListItemChainStyle } from './token-list-item-chain.style'
 
 @customElement(TokenListItemChainElement.tagName)
@@ -14,6 +17,8 @@ export class TokenListItemChainElement extends LitElement {
   static readonly styles = tokenListItemChainStyle
 
   @property({ type: String, attribute: true }) tokenRecordId?: TokenRecordId
+
+  private readonly context = lazyConsumer(this, { context: selectTokenContext })
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
@@ -34,6 +39,23 @@ export class TokenListItemChainElement extends LitElement {
     },
     () => [this.tokenRecordId]
   )
+
+  protected firstUpdated() {
+    subscribe(
+      this,
+      [
+        fromEvent(this, 'click').pipe(
+          tap(() => {
+            if (!this.task.value) return
+            const [token] = this.task.value
+            this.context.value.onSelectToken(token)
+            dispatchEvent(this, 'backCard', null)
+          })
+        ),
+      ],
+      { requestUpdate: false }
+    )
+  }
 
   protected render() {
     return this.task.render({
