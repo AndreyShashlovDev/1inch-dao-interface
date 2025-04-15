@@ -5,10 +5,14 @@ export default function vitePwaConfig(baseHref: string, isProduction: boolean = 
   return {
     registerType: 'autoUpdate',
     manifest: manifest(baseHref),
+    devOptions: {
+      enabled: !isProduction,
+      disableRuntimeConfig: !isProduction,
+    },
     workbox: {
       skipWaiting: true,
       clientsClaim: true,
-      disableDevLogs: true,
+      disableDevLogs: !isProduction,
       runtimeCaching: [
         {
           urlPattern: ({ url }: { url: URL }) =>
@@ -69,9 +73,6 @@ export default function vitePwaConfig(baseHref: string, isProduction: boolean = 
           },
         },
       ],
-    },
-    devOptions: {
-      enabled: !isProduction,
     },
   } satisfies Partial<VitePWAOptions>
 }

@@ -1,11 +1,9 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { getMobileMatchMediaAndSubscribe, subscribe } from '@1inch-community/core/lit-utils'
-import { IApplicationContext } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/widgets/chain-selector'
 import '@1inch-community/widgets/notifications'
 import '@1inch-community/widgets/wallet-manage'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
@@ -19,13 +17,12 @@ export class HeaderElement extends LitElement {
 
   static override styles = headerStyle
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   protected firstUpdated() {
-    subscribe(this, [this.applicationContext.wallet.data.isConnected$])
+    subscribe(this, [this.applicationContext.value.wallet.data.isConnected$])
   }
 
   protected render() {
@@ -46,11 +43,11 @@ export class HeaderElement extends LitElement {
           <inch-icon icon="logoFull"></inch-icon>
         </div>
         ${when(
-          this.applicationContext.wallet.isConnected,
+          this.applicationContext.value.wallet.isConnected,
           () => html`
             <div class="right-content">
               <inch-connect-wallet-view
-                .controller="${this.applicationContext.wallet}"
+                .controller="${this.applicationContext.value.wallet}"
               ></inch-connect-wallet-view>
               <inch-notifications-open-button></inch-notifications-open-button>
             </div>

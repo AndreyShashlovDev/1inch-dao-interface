@@ -40,7 +40,6 @@ export function webFallback(
     await Promise.all(transportHolders.map(benchMartTransport))
     assessmentCompleted = true
     assessmentCompletedSignal.next()
-    console.log('benchMartTransports complete')
   }
 
   const getBestTransport = (): { http?: TransportHolder; ws?: TransportHolder } => {

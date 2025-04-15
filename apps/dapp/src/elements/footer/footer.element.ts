@@ -1,10 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { changeMobileMatchMedia, getMobileMatchMedia } from '@1inch-community/core/lit-utils'
-import { IApplicationContext } from '@1inch-community/models'
-import { OverlayMobileController } from '@1inch-community/ui-components/overlay'
 import '@1inch-community/widgets/notifications'
 import '@1inch-community/widgets/wallet-manage'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
@@ -20,12 +17,9 @@ export class FooterElement extends LitElement {
 
   static styles = footerStyle
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private mobileMedia = getMobileMatchMedia()
-
-  private readonly mobileOverlay = new OverlayMobileController('app-root')
 
   connectedCallback() {
     super.connectedCallback()
@@ -48,7 +42,7 @@ export class FooterElement extends LitElement {
       <div class="footer-container" style="${styleMap(styles)}">
         <span class="power-by">© ${new Date().getFullYear()} Powered by 1inch</span>
         <span class="version"
-          >version: ${this.applicationContext.environment.get('appVersion')}</span
+          >version: ${this.applicationContext.value.environment.get('appVersion')}</span
         >
       </div>
     `
@@ -58,7 +52,7 @@ export class FooterElement extends LitElement {
     return html`
       <div class="footer-container mobile-footer">
         <inch-connect-wallet-view
-          .controller="${this.applicationContext.wallet}"
+          .controller="${this.applicationContext.value.wallet}"
         ></inch-connect-wallet-view>
 
         <inch-notifications-open-button></inch-notifications-open-button>
@@ -71,9 +65,11 @@ export class FooterElement extends LitElement {
   }
 
   private async onOpenSettings() {
-    const id = await this.mobileOverlay.open(html`
+    const id = await this.applicationContext.value.overlay.open(html`
       <inch-card overlayView>
-        <inch-settings @closeSettings="${() => this.mobileOverlay.close(id)}"></inch-settings>
+        <inch-settings
+          @closeSettings="${() => this.applicationContext.value.overlay.close(id)}"
+        ></inch-settings>
       </inch-card>
     `)
   }

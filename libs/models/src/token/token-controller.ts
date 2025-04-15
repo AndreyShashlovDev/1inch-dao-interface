@@ -12,6 +12,7 @@ export interface ITokenStorage extends InitializingEntity {
   getCrossChainTokenByPriority(symbol: string): Promise<IToken | null>
   getCrossChainTokenName(symbol: string): Promise<string>
   getCrossChainTokenIdListWithBalance(
+    chainIds: ChainId[],
     symbol: string,
     walletAddress: Address
   ): Promise<TokenRecordId[]>
@@ -19,8 +20,12 @@ export interface ITokenStorage extends InitializingEntity {
   getCrossChainTotalFiatBalance(walletAddress: Address): Promise<IBigFloat>
 
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
-  getSymbolData(walletAddress?: Address): Promise<ITokenListViewData>
+  getSymbolDataWithFilter(filter: string, walletAddress?: Address): Promise<TokenRecordId[]>
+  getSymbolData(chainIds: ChainId[], walletAddress?: Address): Promise<ITokenListViewData>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
+  getTokenById(id: TokenRecordId): Promise<IToken | null>
+  getTokenBalanceById(id: TokenRecordId): Promise<IBigFloat>
+  getTokenFiatBalanceById(id: TokenRecordId): Promise<IBigFloat>
   getTokenLogoURL(chainId: ChainId, address: Address): Promise<string | null>
   getNativeToken(chainId: ChainId): Promise<IToken | null>
   getTokenBySymbol(chainId: ChainId, symbol: string): Promise<IToken[]>

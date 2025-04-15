@@ -103,6 +103,13 @@ export class SceneController<T extends string, U extends T> {
       const nextSceneWrapper = this.buildSceneWrapper(nextSceneFactory(), sceneName)
       const currentSceneWrapper = this.sceneContainer.firstChild as SceneWrapperElement
 
+      appendStyle(currentSceneWrapper, {
+        pointerEvents: 'none',
+      })
+      appendStyle(nextSceneWrapper, {
+        pointerEvents: 'none',
+      })
+
       const upScene = isBack ? currentSceneWrapper : nextSceneWrapper
       const downScene = !isBack ? currentSceneWrapper : nextSceneWrapper
 
@@ -127,6 +134,12 @@ export class SceneController<T extends string, U extends T> {
       appendStyle(this.sceneContainer, {
         width: '',
         height: '',
+      })
+      appendStyle(currentSceneWrapper, {
+        pointerEvents: '',
+      })
+      appendStyle(nextSceneWrapper, {
+        pointerEvents: '',
       })
       this.sceneContainer.firstChild &&
         this.sceneContainer.removeChild(this.sceneContainer.firstChild)

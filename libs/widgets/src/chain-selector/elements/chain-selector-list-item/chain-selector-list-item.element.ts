@@ -1,8 +1,4 @@
-import {
-  dispatchEvent,
-  getMobileMatchMediaAndSubscribe,
-  isRTLCurrentLocale,
-} from '@1inch-community/core/lit-utils'
+import { dispatchEvent, isRTLCurrentLocale } from '@1inch-community/core/lit-utils'
 import { ChainViewFull } from '@1inch-community/models'
 import { isL2Chain } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
@@ -18,8 +14,6 @@ export class ChainSelectorListItemElement extends LitElement {
 
   static override styles = chainSelectorListItemStyle
 
-  private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
-
   @property({ type: Object }) info?: ChainViewFull
 
   @property({ type: Boolean, attribute: false }) isActiveChain: boolean = false
@@ -33,19 +27,15 @@ export class ChainSelectorListItemElement extends LitElement {
       container: true,
       active: this.isActiveChain,
     }
-    /**
-     * TODO: Mobile icon size
-     */
-    const iconSize = this.mobileMedia.matches ? 26 : 24
+    const iconSize = 24
 
     return html`
       <div class="${classMap(classes)}" @click="${() => this.onItemClick()}">
         ${when(
           isL2,
-          () =>
-            html`<inch-icon
-              icon="${isRTLCurrentLocale() ? 'l2ChainRTL24' : 'l2Chain24'}"
-            ></inch-icon>`
+          () => html`
+            <inch-icon icon="${isRTLCurrentLocale() ? 'l2ChainRTL24' : 'l2Chain24'}"></inch-icon>
+          `
         )}
         <inch-icon
           width="${iconSize}px"
@@ -64,13 +54,12 @@ export class ChainSelectorListItemElement extends LitElement {
 
   private onItemClick() {
     if (!this.info) throw new Error('')
-
     dispatchEvent(this, 'chainItemClick', this.info)
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-chain-selector-list-item': ChainSelectorListItemElement
+    [ChainSelectorListItemElement.tagName]: ChainSelectorListItemElement
   }
 }

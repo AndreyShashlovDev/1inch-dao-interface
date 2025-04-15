@@ -7,10 +7,14 @@ export default tsEslint.config(
   globalIgnores([
     '**/node_modules/**',
     '**/dist/**',
+    '**/dev-dist/**',
     '**/out/**',
     'build/',
+    'apps/dapp/cache',
     '**/scripts/**',
     '**/*.min.js',
+    '**/vite.config.ts',
+    '**/*.spec.ts',
   ]),
   eslint.configs.recommended,
   tsEslint.configs.recommended,
@@ -19,6 +23,7 @@ export default tsEslint.config(
     rules: {
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   }
 ) as ConfigArray

@@ -7,10 +7,9 @@ export function getContainer() {
 
 function findOrCreateContainer() {
   if (container) return
-  let overlayContainer = document.querySelector('#overlay-container') as HTMLElement
+  const overlayContainer = document.querySelector('#overlay-container') as HTMLElement
   if (!overlayContainer) {
-    overlayContainer = document.createElement('div')
-    overlayContainer.id = 'overlay-container'
+    throw new Error(`Overlay container not init`)
   }
   container = overlayContainer
 }

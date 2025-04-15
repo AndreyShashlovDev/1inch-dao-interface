@@ -2,6 +2,7 @@ import {
   ApplicationContextToken,
   EmbeddedConfigToken,
 } from '@1inch-community/core/application-context'
+import { lazyProvider } from '@1inch-community/core/lazy'
 import { fontStyle, mainColorMap, makeColorSchema } from '@1inch-community/core/theme'
 import {
   ColorHex,
@@ -11,7 +12,6 @@ import {
   MainColors,
 } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
-import { ContextProvider, provide } from '@lit/context'
 import { adoptStyles, CSSResult, html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
@@ -22,10 +22,9 @@ export class GlobalEmbeddedContextElement
   extends LitElement
   implements IGlobalEmbeddedContextElement
 {
-  static readonly tagName = 'global-embedded-context'
+  static readonly tagName = 'global-embedded-context' as const
 
-  @provide({ context: EmbeddedConfigToken })
-  config!: EmbeddedBootstrapConfig
+  private readonly config = lazyProvider(this, { context: EmbeddedConfigToken })
 
   private styles: Map<string, CSSResult> = new Map()
 
@@ -43,7 +42,7 @@ export class GlobalEmbeddedContextElement
   }
 
   async setConfig(config: EmbeddedBootstrapConfig) {
-    this.config = config
+    this.config.set(config)
     await Promise.all([
       this.setThemePrimaryColor(config.primaryColor),
       this.setThemeType(config.themeType),
@@ -55,8 +54,8 @@ export class GlobalEmbeddedContextElement
   async setContext(context: IApplicationContext) {
     contextHolder.set(this, context)
     const swapContext = await context.makeSwapContext()
-    new ContextProvider(this, { context: ApplicationContextToken, initialValue: context })
-    new ContextProvider(this, { context: SwapContextToken, initialValue: swapContext })
+    lazyProvider(this, { context: ApplicationContextToken, initialValue: context })
+    lazyProvider(this, { context: SwapContextToken, initialValue: swapContext })
   }
 
   protected render() {
@@ -90,6 +89,6 @@ export class GlobalEmbeddedContextElement
 
 declare global {
   interface HTMLElementTagNameMap {
-    'global-embedded-context': GlobalEmbeddedContextElement
+    [GlobalEmbeddedContextElement.tagName]: GlobalEmbeddedContextElement
   }
 }

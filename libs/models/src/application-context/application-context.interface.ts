@@ -7,6 +7,7 @@ import { Type } from '../global'
 import { Ii18nManager } from '../i18n'
 import { ILogger } from '../logger'
 import { INotificationsManager } from '../notifications'
+import { IOverlayController } from '../overlay'
 import { ISettingsManager } from '../settings'
 import { IPersistSyncStorage } from '../storage'
 import { ISwapContext } from '../swap'
@@ -32,6 +33,7 @@ export interface IApplicationContext {
   readonly onChain: IOnChain
   readonly animations: IAnimationsManager
   readonly environment: IEnvironmentController
+  readonly overlay: IOverlayController
 
   makeSwapContext(): Promise<ISwapContext>
 

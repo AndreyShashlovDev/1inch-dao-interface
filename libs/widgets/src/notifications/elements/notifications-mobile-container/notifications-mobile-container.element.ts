@@ -1,9 +1,6 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { animationMap, appendStyle, subscribe } from '@1inch-community/core/lit-utils'
 import { getScrollbarStyle } from '@1inch-community/core/theme'
-import { IApplicationContext } from '@1inch-community/models'
 import { getContainer } from '@1inch-community/ui-components/overlay'
-import { consume } from '@lit/context'
 import { html, render } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
@@ -42,9 +39,6 @@ export class NotificationsMobileContainerElement extends NotificationsBaseContai
     notificationsBaseContainerStyle,
     notificationsMobileContainerStyle,
   ]
-
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
 
   protected maxShorthandView = 1
 

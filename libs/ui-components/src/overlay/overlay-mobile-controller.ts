@@ -6,14 +6,8 @@ import {
   isStandalone,
   resizeObserver,
 } from '@1inch-community/core/lit-utils'
-import {
-  applyColorBrightness,
-  getCssValue,
-  interpolateColorRange,
-  setBrowserMetaColorFilter,
-} from '@1inch-community/core/theme'
-import { IOverlayController, OverlayViewConfig } from '@1inch-community/models'
-import { ContextProvider } from '@lit/context'
+import { applyColorBrightness, setBrowserMetaColorFilter } from '@1inch-community/core/theme'
+import { IOverlayController } from '@1inch-community/models'
 import { html, render, TemplateResult } from 'lit'
 import {
   distinctUntilChanged,
@@ -21,6 +15,7 @@ import {
   fromEvent,
   map,
   merge,
+  pairwise,
   skip,
   Subscription,
   switchMap,
@@ -29,71 +24,137 @@ import {
 } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
 import { getContainer } from './overlay-container'
-import { overlayContextToken } from './overlay-context.token'
 import { getOverlayId } from './overlay-id-generator'
-import { viewConfigDefault } from './overlay-view-config-default'
+
+const lerp = (min: number, max: number, percent: number): number => {
+  return min + (max - min) * (percent / 100)
+}
+
+const scaleAndTranslate = (scale: number, offset: number) =>
+  `scale3d(${scale}, ${scale}, ${scale}) translate3d(0, ${offset}%, 0)`
+
+const blur = (blur: number) => `blur(${blur}px)`
+
+const translate = (y: number) => `translate3d(0, ${y}%, 0)`
+
+const overlayBorderRadius = (radius: number) => `${radius}px ${radius}px 0 0`
+
+const isOverlayNode = (node: HTMLElement) =>
+  node.id === 'overlay-container' && node instanceof ScrollViewProviderElement
+
+let touchPositionMap: WeakMap<HTMLElement, object> = new WeakMap()
+
+const clearTouchPositionMap = () => {
+  touchPositionMap = new WeakMap()
+}
 
 export class OverlayMobileController implements IOverlayController {
-  private readonly borderRadius = '8px'
-  private readonly brightnessHalfView = '.7'
-  private readonly scale = '.9'
+  private readonly scale = 0.85
+  private readonly borderRadius = 8
   private readonly topOffsetPercent = -5
-  private readonly backgroundColor = 'var(--color-background-bg-active)'
-  private readonly backgroundColorDefault = 'var(--color-background-bg-body)'
+  private readonly overlayBorderRadius = 24
+  private readonly overlayBackgroundBlur = 1
 
-  private readonly container = getContainer()
+  private get container() {
+    return getContainer()
+  }
 
-  private readonly activeOverlayMap = new Map<number, ScrollViewProviderElement>()
+  private readonly activeOverlayMap = new Map<number, [ScrollViewProviderElement, HTMLElement]>()
   private readonly subscriptions = new Map<number, Subscription>()
+  private readonly overlayIdStack: number[] = []
 
   constructor(private readonly rootNodeName: string) {}
+
+  async init(): Promise<void> {}
 
   isOpenOverlay(overlayId: number): overlayId is number {
     return this.activeOverlayMap.has(overlayId)
   }
 
-  async open(
-    openTarget: TemplateResult | HTMLElement,
-    viewConfig: OverlayViewConfig = viewConfigDefault
-  ): Promise<number> {
-    const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-    const overlayContainer = this.createOverlayContainer(openTarget, viewConfig)
-    await asyncFrame()
-    const halfView = this.calculateIsHalfView(overlayContainer)
-    this.appendStyleBeforeTransition(rootNode)
-    await this.transition(overlayContainer, rootNode, false, halfView)
-    this.appendStyleAfterTransition(rootNode, false, halfView)
+  async open(openTarget: TemplateResult | HTMLElement): Promise<number> {
+    clearTouchPositionMap()
     const id = getOverlayId()
-    this.activeOverlayMap.set(id, overlayContainer)
-    this.subscribeOnEvents(id)
+    const previousOverlayId = this.findPreviousOverlayId(id)
+    const overlayBackground = this.createOverlayBackground(id)
+    const overlayContainer = this.createOverlayContainer(id, openTarget)
+    const rootNode = this.getRootNodeOrPreviousOverlay(previousOverlayId)
+    const previousOverlayBackground = this.getPreviousOverlayBackground(previousOverlayId)
+    await asyncFrame()
+    const fullOverlayView = this.calculateIsFullOverlayView(overlayContainer)
+    await this.transition(
+      'open',
+      fullOverlayView,
+      overlayContainer,
+      overlayBackground,
+      rootNode,
+      previousOverlayBackground
+    )
+    this.applyStyleAfterTransition(
+      'open',
+      fullOverlayView,
+      overlayContainer,
+      overlayBackground,
+      rootNode,
+      previousOverlayBackground
+    )
+    this.activeOverlayMap.set(id, [overlayContainer, overlayBackground])
+    this.overlayIdStack.unshift(id)
+    this.subscribe(id, overlayContainer, overlayBackground, rootNode, previousOverlayBackground)
     return id
   }
 
-  async close(overlayId: number): Promise<void> {
-    if (!this.activeOverlayMap.has(overlayId)) {
+  async close(id: number): Promise<void> {
+    if (!this.activeOverlayMap.has(id)) {
       return
     }
-    const overlayContainer = this.activeOverlayMap.get(overlayId)!
-    const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-    const halfView = this.calculateIsHalfView(overlayContainer)
-    await this.transition(overlayContainer, rootNode, true, halfView)
-    this.appendStyleAfterTransition(rootNode, true, halfView)
-    this.unsubscribeOnResize(overlayId)
+    const previousOverlayId = this.findPreviousOverlayId(id)
+    const [overlayContainer, overlayBackground] = this.activeOverlayMap.get(id)!
+    const rootNode = this.getRootNodeOrPreviousOverlay(previousOverlayId)
+    const previousOverlayBackground = this.getPreviousOverlayBackground(previousOverlayId)
+    const fullOverlayView = this.calculateIsFullOverlayView(overlayContainer)
+    await this.transition(
+      'close',
+      fullOverlayView,
+      overlayContainer,
+      overlayBackground,
+      rootNode,
+      previousOverlayBackground
+    )
+    this.applyStyleAfterTransition(
+      'close',
+      fullOverlayView,
+      overlayContainer,
+      overlayBackground,
+      rootNode,
+      previousOverlayBackground
+    )
+    this.unsubscribeOnResize(id)
+    this.activeOverlayMap.delete(id)
+    this.overlayIdStack.shift()
     overlayContainer.remove()
-    this.activeOverlayMap.delete(overlayId)
-    setBrowserMetaColorFilter(null)
+    overlayBackground.remove()
+    clearTouchPositionMap()
   }
 
-  private createOverlayContainer(
-    openTarget: TemplateResult | HTMLElement,
-    viewConfig: OverlayViewConfig
-  ) {
+  async closeAll() {
+    while (this.overlayIdStack.length > 0) {
+      const id = this.overlayIdStack[0]
+      await this.close(id)
+    }
+  }
+
+  private createOverlayContainer(id: number, openTarget: TemplateResult | HTMLElement) {
     const overlayContainer = document.createElement(ScrollViewProviderElement.tagName)
     const overlayIndex = this.activeOverlayMap.size + 1
-    const offsetStep = 2
+    const offsetStep = 5
     const innerHeight = isSafari() && isStandalone() ? window.innerHeight - 10 : window.innerHeight
     overlayContainer.maxHeight = ((100 - overlayIndex * offsetStep) * innerHeight) / 100
+    overlayContainer.id = 'overlay-container'
+    overlayContainer.setAttribute('overlay-id', id.toString())
     overlayContainer.setAttribute('overlay-index', overlayIndex.toString())
+    const [startKeyframe] = this.getStyleForOverlayContainer('open', overlayContainer)
+    const startPosition: Partial<CSSStyleDeclaration> =
+      startKeyframe as Partial<CSSStyleDeclaration>
     appendStyle(overlayContainer, {
       position: 'fixed',
       display: 'flex',
@@ -102,179 +163,426 @@ export class OverlayMobileController implements IOverlayController {
       alignItems: 'flex-end',
       bottom: '0',
       left: '0',
-      zIndex: '2000',
+      zIndex: `${2000 + id * 10 + 1}`,
       boxSizing: 'border-box',
-      borderTopLeftRadius: '24px',
-      borderTopRightRadius: '24px',
+      borderRadius: overlayBorderRadius(this.overlayBorderRadius),
+      // transition: 'all 10ms',
+      ...startPosition,
     })
     if (isSafari() && isStandalone()) {
       appendStyle(overlayContainer, {
         bottom: '10px',
       })
     }
-    new ContextProvider(overlayContainer, {
-      context: overlayContextToken,
-      initialValue: { config: viewConfig },
-    })
     render(html`${openTarget}`, overlayContainer)
     this.container.appendChild(overlayContainer)
     return overlayContainer
   }
 
-  private subscribeOnEvents(overlayId: number) {
-    const overlayContainer = this.activeOverlayMap.get(overlayId)!
-    const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-    const subscription = merge(
-      //
-      getMobileMatchMediaEmitter().pipe(tap(() => this.updatePosition(overlayId))),
-      //
-      resizeObserver(overlayContainer).pipe(
-        filter(() => {
-          const overlayIndex = Number(overlayContainer.getAttribute('overlay-index'))
-          return overlayIndex === this.activeOverlayMap.size
-        }),
-        map(() => this.calculateIsHalfView(overlayContainer)),
-        distinctUntilChanged(),
-        skip(1),
-        switchMap((halfView) => {
-          const rootNode = document.querySelector(this.rootNodeName) as HTMLElement
-          return this.transitionHalfView(rootNode, halfView)
-        })
-      ),
-      //
-      fromEvent(this.container, 'click').pipe(
-        filter(() => {
-          const overlayIndex = Number(overlayContainer.getAttribute('overlay-index'))
-          return overlayIndex === this.activeOverlayMap.size
-        }),
-        filter((event) => event.target === this.container),
-        tap(() => this.updatePosition(overlayId))
-      ),
-      //
-      fromEvent<TouchEvent>(overlayContainer, 'touchstart', { passive: true }).pipe(
-        filter(() => (overlayContainer.scrollTopFromConsumer ?? 0) === 0),
-        switchMap((startEvent) => {
-          const halfView = this.calculateIsHalfView(overlayContainer)
-          const overlayContainerHeight = overlayContainer.clientHeight
-          const swipeMaxForClose = 30
-          const startPoint = startEvent.touches[0].clientY
-          const bgColorStart = getCssValue(this.backgroundColor)
-          const bgColorEnd = getCssValue(this.backgroundColorDefault)
-          let currentDelta = 0
-          let currentDeltaPoint = 0
-          let closeReady = false
-          let scale = Number(this.scale)
-          let offset = this.topOffsetPercent
-          let bgColor = this.backgroundColor
-          return fromEvent<TouchEvent>(overlayContainer, 'touchmove', { passive: true }).pipe(
-            filter(() => !closeReady),
-            tap((event) => {
-              const currentPoint = event.touches[0].clientY
-              const deltaPoint = currentPoint - startPoint
-              const delta = (deltaPoint * 100) / overlayContainerHeight
-              if (delta < 0) return
-              if (delta > swipeMaxForClose) {
-                closeReady = true
-                this.updatePosition(overlayId)
-              }
-              currentDelta = delta
-              currentDeltaPoint = deltaPoint
-              overlayContainer.setAttribute('offset', delta.toString())
-              appendStyle(overlayContainer, {
-                transform: `translateY(${deltaPoint}px)`,
+  private createOverlayBackground(id: number) {
+    const overlayBackground = document.createElement('div') as HTMLElement
+    overlayBackground.id = 'overlay-background'
+    overlayBackground.setAttribute('overlay-background-id', id.toString())
+    const [start] = this.getStyleForOverlayBackground('open')
+    appendStyle(overlayBackground, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100vw',
+      height: '100vh',
+      background: 'rgba(0, 0, 0, 0.4)',
+      zIndex: `${2000 + id * 10}`,
+      ...start,
+    })
+    this.container.appendChild(overlayBackground)
+    return overlayBackground
+  }
+
+  private async transition(
+    direction: 'open' | 'close',
+    fullOverlayView: boolean,
+    overlayContainer: HTMLElement,
+    overlayBackground: HTMLElement,
+    rootNodeOrPreviousOverlay: HTMLElement,
+    previousOverlayBackground: HTMLElement | null
+  ) {
+    const animationOptions = this.getDefaultAnimationOptions()
+    const overlayContainerStyle = this.getStyleForOverlayContainer(
+      direction,
+      overlayContainer
+    ) as Keyframe[]
+    const overlayBackgroundStyle = this.getStyleForOverlayBackground(direction) as Keyframe[]
+    const rootNodeOrPreviousOverlayStyle = this.getStyleForRootNodeOrPreviousOverlay(
+      direction,
+      fullOverlayView,
+      rootNodeOrPreviousOverlay
+    ) as Keyframe[]
+    const previousOverlayBackgroundStyle = this.getStyleForPreviousOverlayBackground(
+      direction
+    ) as Keyframe[]
+    const resetMetaColor = direction === 'close' && this.activeOverlayMap.size === 1
+    await Promise.all([
+      this.updateBrowserMetaColor(fullOverlayView, resetMetaColor),
+      overlayContainer.animate(overlayContainerStyle, animationOptions).finished,
+      overlayBackground.animate(overlayBackgroundStyle, animationOptions).finished,
+      rootNodeOrPreviousOverlay.animate(rootNodeOrPreviousOverlayStyle, animationOptions).finished,
+      previousOverlayBackground
+        ? previousOverlayBackground.animate(previousOverlayBackgroundStyle, animationOptions)
+            .finished
+        : null,
+    ])
+  }
+
+  private async transitionFullView(
+    direction: 'open' | 'close',
+    fullOverlayView: boolean,
+    rootNodeOrPreviousOverlay: HTMLElement
+  ) {
+    const animationOptions = this.getDefaultAnimationOptions()
+    const rootNodeOrPreviousOverlayStyle = this.getStyleForRootNodeOrPreviousOverlay(
+      direction,
+      fullOverlayView,
+      rootNodeOrPreviousOverlay
+    ) as Keyframe[]
+    await rootNodeOrPreviousOverlay.animate(rootNodeOrPreviousOverlayStyle, animationOptions)
+      .finished
+  }
+
+  private applyStyleAfterTransition(
+    direction: 'open' | 'close',
+    fullOverlayView: boolean,
+    overlayContainer: HTMLElement,
+    overlayBackground: HTMLElement,
+    rootNodeOrPreviousOverlay: HTMLElement,
+    previousOverlayBackground: HTMLElement | null
+  ) {
+    const [, overlayContainerFinishStyle] = this.getStyleForOverlayContainer(
+      direction,
+      overlayContainer
+    )
+    const [, overlayBackgroundFinishStyle] = this.getStyleForOverlayBackground(direction)
+    const [, rootNodeOrPreviousOverlayFinishStyle] = this.getStyleForRootNodeOrPreviousOverlay(
+      direction,
+      fullOverlayView,
+      rootNodeOrPreviousOverlay,
+      true
+    )
+    appendStyle(overlayContainer, {
+      ...overlayContainerFinishStyle,
+    })
+    appendStyle(overlayBackground, {
+      ...overlayBackgroundFinishStyle,
+    })
+    appendStyle(rootNodeOrPreviousOverlay, {
+      ...rootNodeOrPreviousOverlayFinishStyle,
+    })
+    if (previousOverlayBackground) {
+      const [, previousOverlayBackgroundFinishStyle] =
+        this.getStyleForPreviousOverlayBackground(direction)
+      appendStyle(previousOverlayBackground, {
+        ...previousOverlayBackgroundFinishStyle,
+      })
+    }
+  }
+
+  private applyStyleAfterTransitionFullView(
+    direction: 'open' | 'close',
+    fullOverlayView: boolean,
+    rootNodeOrPreviousOverlay: HTMLElement
+  ) {
+    const [, rootNodeOrPreviousOverlayFinishStyle] = this.getStyleForRootNodeOrPreviousOverlay(
+      direction,
+      fullOverlayView,
+      rootNodeOrPreviousOverlay,
+      true
+    )
+    appendStyle(rootNodeOrPreviousOverlay, {
+      ...rootNodeOrPreviousOverlayFinishStyle,
+    })
+  }
+
+  private getStyleForOverlayContainer(direction: 'open' | 'close', node: HTMLElement) {
+    const { position } = (touchPositionMap.get(node) as { position?: number }) ?? {}
+
+    const start: Record<typeof direction, Record<string, string>> = {
+      open: { transform: translate(position ?? 100) },
+      close: { transform: translate(position ?? 0) },
+    }
+
+    const finish: Record<typeof direction, Record<string, string>> = {
+      open: { transform: translate(0) },
+      close: { transform: translate(100) },
+    }
+
+    return [start[direction], finish[direction]]
+  }
+
+  private getStyleForOverlayBackground(direction: 'open' | 'close') {
+    const start: Record<typeof direction, Record<string, string>> = {
+      open: { backdropFilter: blur(0), opacity: '0' },
+      close: {
+        backdropFilter: blur(this.overlayBackgroundBlur),
+        opacity: '1',
+      },
+    }
+    const finish: Record<typeof direction, Record<string, string>> = {
+      open: start.close,
+      close: start.open,
+    }
+    return [start[direction], finish[direction]]
+  }
+
+  private getStyleForRootNodeOrPreviousOverlay(
+    direction: 'open' | 'close',
+    fullOverlayView: boolean,
+    node: HTMLElement,
+    styleForAppend = false
+  ) {
+    if (!fullOverlayView) {
+      return [{}, {}]
+    }
+
+    const { scale, offset } = this.calculateTransform(node)
+    const stored = (touchPositionMap.get(node) as {
+      scale: number
+      offset: number
+      borderRadius: number
+    }) ?? { scale: 1, offset: 0, borderRadius: 0 }
+
+    const isOverlay = isOverlayNode(node)
+
+    const baseTransform = styleForAppend ? '' : scaleAndTranslate(1, 0)
+    const baseBorderRadius = isOverlay
+      ? overlayBorderRadius(this.overlayBorderRadius)
+      : overlayBorderRadius(0)
+
+    const storageTransform =
+      stored.scale && stored.offset ? scaleAndTranslate(stored.scale, stored.offset) : null
+    const storageBorderRadius = stored.borderRadius
+      ? overlayBorderRadius(stored.borderRadius)
+      : null
+
+    const start: Record<typeof direction, Record<string, string>> = {
+      open: {
+        transform: storageTransform ?? baseTransform,
+        borderRadius: storageBorderRadius ?? baseBorderRadius,
+      },
+      close: {
+        transform: storageTransform ?? scaleAndTranslate(scale, offset),
+        borderRadius: storageBorderRadius ?? `${this.borderRadius}px`,
+      },
+    }
+
+    const finish: Record<typeof direction, Record<string, string>> = {
+      open: {
+        transform: scaleAndTranslate(scale, offset),
+        borderRadius: `${this.borderRadius}px`,
+      },
+      close: {
+        transform: baseTransform,
+        borderRadius: baseBorderRadius,
+      },
+    }
+
+    return [start[direction], finish[direction]]
+  }
+
+  private getStyleForPreviousOverlayBackground(direction: 'open' | 'close') {
+    const [start, finish] = this.getStyleForOverlayBackground(direction)
+    return [finish, start]
+  }
+
+  private calculateTransform(node: HTMLElement) {
+    const index = Number(node.getAttribute('overlay-index'))
+    return {
+      scale: this.scale + index * 0.02,
+      offset: this.topOffsetPercent - index * 2,
+    }
+  }
+
+  private getRootNodeOrPreviousOverlay(id: number | null): HTMLElement {
+    if (id === null) {
+      return document.querySelector(this.rootNodeName) as HTMLElement
+    }
+    const frontNode = this.container.querySelector(
+      `#overlay-container[overlay-id="${id}"]`
+    ) as HTMLElement | null
+    if (!frontNode) {
+      return document.querySelector(this.rootNodeName) as HTMLElement
+    }
+    return frontNode
+  }
+
+  private getPreviousOverlayBackground(id: number | null): HTMLElement | null {
+    if (id === null) return null
+    return this.container.querySelector(
+      `#overlay-background[overlay-background-id="${id}"]`
+    ) as HTMLElement | null
+  }
+
+  private findPreviousOverlayId(id: number): number | null {
+    const index = this.overlayIdStack.indexOf(id)
+    if (index === -1) return this.overlayIdStack[0] ?? null
+    return this.overlayIdStack[index + 1] ?? null
+  }
+
+  private subscribe(
+    id: number,
+    overlayContainer: ScrollViewProviderElement,
+    overlayBackground: HTMLElement,
+    rootNodeOrPreviousOverlay: HTMLElement,
+    previousOverlayBackground: HTMLElement | null
+  ) {
+    const closeIfChangeMobileView$ = getMobileMatchMediaEmitter().pipe(
+      skip(1),
+      tap(() => this.close(id))
+    )
+    const changeFullView$ = resizeObserver(overlayContainer).pipe(
+      filter(() => this.overlayIdStack[0] === id),
+      map(() => this.calculateIsFullOverlayView(overlayContainer)),
+      distinctUntilChanged(),
+      pairwise(),
+      switchMap(async ([prevFullOverlayView, currFullOverlayView]) => {
+        const direction = prevFullOverlayView ? 'close' : 'open'
+        const fullOverlayView = prevFullOverlayView ? prevFullOverlayView : currFullOverlayView
+        await this.transitionFullView(direction, fullOverlayView, rootNodeOrPreviousOverlay)
+        this.applyStyleAfterTransitionFullView(
+          direction,
+          fullOverlayView,
+          rootNodeOrPreviousOverlay
+        )
+      })
+    )
+    const closeOnClickBackground$ = fromEvent(overlayBackground, 'click').pipe(
+      tap(() => this.close(id))
+    )
+
+    const touch$ = fromEvent<TouchEvent>(overlayContainer, 'touchstart', { passive: true }).pipe(
+      filter(() => (overlayContainer.scrollTopFromConsumer ?? 0) === 0),
+      switchMap((startEvent) => {
+        const fullView = this.calculateIsFullOverlayView(overlayContainer)
+        const { scale, offset } = this.calculateTransform(rootNodeOrPreviousOverlay)
+        const overlayContainerHeight = overlayContainer.clientHeight
+        const startPoint = startEvent.touches[0].clientY
+        const swipeMaxForClose = 30
+        let currentDelta = 0
+        let closeReady = false
+        return fromEvent<TouchEvent>(overlayContainer, 'touchmove', { passive: true }).pipe(
+          filter(() => !closeReady),
+          tap(async (event: TouchEvent) => {
+            const currentPoint = event.touches[0].clientY
+            const deltaPoint = currentPoint - startPoint
+            const delta = (deltaPoint * 100) / overlayContainerHeight
+            if (delta < 0) return
+            if (delta >= swipeMaxForClose) {
+              closeReady = true
+              return await this.close(id)
+            }
+            currentDelta = delta
+            const lerpBlur = lerp(this.overlayBackgroundBlur, 0, delta)
+            const lerpOpacity = lerp(1, 0, delta)
+            appendStyle(overlayContainer, {
+              transform: translate(delta),
+            })
+            appendStyle(overlayBackground, {
+              backdropFilter: blur(lerpBlur),
+              opacity: lerpOpacity.toString(),
+            })
+            touchPositionMap.set(overlayContainer, { position: delta })
+            touchPositionMap.set(overlayBackground, { blur: lerpBlur, opacity: lerpOpacity })
+            if (previousOverlayBackground) {
+              const lerpBlurPreviousOverlayBackground = lerp(0, this.overlayBackgroundBlur, delta)
+              const lerpOpacityPreviousOverlayBackground = lerp(0, 1, delta)
+              appendStyle(previousOverlayBackground, {
+                backdropFilter: blur(lerpBlurPreviousOverlayBackground),
+                opacity: lerpOpacityPreviousOverlayBackground.toString(),
               })
-              if (!halfView) {
-                scale = (delta * (1 - Number(this.scale))) / swipeMaxForClose + Number(this.scale)
-                offset = this.topOffsetPercent - (delta * this.topOffsetPercent) / swipeMaxForClose
-                bgColor = interpolateColorRange(bgColorStart, bgColorEnd, 0, 100, delta)
-                rootNode.setAttribute('scale', scale.toString())
-                rootNode.setAttribute('offset', offset.toString())
-                rootNode.setAttribute('bgColor', bgColor.toString())
-                appendStyle(rootNode, {
-                  transform: `scale(${scale}) translate3d(0, ${offset}%, 0)`,
-                  backgroundColor: bgColor,
-                })
-              }
-            }),
-            takeUntil(
-              merge(
-                fromEvent<TouchEvent>(overlayContainer, 'touchend', { passive: true }),
-                fromEvent<TouchEvent>(overlayContainer, 'touchcancel', { passive: true })
-              ).pipe(
-                switchMap(async (endEvent) => {
-                  if (currentDeltaPoint === 0) return
-                  if (
-                    endEvent.timeStamp - startEvent.timeStamp < 300 &&
-                    currentDelta > swipeMaxForClose / 2
-                  ) {
-                    this.updatePosition(overlayId)
-                    return
-                  }
-                  if (closeReady) return
-                  await Promise.all([
-                    overlayContainer.animate(
-                      [
-                        { transform: `translateY(${currentDeltaPoint}px)` },
-                        { transform: `translateY(0px)` },
-                      ],
-                      this.getDefaultAnimationOptions()
-                    ).finished,
-                    !halfView
-                      ? rootNode.animate(
-                          [
-                            {
-                              transform: `scale(${scale}) translate3d(0, ${offset}%, 0)`,
-                              backgroundColor: bgColor,
-                            },
-                            {
-                              transform: `scale(${this.scale}) translate3d(0, ${this.topOffsetPercent}%, 0)`,
-                              backgroundColor: this.backgroundColor,
-                            },
-                          ],
-                          this.getDefaultAnimationOptions()
-                        ).finished
-                      : Promise.resolve(),
-                  ])
-                  overlayContainer.removeAttribute('offset')
-                  appendStyle(overlayContainer, {
-                    transform: ``,
-                  })
-                  if (!halfView) {
-                    rootNode.removeAttribute('scale')
-                    rootNode.removeAttribute('offset')
-                    rootNode.removeAttribute('bgColor')
-                    appendStyle(rootNode, {
-                      transform: `scale(${this.scale}) translate3d(0, ${this.topOffsetPercent}%, 0)`,
-                      backgroundColor: this.backgroundColor,
-                    })
-                  }
-                })
+              touchPositionMap.set(previousOverlayBackground, {
+                blur: lerpBlurPreviousOverlayBackground,
+                opacity: lerpOpacityPreviousOverlayBackground,
+              })
+            }
+            if (fullView) {
+              const isOverlay = isOverlayNode(rootNodeOrPreviousOverlay)
+              const lerpScale = lerp(scale, 1, delta)
+              const lerpOffset = lerp(offset, 0, delta)
+              const lerpBorder = lerp(
+                this.borderRadius,
+                isOverlay ? this.overlayBorderRadius : 0,
+                delta
               )
+              appendStyle(rootNodeOrPreviousOverlay, {
+                transform: scaleAndTranslate(lerpScale, lerpOffset),
+                borderRadius: overlayBorderRadius(lerpBorder),
+              })
+              touchPositionMap.set(rootNodeOrPreviousOverlay, {
+                scale: lerpScale,
+                offset: lerpOffset,
+                borderRadius: lerpBorder,
+              })
+            }
+          }),
+          takeUntil(
+            merge(
+              fromEvent<TouchEvent>(overlayContainer, 'touchend', { passive: true }),
+              fromEvent<TouchEvent>(overlayContainer, 'touchcancel', { passive: true })
+            ).pipe(
+              filter(() => !closeReady),
+              tap(async (endEvent: TouchEvent) => {
+                if (currentDelta === 0) return
+                if (
+                  endEvent.timeStamp - startEvent.timeStamp < 300 &&
+                  currentDelta > swipeMaxForClose / 2
+                ) {
+                  return await this.close(id)
+                }
+                await this.transition(
+                  'open',
+                  fullView,
+                  overlayContainer,
+                  overlayBackground,
+                  rootNodeOrPreviousOverlay,
+                  previousOverlayBackground
+                )
+                this.applyStyleAfterTransition(
+                  'open',
+                  fullView,
+                  overlayContainer,
+                  overlayBackground,
+                  rootNodeOrPreviousOverlay,
+                  previousOverlayBackground
+                )
+              })
             )
           )
-        })
-      )
-    ).subscribe()
+        )
+      })
+    )
 
-    this.subscriptions.set(overlayId, subscription)
+    const subscription = merge(
+      closeIfChangeMobileView$,
+      changeFullView$,
+      closeOnClickBackground$,
+      touch$
+    ).subscribe()
+    this.subscriptions.set(id, subscription)
   }
 
   private unsubscribeOnResize(overlayId: number) {
-    if (!this.subscriptions.has(overlayId)) return
-    const subscription = this.subscriptions.get(overlayId)!
-    if (subscription.closed) return
-    subscription.unsubscribe()
+    try {
+      if (!this.subscriptions.has(overlayId)) return
+      const subscription = this.subscriptions.get(overlayId)!
+      if (subscription.closed) return
+      subscription.unsubscribe()
+    } finally {
+      this.subscriptions.delete(overlayId)
+    }
   }
 
-  private updatePosition(overlayId: number) {
-    if (!this.subscriptions.has(overlayId)) return
-    this.close(overlayId).catch()
-  }
-
-  private calculateIsHalfView(element: ScrollViewProviderElement): boolean {
+  private calculateIsFullOverlayView(element: ScrollViewProviderElement): boolean {
     const height = element.clientHeight
     const maxHeight = element.maxHeight ?? 0
-    return (height * 100) / maxHeight < 90
+    return (height * 100) / maxHeight >= 90
   }
 
   private getDefaultAnimationOptions() {
@@ -284,130 +592,25 @@ export class OverlayMobileController implements IOverlayController {
     }
   }
 
-  private async transition(
-    overlayContainer: HTMLElement,
-    rootNode: HTMLElement,
-    isBack: boolean,
-    halfView: boolean
-  ) {
-    const scale = rootNode.getAttribute('scale') ?? this.scale
-    const brightnessHalfView = this.brightnessHalfView
-    const offset = Number(rootNode.getAttribute('offset') ?? this.topOffsetPercent)
-    const backgroundColor = rootNode.getAttribute('bgColor') ?? this.backgroundColor
-    const mainOverlayOffset = overlayContainer.getAttribute('offset') ?? '0'
-    const transitionOverlayContainerStart = () => ({
-      transform: `translate3d(0, ${isBack ? mainOverlayOffset : '100'}%, 0)`,
+  private async updateBrowserMetaColor(fullOverlayView: boolean, resetColor: boolean) {
+    appendStyle(document.body, {
+      backgroundColor: resetColor ? '' : 'var(--color-background-bg-overlay)',
     })
-    const transitionOverlayContainerEnd = () => ({
-      transform: `translate3d(0, ${!isBack ? mainOverlayOffset : '100'}%, 0)`,
-    })
-    const transitionRootNodeStart = () => ({
-      filter: halfView ? `brightness(${isBack ? brightnessHalfView : '1'})` : '',
-      transform: halfView
-        ? ''
-        : `scale(${isBack ? scale : '1'}) translate3d(0, ${isBack ? offset : '0'}%, 0)`,
-      borderRadius: halfView ? '' : isBack ? this.borderRadius : '0',
-      backgroundColor: halfView ? '' : isBack ? backgroundColor : this.backgroundColorDefault,
-    })
-    const transitionRootNodeEnd = () => ({
-      filter: halfView ? `brightness(${!isBack ? brightnessHalfView : '1'})` : '',
-      transform: halfView
-        ? ''
-        : `scale(${!isBack ? scale : '1'}) translate3d(0, ${!isBack ? offset : '0'}%, 0)`,
-      borderRadius: halfView ? '' : !isBack ? this.borderRadius : '0',
-      backgroundColor: halfView ? '' : !isBack ? backgroundColor : this.backgroundColorDefault,
-    })
-    this.changeBrowserMetaColor(halfView, isBack)
-    return await Promise.all([
-      overlayContainer.animate(
-        [transitionOverlayContainerStart(), transitionOverlayContainerEnd()],
-        this.getDefaultAnimationOptions()
-      ).finished,
-      rootNode.animate(
-        [transitionRootNodeStart(), transitionRootNodeEnd()],
-        this.getDefaultAnimationOptions()
-      ).finished,
-    ])
-  }
-
-  private async transitionHalfView(rootNode: HTMLElement, isBack: boolean) {
-    const scale = this.scale
-    const brightnessHalfView = this.brightnessHalfView
-    const offset = this.topOffsetPercent
-    const transitionRootNodeStart = () => ({
-      filter: `brightness(${!isBack ? brightnessHalfView : '1'})`,
-      transform: `scale(${isBack ? scale : '1'}) translate3d(0, ${isBack ? offset : '0'}%, 0)`,
-      borderRadius: isBack ? this.borderRadius : '0',
-      backgroundColor: isBack ? this.backgroundColor : this.backgroundColorDefault,
-    })
-    const transitionRootNodeEnd = () => ({
-      filter: `brightness(${isBack ? brightnessHalfView : '1'})`,
-      transform: `scale(${!isBack ? scale : '1'}) translate3d(0, ${!isBack ? offset : '0'}%, 0)`,
-      borderRadius: !isBack ? this.borderRadius : '0',
-      backgroundColor: !isBack ? this.backgroundColor : this.backgroundColorDefault,
-    })
-    this.changeBrowserMetaColor(isBack, false)
-    await rootNode.animate(
-      [transitionRootNodeStart(), transitionRootNodeEnd()],
-      this.getDefaultAnimationOptions()
-    ).finished
-    appendStyle(rootNode, transitionRootNodeEnd())
-  }
-
-  private appendStyleBeforeTransition(rootNode: HTMLElement) {
-    appendStyle(rootNode, {
-      willChange: 'filter, transform',
-      overflow: 'hidden',
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      right: '0',
-      bottom: '0',
-      pointerEvents: 'none',
-    })
-    rootNode.removeAttribute('scale')
-    rootNode.removeAttribute('offset')
-    rootNode.removeAttribute('bgColor')
-  }
-
-  private appendStyleAfterTransition(rootNode: HTMLElement, isBack: boolean, halfView: boolean) {
-    if (isBack) {
-      return this.resetRootNodeStyle(rootNode)
-    }
-    appendStyle(rootNode, {
-      filter: halfView ? `brightness(${this.brightnessHalfView})` : '',
-      transform: halfView
-        ? ''
-        : `scale(${this.scale}) translate3d(0, ${this.topOffsetPercent}%, 0)`,
-      borderRadius: halfView ? '' : this.borderRadius,
-      backgroundColor: halfView ? '' : this.backgroundColor,
-    })
-  }
-
-  private changeBrowserMetaColor(halfView: boolean, isBack: boolean) {
-    setBrowserMetaColorFilter((color: string) => {
-      if (halfView && !isBack) {
-        return applyColorBrightness(color, parseFloat(this.brightnessHalfView))
-      }
-      return color
-    })
-  }
-
-  private resetRootNodeStyle(rootNode: HTMLElement) {
-    appendStyle(rootNode, {
-      filter: '',
-      transform: '',
-      position: '',
-      willChange: '',
-      overflow: '',
-      top: '',
-      left: '',
-      right: '',
-      bottom: '',
-      zIndex: '',
-      pointerEvents: '',
-      backgroundColor: '',
-      borderRadius: '',
-    })
+    await setBrowserMetaColorFilter(
+      resetColor
+        ? null
+        : (color: string, isDarkTheme: boolean) => {
+            if (isDarkTheme && fullOverlayView) {
+              return applyColorBrightness('#ffffff', 0.6)
+            }
+            if (!isDarkTheme && fullOverlayView) {
+              return applyColorBrightness('#000000', 0.6)
+            }
+            if (!fullOverlayView) {
+              return applyColorBrightness(color, 0.6)
+            }
+            return color
+          }
+    )
   }
 }

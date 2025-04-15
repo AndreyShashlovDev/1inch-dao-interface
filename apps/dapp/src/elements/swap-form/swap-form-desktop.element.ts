@@ -1,13 +1,5 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import {
-  AccentColors,
-  IApplicationContext,
-  ISwapContext,
-  SwapSnapshot,
-  TokenType,
-} from '@1inch-community/models'
+import { AccentColors, ISwapContext, SwapSnapshot, TokenType } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
-import { OverlayController } from '@1inch-community/ui-components/overlay'
 import { SceneController } from '@1inch-community/ui-components/scene'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
@@ -16,6 +8,7 @@ import { classMap } from 'lit/directives/class-map.js'
 import { when } from 'lit/directives/when.js'
 import { swapFormStyle } from './swap-form.style'
 
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   registerShadowDomElement,
   subscribe,
@@ -41,8 +34,7 @@ export class SwapFormDesktopElement extends LitElement {
   @consume({ context: SwapContextToken })
   swapContext!: ISwapContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @state()
   private accessor isRainbowTheme = false
@@ -51,13 +43,11 @@ export class SwapFormDesktopElement extends LitElement {
 
   private swapSnapshot: SwapSnapshot | null = null
 
-  private readonly overlay = new OverlayController('app-root', () => this)
-
   private connectWalletViewId: number | null = null
 
   private readonly desktopScene = new SceneController('swapForm', {
     swapForm: { minWidth: 556, maxWidth: 556, maxHeight: 625, lazyRender: true },
-    selectToken: { minWidth: 556, maxWidth: 556, maxHeight: 680 },
+    selectToken: { minWidth: 556, maxWidth: 556, maxHeight: 750 },
     confirmSwap: { minWidth: 556, maxWidth: 556, maxHeight: 680 },
     settings: { minWidth: 556, maxWidth: 556, maxHeight: 900, lazyRender: true },
   })
@@ -98,7 +88,6 @@ export class SwapFormDesktopElement extends LitElement {
             swapForm: () => html`
               <inch-swap-form
                 @confirmSwap="${(event: CustomEvent) => this.onOpenConfirmSwap(event)}"
-                @changeChain="${() => this.onOpenChangeChainView()}"
                 @openTokenSelector="${(event: CustomEvent) => this.onOpenSelectToken(event)}"
                 @connectWallet="${() => this.onOpenConnectWalletView()}"
               >
@@ -151,31 +140,27 @@ export class SwapFormDesktopElement extends LitElement {
     await this.desktopScene.nextTo('confirmSwap')
   }
 
-  private async onOpenChangeChainView() {
-    const id = await this.overlay.open(html`
-      <inch-chain-selector-list
-        showShadow
-        @closeCard="${() => this.overlay.close(id)}"
-        .wallet="${this.applicationContext.wallet}"
-      ></inch-chain-selector-list>
-    `)
-  }
-
   private async onOpenConnectWalletView() {
     const close = () => {
       if (!this.connectWalletViewId) return
-      this.overlay.close(this.connectWalletViewId)
+      this.applicationContext.value.overlay.close(this.connectWalletViewId)
       this.connectWalletViewId = null
     }
-    if (this.connectWalletViewId && this.overlay.isOpenOverlay(this.connectWalletViewId)) {
+    if (
+      this.connectWalletViewId &&
+      this.applicationContext.value.overlay.isOpenOverlay(this.connectWalletViewId)
+    ) {
       close()
       return
     }
-    this.connectWalletViewId = await this.overlay.open(html`
-      <inch-wallet-manage
-        @closeCard="${close}"
-        .controller="${this.applicationContext.wallet}"
-      ></inch-wallet-manage>
-    `)
+    this.connectWalletViewId = await this.applicationContext.value.overlay.open(
+      html`
+        <inch-wallet-manage
+          @closeCard="${close}"
+          .controller="${this.applicationContext.value.wallet}"
+        ></inch-wallet-manage>
+      `,
+      { targetFactory: () => this }
+    )
   }
 }

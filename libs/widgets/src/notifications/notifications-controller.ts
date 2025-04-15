@@ -174,7 +174,7 @@ export class NotificationsManager
       })
       await this.cache.set(id, recordString)
     } catch (error) {
-      console.warn(error)
+      console.error(error)
     }
   }
 

@@ -1,9 +1,9 @@
 import { IApplicationContext, ILazyValue } from '@1inch-community/models'
 import { lazyValue } from './lazy-value'
 
-class ApplicationContextInitializedError extends Error {
+export class ApplicationContextInitializedError extends Error {
   constructor(initPoint?: unknown) {
-    super('ApplicationContext not initialized. Init point: ' + initPointToString(initPoint))
+    super('ApplicationContext not initialized. query point: ' + initPointToString(initPoint))
   }
 }
 

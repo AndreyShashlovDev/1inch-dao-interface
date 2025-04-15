@@ -1,4 +1,5 @@
-import { lazyAppContext, objectsEqual } from '@1inch-community/core/utils'
+import { lazyAppContext } from '@1inch-community/core/lazy'
+import { objectsEqual } from '@1inch-community/core/utils'
 import {
   ChainId,
   EIP6963ProviderDetail,

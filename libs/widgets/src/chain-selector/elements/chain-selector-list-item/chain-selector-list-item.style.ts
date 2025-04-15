@@ -6,6 +6,11 @@ export const chainSelectorListItemStyle = css`
     width: 100%;
     height: 100%;
     cursor: pointer;
+    display: block;
+  }
+
+  :host(:not(:last-child)) {
+    margin-bottom: 8px;
   }
 
   .container {

@@ -1,7 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { formatNumber } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { observe, translate } from '@1inch-community/core/lit-utils'
-import { IApplicationContext, ISwapContext } from '@1inch-community/models'
+import { ISwapContext } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
@@ -21,8 +21,7 @@ export class BalanceElement extends LitElement {
   @consume({ context: SwapContextToken })
   context?: ISwapContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   readonly balance$ = defer(() => {
     if (!this.context) throw new Error('')
@@ -33,7 +32,7 @@ export class BalanceElement extends LitElement {
       this.context.chainId$,
       this.context.chainId$.pipe(
         switchMap((chainId) =>
-          chainId ? this.applicationContext.onChain.getBlockEmitter(chainId) : []
+          chainId ? this.applicationContext.value.onChain.getBlockEmitter(chainId) : []
         ),
         startWith(null)
       ),
@@ -42,7 +41,7 @@ export class BalanceElement extends LitElement {
     filter(([address]) => !!address),
     switchMap(async ([walletAddress, token, chainId]) => {
       if (!walletAddress || !token || !chainId) return html`<br />`
-      const balanceRecord = await this.applicationContext.tokenStorage.getTokenBalance(
+      const balanceRecord = await this.applicationContext.value.tokenStorage.getTokenBalance(
         chainId,
         token.address,
         walletAddress

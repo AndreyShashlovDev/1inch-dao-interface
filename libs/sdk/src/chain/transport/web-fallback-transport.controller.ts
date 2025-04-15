@@ -1,7 +1,7 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
-import { IApplicationContext } from '@1inch-community/models'
+import { lazyAppContext } from '@1inch-community/core/lazy'
+import { IApplicationContext, InitializingEntity } from '@1inch-community/models'
 import { Chain, createTransport, http, Transport, webSocket } from 'viem'
-import { getRPC } from '../transport-map'
 
 interface RpcConfig {
   batchSize: number
@@ -27,22 +27,23 @@ const defaultRPCConfig: RpcConfig = {
   batchSize: 100,
 }
 
-export class WebFallbackTransportController {
+export class WebFallbackTransportController implements InitializingEntity {
   private readonly httpTransportSet = new Set<TransportHolder>()
   private readonly wsTransportSet = new Set<TransportHolder>()
+  private readonly context = lazyAppContext('WebFallbackTransportController')
 
-  constructor(
-    private readonly context: IApplicationContext,
-    private readonly chain: Chain
-  ) {
-    this.initRPC()
+  constructor(private readonly chain: Chain) {}
+
+  async init(context: IApplicationContext) {
+    this.context.set(context)
+    await this.initRPC()
   }
 
   @CacheActivePromise()
   async benchMartTransport() {
     await Promise.all([
-      ...[...this.httpTransportSet.values()].map(benchMartTransport),
-      ...[...this.wsTransportSet.values()].map(benchMartTransport),
+      ...this.httpTransportSet.values().toArray().map(benchMartTransport),
+      ...this.wsTransportSet.values().toArray().map(benchMartTransport),
     ])
   }
 
@@ -82,8 +83,8 @@ export class WebFallbackTransportController {
     }
   }
 
-  private initRPC() {
-    const { http, ws } = getRPC(this.chain)
+  private async initRPC() {
+    const { http, ws } = await import('../transport-map').then((m) => m.getRPC(this.chain.id))
     const httpTransportHolderList = buildTransportHolderList(this.chain, http)
     const wsTransportHolderList = buildTransportHolderList(this.chain, ws)
     httpTransportHolderList.forEach((item) => this.httpTransportSet.add(item))
@@ -97,34 +98,33 @@ export class WebFallbackTransportController {
     }
 
     this.httpTransportSet.forEach(
-      (transport) =>
-        (bestTransport.http = this.compareTransportHolder(transport, bestTransport.http))
+      (transport) => (bestTransport.http = compareTransportHolder(transport, bestTransport.http))
     )
     this.wsTransportSet.forEach(
-      (transport) => (bestTransport.ws = this.compareTransportHolder(transport, bestTransport.ws))
+      (transport) => (bestTransport.ws = compareTransportHolder(transport, bestTransport.ws))
     )
 
     return bestTransport
   }
+}
 
-  private compareTransportHolder(
-    th1: TransportHolder,
-    th2?: TransportHolder
-  ): TransportHolder | undefined {
-    if (!th1.success) {
-      return th2
-    }
-    if (th2 === undefined) {
-      return th1
-    }
-    if (th2.countErrors > th1.countErrors) {
-      return th1
-    }
-    if (th2.time > th1.time) {
-      return th1
-    }
+function compareTransportHolder(
+  th1: TransportHolder,
+  th2?: TransportHolder
+): TransportHolder | undefined {
+  if (!th1.success) {
     return th2
   }
+  if (th2 === undefined) {
+    return th1
+  }
+  if (th2.countErrors > th1.countErrors) {
+    return th1
+  }
+  if (th2.time > th1.time) {
+    return th1
+  }
+  return th2
 }
 
 async function request(
@@ -150,9 +150,22 @@ async function benchMartTransport(transportHolder: TransportHolder): Promise<voi
   const start = Date.now()
   let end: number
   try {
-    transportHolder.success = await _transport.request({ method: 'net_listening' })
+    transportHolder.success = await _transport
+      .request({ method: 'net_listening' })
+      .catch(() => _transport.request({ method: 'web3_clientVersion' }))
+      .catch(() => _transport.request({ method: 'eth_blockNumber' }))
+      .catch(() => _transport.request({ method: 'net_version' }))
+      .catch(() => _transport.request({ method: 'eth_syncing' }))
+      .then((result) => {
+        return !!result
+      })
   } catch {
     transportHolder.success = false
+    // console.groupCollapsed('RPC bench mart error', rpc)
+    // console.error('chain: ', chain.id, chain.name)
+    // console.error('rpc: ', rpc)
+    // console.error(error)
+    // console.groupEnd()
   } finally {
     end = Date.now()
     transportHolder.time = end - start

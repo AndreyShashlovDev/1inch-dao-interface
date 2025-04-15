@@ -1,6 +1,6 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
+import { lazyAppContext } from '@1inch-community/core/lazy'
 import { BigFloat } from '@1inch-community/core/math'
-import { lazyAppContext } from '@1inch-community/core/utils'
 import {
   ChainId,
   IApplicationContext,
@@ -8,15 +8,20 @@ import {
   IBigFloat,
   ICrossChainTokensBindingRecord,
   IToken,
+  ITokenDto,
   ITokenListViewData,
   ITokenPriceRecord,
   ITokenRecord,
   ITokenStorage,
+  ITokenV2Dto,
+  ProxyResultBalance,
+  ProxyResultTokenPrice,
   TokenRecordId,
 } from '@1inch-community/models'
 import { from, switchMap } from 'rxjs'
 import { Address, isAddressEqual } from 'viem'
-import { getChainIdList } from '../../chain/chain-id-list'
+import { getChainIdList, isChainId, parseChainId } from '../../chain'
+import { buildBalanceId, buildTokenId, buildTokenPriceId, destructuringId } from '../token-id'
 import { TokenSchema } from './token.schema'
 
 export class TokenController implements ITokenStorage {
@@ -33,17 +38,48 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getSymbolData(walletAddress?: Address): Promise<ITokenListViewData> {
+  async getSymbolData(chainIds: ChainId[], walletAddress?: Address): Promise<ITokenListViewData> {
+    await this.updateDatabase(walletAddress)
     if (walletAddress) {
-      return this.getSymbolDataByWalletAddress(walletAddress)
+      return this.getSymbolDataByWalletAddress(chainIds, walletAddress)
     }
-    return this.getSymbolDataWithoutWalletAddress()
+    return this.getSymbolDataWithoutWalletAddress(chainIds)
   }
 
   @CacheActivePromise()
-  async getSymbolDataWithoutWalletAddress(): Promise<ITokenListViewData> {
+  async getSymbolDataWithFilter(filter: string, walletAddress?: Address): Promise<TokenRecordId[]> {
+    await this.updateDatabase(walletAddress)
+    if (walletAddress) {
+      // return this.getSymbolDataByWalletAddress(walletAddress)
+    }
+    // return this.getSymbolDataWithoutWalletAddress()
+
+    return []
+  }
+
+  @CacheActivePromise()
+  private async getSymbolDataWithoutWalletAddress(
+    chainIds: ChainId[]
+  ): Promise<ITokenListViewData> {
+    await this.updateDatabase()
     const { crossChainTokensBinding } = this.schema
-    const allTokensInfo = await crossChainTokensBinding.orderBy('priority').reverse().toArray()
+    const chainIdSet = new Set<ChainId>(chainIds)
+    const allTokensInfo: ICrossChainTokensBindingRecord[] = []
+    await crossChainTokensBinding
+      .orderBy('priority')
+      .reverse()
+      // .filter((record) => record.symbol)
+      .each((record) => {
+        const tokenRecordIds = record.tokenRecordIds.filter((id) => {
+          const [chainIdStr] = destructuringId(id)
+          return chainIdSet.has(parseChainId(chainIdStr))
+        })
+        if (!tokenRecordIds.length) return
+        allTokensInfo.push({
+          ...record,
+          tokenRecordIds,
+        })
+      })
     return {
       allTokensInfo,
       userTokensInfo: [],
@@ -51,8 +87,12 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getSymbolDataByWalletAddress(walletAddress: Address): Promise<ITokenListViewData> {
+  private async getSymbolDataByWalletAddress(
+    chainIds: ChainId[],
+    walletAddress: Address
+  ): Promise<ITokenListViewData> {
     await this.updateDatabase(walletAddress)
+    const chainIdSet = new Set<ChainId>(chainIds)
     const { balances, tokens, crossChainTokensBinding, tokenPrice } = this.schema
     const crossChainTokensBindingSortedSymbols = crossChainTokensBinding
       .orderBy('priority')
@@ -78,6 +118,7 @@ export class TokenController implements ITokenStorage {
     await tokens
       .where('id')
       .anyOf(tokenIdsWithBalance)
+      .filter((record) => chainIdSet.has(record.chainId))
       .each((record) => {
         tokenSymbolsWithBalance.add(record.symbol)
         const balance = tokenRawBalanceRecord[record.id]
@@ -88,7 +129,15 @@ export class TokenController implements ITokenStorage {
       .clone()
       .filter((record) => tokenSymbolsWithBalance.has(record.symbol))
       .each((record) => {
-        crossChainTokensBindingRecord[record.symbol] = record
+        const tokenRecordIds = record.tokenRecordIds.filter((id) => {
+          const [chainIdStr] = destructuringId(id)
+          return chainIdSet.has(parseChainId(chainIdStr))
+        })
+        if (!tokenRecordIds.length) return
+        crossChainTokensBindingRecord[record.symbol] = {
+          ...record,
+          tokenRecordIds,
+        }
       })
     await tokenPrice
       .where('tokenRecordId')
@@ -116,7 +165,15 @@ export class TokenController implements ITokenStorage {
       .clone()
       .filter((record) => !tokenSymbolsWithBalance.has(record.symbol))
       .each((record) => {
-        crossChainTokensBindingResult.push(record)
+        const tokenRecordIds = record.tokenRecordIds.filter((id) => {
+          const [chainIdStr] = destructuringId(id)
+          return chainIdSet.has(parseChainId(chainIdStr))
+        })
+        if (!tokenRecordIds.length) return
+        crossChainTokensBindingResult.push({
+          ...record,
+          tokenRecordIds,
+        })
       })
     return {
       allTokensInfo: crossChainTokensBindingResult,
@@ -131,8 +188,7 @@ export class TokenController implements ITokenStorage {
     const crossChainTokensBindingRecord = await crossChainTokensBinding
       .where('symbol')
       .equals(symbol)
-      .toArray()
-      .then((result) => result[0] ?? null)
+      .first()
     if (!crossChainTokensBindingRecord) return BigFloat.zero()
     let totalBalance = BigFloat.zero()
     const tokenMap = new Map<TokenRecordId, IToken>()
@@ -160,8 +216,7 @@ export class TokenController implements ITokenStorage {
     const crossChainTokensBindingRecord = await crossChainTokensBinding
       .where('symbol')
       .equals(symbol)
-      .toArray()
-      .then((result) => result[0] ?? null)
+      .first()
     if (!crossChainTokensBindingRecord) return BigFloat.zero()
     let totalBalance = BigFloat.zero()
     const tokenMap = new Map<TokenRecordId, IToken>()
@@ -240,8 +295,7 @@ export class TokenController implements ITokenStorage {
     const crossChainTokensBindingRecord = await crossChainTokensBinding
       .where('symbol')
       .equals(symbol)
-      .toArray()
-      .then((result) => result[0] ?? null)
+      .first()
     if (!crossChainTokensBindingRecord) return null
     let targetToken!: ITokenRecord
     await tokens
@@ -257,17 +311,23 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   async getCrossChainTokenIdListWithBalance(
+    chainIds: ChainId[],
     symbol: string,
     walletAddress: Address
   ): Promise<TokenRecordId[]> {
     const { balances, crossChainTokensBinding } = this.schema
+    const chainIdSet = new Set(chainIds)
     const crossChainTokensBindingRecord = await crossChainTokensBinding
       .where('symbol')
       .equals(symbol)
-      .toArray()
-      .then((result) => result[0] ?? null)
+      .first()
     if (!crossChainTokensBindingRecord) return []
-    const tokenIdSet = new Set(crossChainTokensBindingRecord.tokenRecordIds)
+    const tokenIdSet = new Set(
+      crossChainTokensBindingRecord.tokenRecordIds.filter((id) => {
+        const [chainIdStr] = destructuringId(id)
+        return chainIdSet.has(parseChainId(chainIdStr))
+      })
+    )
     const result: TokenRecordId[] = []
     await balances
       .where('walletAddress')
@@ -289,6 +349,31 @@ export class TokenController implements ITokenStorage {
 
   async getToken(chainId: ChainId, address: Address) {
     return await this.schema.getToken(chainId, address)
+  }
+
+  @CacheActivePromise()
+  async getTokenById(id: TokenRecordId): Promise<IToken | null> {
+    const token = await this.schema.tokens.get(id)
+    return token ?? null
+  }
+
+  @CacheActivePromise()
+  async getTokenBalanceById(id: TokenRecordId): Promise<IBigFloat> {
+    const { balances } = this.schema
+    const token = await this.getTokenById(id)
+    if (!token) return BigFloat.zero()
+    const balanceRecord = await balances.where('tokenRecordId').equals(id).first()
+    if (!balanceRecord) return BigFloat.zero()
+    return BigFloat.fromBigInt(BigInt(balanceRecord.amount), token.decimals)
+  }
+
+  @CacheActivePromise()
+  async getTokenFiatBalanceById(id: TokenRecordId): Promise<IBigFloat> {
+    const { tokenPrice } = this.schema
+    const balance = await this.getTokenBalanceById(id)
+    const tokenPriceRecord = await tokenPrice.where('tokenRecordId').equals(id).first()
+    if (!tokenPriceRecord) return BigFloat.zero()
+    return balance.mul(BigFloat.fromString(tokenPriceRecord.price))
   }
 
   async getNativeToken(chainId: ChainId) {
@@ -407,26 +492,198 @@ export class TokenController implements ITokenStorage {
   private async updateTokenDatabase() {
     if (!this.schema.tokensIsExpired()) return
     const tokens = await this.oneInchApiAdapter.getTokenList()
-    await this.schema.setTokens(tokens)
+    await this.setTokens(tokens)
   }
 
   @CacheActivePromise()
   private async updateBalanceDatabase(walletAddress?: Address) {
     if (!walletAddress || !this.schema.balancesIsExpired(walletAddress)) return
-    const chainIdList = getChainIdList()
-    const balances = await this.oneInchApiAdapter.getBalances(chainIdList, [walletAddress])
-    await this.schema.setBalances(balances)
+
+    const update = async () => {
+      const chainIdList = getChainIdList()
+      const balances = await this.oneInchApiAdapter.getBalances(chainIdList, [walletAddress])
+      await this.setBalances(balances)
+    }
+
+    const isEmpty = await this.schema.balancesIsEmpty(walletAddress)
+
+    if (isEmpty) {
+      return await update()
+    }
+    update().catch(console.error)
   }
 
   @CacheActivePromise()
   private async updateTokenPrice() {
-    if (!this.schema.tokenPriceIsExpired()) return
-    const chainIdList = getChainIdList()
-    const tokenPrice = await this.oneInchApiAdapter.getTokenPrice(chainIdList)
-    await this.schema.setTokenPrice(tokenPrice)
+    const walletConnected = await this.context.value.wallet.data.isConnected()
+    if (!this.schema.tokenPriceIsExpired() || !walletConnected) return
+
+    const update = async () => {
+      const chainIdList = getChainIdList()
+      const tokenPrice = await this.oneInchApiAdapter.getTokenPrice(chainIdList)
+      await this.setTokenPrice(tokenPrice)
+    }
+
+    const isEmpty = await this.schema.tokenPriceIsEmpty()
+
+    if (isEmpty) {
+      return await update()
+    }
+    update().catch(console.error)
+  }
+
+  private async setTokens(tokensDto: ITokenV2Dto[]) {
+    const { tokens, crossChainTokensBinding } = this.schema
+    const tableTokens: ITokenRecord[] = []
+    type crossChainTokensBindingRecord = {
+      priority: number
+      supportedChainIds: Set<ChainId>
+      tokenNames: Set<string>
+      tokenAddresses: Set<Address>
+      tokenRecordIds: Set<TokenRecordId>
+    }
+    const crossChainTokensBindingRecordMap = new Map<string, crossChainTokensBindingRecord>()
+    for (const token of tokensDto) {
+      const chainId = token.chainId
+      if (!isChainId(chainId)) {
+        continue
+      }
+      const id = buildTokenId(chainId, token.address)
+      const priority = calcTokenPriority(token)
+      tableTokens.push({
+        id,
+        address: token.address,
+        decimals: token.decimals,
+        eip2612: token.eip2612 ?? null,
+        name: token.name,
+        symbol: token.symbol,
+        tags: token.tags,
+        logoURL: token.logoURI,
+        isFavorite: false,
+        chainId,
+        priority,
+      })
+      if (!crossChainTokensBindingRecordMap.has(token.symbol)) {
+        crossChainTokensBindingRecordMap.set(token.symbol, {
+          priority: 0,
+          supportedChainIds: new Set(),
+          tokenNames: new Set(),
+          tokenAddresses: new Set(),
+          tokenRecordIds: new Set(),
+        })
+      }
+      const record = crossChainTokensBindingRecordMap.get(token.symbol)!
+      if (record.tokenRecordIds.has(id)) {
+        throw new Error('violation of communication integrity')
+      }
+      record.priority += priority
+      record.supportedChainIds.add(chainId)
+      record.tokenNames.add(token.name)
+      record.tokenAddresses.add(token.address)
+      record.tokenRecordIds.add(id)
+    }
+
+    const crossChainTokensBindingTable: ICrossChainTokensBindingRecord[] = []
+
+    for (const [symbol, record] of crossChainTokensBindingRecordMap) {
+      crossChainTokensBindingTable.push({
+        symbol,
+        priority: record.priority,
+        tokenRecordIds: record.tokenRecordIds.values().toArray(),
+        tokenAddresses: record.tokenAddresses.values().toArray(),
+        supportedChainIds: record.supportedChainIds.values().toArray(),
+        tokenNames: record.tokenNames.values().toArray(),
+      })
+    }
+
+    await Promise.all([
+      tokens.bulkPut(tableTokens),
+      crossChainTokensBinding.bulkPut(crossChainTokensBindingTable),
+    ])
+    this.schema.resetTokensTTL()
+  }
+
+  async setBalances(balancesDto: ProxyResultBalance) {
+    const { balances } = this.schema
+    const balancesRecords: IBalancesTokenRecord[] = []
+    const walletAddressSet = new Set<Address>()
+
+    for (const balance of balancesDto) {
+      if (balance.error) {
+        this.context.value.logger.error(balance.error)
+        continue
+      }
+      const [chainIdStr, walletAddress]: [string, Address] = destructuringId(balance.id)
+      const chainId = parseChainId(chainIdStr)
+      const balanceRecord = balance.result!
+      for (const address in balanceRecord) {
+        const tokenAddress = address as Address
+        balancesRecords.push({
+          id: buildBalanceId(chainId, walletAddress, tokenAddress),
+          tokenRecordId: buildTokenId(chainId, tokenAddress),
+          chainId,
+          tokenAddress: tokenAddress,
+          walletAddress,
+          amount: balanceRecord[tokenAddress],
+        })
+      }
+      walletAddressSet.add(walletAddress)
+    }
+    await balances.bulkPut(balancesRecords)
+    for (const walletAddress of walletAddressSet) {
+      this.schema.resetBalancesTTL(walletAddress)
+    }
+  }
+
+  async setTokenPrice(tokenPriceDto: ProxyResultTokenPrice): Promise<void> {
+    const { tokenPrice } = this.schema
+    const tokenPriceRecords: ITokenPriceRecord[] = []
+    for (const price of tokenPriceDto) {
+      if (price.error) {
+        this.context.value.logger.error(price.error)
+        continue
+      }
+      const chainId = parseChainId(price.id)
+      const tokenPriceRecord = price.result!
+      for (const address in tokenPriceRecord) {
+        const tokenAddress = address as Address
+        tokenPriceRecords.push({
+          id: buildTokenPriceId(chainId, tokenAddress),
+          tokenRecordId: buildTokenId(chainId, tokenAddress),
+          chainId,
+          price: tokenPriceRecord[tokenAddress],
+        })
+      }
+    }
+    await tokenPrice.bulkPut(tokenPriceRecords)
+    this.schema.resetTokenPriceTTL()
   }
 
   liveQuery<T>(querier: () => T | Promise<T>) {
     return from(import('dexie')).pipe(switchMap((dexie) => dexie.liveQuery<T>(querier)))
   }
+}
+
+const TokenPriority: Record<string, number> = {
+  native: 1000,
+  USDT: 100,
+  USDC: 100,
+  crosschain: 70,
+  WETH: 62,
+  '1INCH': 61,
+  'PEG:ETH': 60,
+  'PEG:USD': 50,
+  'PEG:BTC': 40,
+  'PEG:EUR': 30,
+  staking: 20,
+  savings: 10,
+}
+
+function calcTokenPriority(dto: ITokenDto): number {
+  let priority = dto.providers?.length ?? 0
+  priority += TokenPriority[dto.symbol] ?? 0
+  for (const tag of dto.tags) {
+    priority += TokenPriority[tag] ?? 0
+  }
+  return priority
 }

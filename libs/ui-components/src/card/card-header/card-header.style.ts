@@ -18,6 +18,15 @@ export const cardHeaderStyle = css`
     padding: 0;
   }
 
+  :host(.separator) {
+    border-bottom: 1px solid var(--color-border-border-tertiary);
+  }
+
+  :host(.mini) {
+    height: 56px;
+    padding: 8px 16px 0;
+  }
+
   .card-header-container {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;

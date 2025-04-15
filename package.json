@@ -26,7 +26,7 @@
     "clear:all:node_modules": "find . -type d -name node_modules -exec rm -rf {} +",
     "clear:all:dist": "find . -type d -name dist -exec rm -rf {} +",
     "clear:all:tsbuildinfo": "find . -type f -name 'tsconfig.tsbuildinfo' -exec rm -f {} +",
-    "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist",
+    "clear:all": "pnpm run clear:all:node_modules && pnpm run clear:all:dist && pnpm run clear:all:tsbuildinfo",
     "reset": "pnpm run clear:all && pnpm install",
     "postinstall": "pnpm run build:libs:all",
     "update-version": "ts-node --project ./scripts/tsconfig.json ./scripts/update-version.ts",
@@ -36,6 +36,7 @@
     "test": "pnpm -r run test",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --fix --ext .ts",
+    "update-rpc": "jiti scripts/rpc-updater.mts",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -60,15 +61,17 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
+    "viem": "^2.23.9",
     "vite": "^6.2.1",
     "vite-plugin-dts": "^4.5.3",
     "vite-plugin-html": "^3.2.2",
+    "vite-plugin-ngrok": "^1.1.2",
     "vite-plugin-preload": "^0.4.2",
     "vite-plugin-pwa": "^0.21.1",
     "vitest": "^3.0.8"
   },
   "engines": {
-    "node": ">=22",
+    "node": ">=23",
     "pnpm": ">=10"
   },
   "packageManager": "pnpm@10.6.0"

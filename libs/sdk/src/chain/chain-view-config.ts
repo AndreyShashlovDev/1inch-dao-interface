@@ -1,5 +1,4 @@
 import { ChainId, ChainViewFull, ChainViewInfo } from '@1inch-community/models'
-import { isSupportFusion } from '../swap'
 import { isL2Chain } from './layer2-chain'
 
 export const chainViewConfig: Record<ChainId, ChainViewInfo> = {
@@ -63,7 +62,6 @@ export const chainViewConfig: Record<ChainId, ChainViewInfo> = {
 }
 
 export const chainList: ChainViewFull[] = Object.keys(chainViewConfig)
-  .filter((chainId) => isSupportFusion(+chainId))
   .map((chainId) => ({ ...(chainViewConfig as any)[chainId], chainId: Number(chainId) }))
   .sort((info1: ChainViewFull, info2: ChainViewFull) => {
     if (info1.chainId == ChainId.eth) return -1

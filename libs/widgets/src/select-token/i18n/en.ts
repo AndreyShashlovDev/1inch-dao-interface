@@ -1,4 +1,4 @@
 export default {
-  'inch-token-list-item.network': 'Network',
-  'inch-token-list-item.networks': 'Networks',
+  'inch-token-cross-chain-item.network': 'Network',
+  'inch-token-cross-chain-item.networks': 'Networks',
 }

@@ -4,6 +4,7 @@ import { GlobalEmbeddedContextElement } from './global-embedded-context.element'
 
 export async function bootstrapApplicationContext(config: EmbeddedBootstrapConfig) {
   const env: IEnvironment = {
+    production: true,
     oneInchDevPortalHost: '',
     walletConnectProjectId: '',
   }
@@ -44,6 +45,10 @@ export async function bootstrapApplicationContext(config: EmbeddedBootstrapConfi
         import('@1inch-community/core/animations').then((m) => new m.AnimationsManager()),
       environmentFactory: () =>
         import('@1inch-community/core/environment').then((m) => new m.EnvironmentController(env)),
+      overlayFactory: () =>
+        import('@1inch-community/ui-components/overlay').then(
+          (m) => new m.OverlayController('#app-root')
+        ),
       swapContextFactory: (context) =>
         import('@1inch-community/sdk/swap').then((m) => {
           const swapContext = new m.SwapContext(context)

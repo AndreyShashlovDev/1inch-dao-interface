@@ -1,5 +1,5 @@
 import { IApplicationContext, InitializingEntity } from '@1inch-community/models'
-import { lazyAppContext } from '../utils'
+import { lazyAppContext } from '../lazy'
 
 export class TTLStorage implements InitializingEntity {
   private readonly context = lazyAppContext('TTLStorage')

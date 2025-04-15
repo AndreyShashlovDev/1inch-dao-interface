@@ -33,6 +33,10 @@ export async function bootstrapApplicationContext(env: IEnvironment) {
       import('@1inch-community/core/animations').then((m) => new m.AnimationsManager()),
     environmentFactory: () =>
       import('@1inch-community/core/environment').then((m) => new m.EnvironmentController(env)),
+    overlayFactory: () =>
+      import('@1inch-community/ui-components/overlay').then(
+        (m) => new m.OverlayController('#app-root')
+      ),
     swapContextFactory: (context) =>
       import('@1inch-community/sdk/swap').then((m) => {
         const swapContext = new m.SwapContext(context)

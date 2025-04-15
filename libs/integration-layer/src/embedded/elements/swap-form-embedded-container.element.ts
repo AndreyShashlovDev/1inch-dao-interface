@@ -1,8 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   __ISwapFormEmbeddedController,
   EmbeddedBootstrapConfigSwapForm,
-  IApplicationContext,
   ISwapContext,
   SwapSnapshot,
   TokenType,
@@ -23,8 +22,7 @@ export class SwapFormEmbeddedContainerElement extends LitElement implements Elem
   @consume({ context: SwapContextToken, subscribe: true })
   swapContext!: ISwapContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private targetSelectToken: TokenType | null = null
 
@@ -97,11 +95,11 @@ export class SwapFormEmbeddedContainerElement extends LitElement implements Elem
     const { chainId } = config
     const { sourceTokenSymbol, destinationTokenSymbol } = config.swapFromParams
     const [source, destination] = await Promise.all([
-      this.applicationContext.tokenStorage.getTokenBySymbol(
+      this.applicationContext.value.tokenStorage.getTokenBySymbol(
         chainId,
         sourceTokenSymbol.toUpperCase()
       ),
-      this.applicationContext.tokenStorage.getTokenBySymbol(
+      this.applicationContext.value.tokenStorage.getTokenBySymbol(
         chainId,
         destinationTokenSymbol.toUpperCase()
       ),
