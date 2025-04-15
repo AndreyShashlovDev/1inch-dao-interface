@@ -1,7 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { smartFormatNumber } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { observe } from '@1inch-community/core/lit-utils'
-import { IApplicationContext, ISwapContext } from '@1inch-community/models'
+import { ISwapContext } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
@@ -21,8 +21,7 @@ export class FiatBalanceElement extends LitElement {
   @consume({ context: SwapContextToken })
   context?: ISwapContext
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   readonly balance$ = defer(() => {
     if (!this.context) throw new Error('')
@@ -37,8 +36,8 @@ export class FiatBalanceElement extends LitElement {
     switchMap(([walletAddress, token, chainId]) => {
       if (!walletAddress || !token || !chainId) return [html`<br />`]
       return combineLatest([
-        this.applicationContext.tokenStorage.liveQuery(() =>
-          this.applicationContext.tokenStorage.getTokenUSDPrice(chainId, token.address)
+        this.applicationContext.value.tokenStorage.liveQuery(() =>
+          this.applicationContext.value.tokenStorage.getTokenUSDPrice(chainId, token.address)
         ),
         this.context!.getTokenRawAmountByType(this.tokenType!),
       ]).pipe(

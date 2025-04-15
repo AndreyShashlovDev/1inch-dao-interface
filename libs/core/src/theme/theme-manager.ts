@@ -4,7 +4,7 @@ import {
   IThemeManager,
   MainColors,
 } from '@1inch-community/models'
-import { lazy } from '../utils'
+import { lazy } from '../lazy'
 import { themeChange } from './theme-change'
 import { themeInit } from './theme-init'
 

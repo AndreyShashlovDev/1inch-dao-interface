@@ -8,6 +8,7 @@ import {
   INotificationsManager,
   IOnChain,
   IOneInchDevPortalCrossChainAdapter,
+  IOverlayController,
   IPersistSyncStorage,
   ISettingsManager,
   ISwapContext,
@@ -34,6 +35,7 @@ export type ApplicationContextPayload = {
   settingsFactory: () => Promise<ISettingsManager>
   animationsFactory: () => Promise<IAnimationsManager>
   environmentFactory: () => Promise<IEnvironmentController>
+  overlayFactory: () => Promise<IOverlayController>
   swapContextFactory: (context: IApplicationContext) => Promise<ISwapContext>
 }
 
@@ -54,6 +56,7 @@ export class ApplicationContext implements IApplicationContext {
   private _settings?: ISettingsManager
   private _animations?: IAnimationsManager
   private _environment?: IEnvironmentController
+  private _overlay?: IOverlayController
 
   private _activeSwapContext: WeakRef<ISwapContext> | null = null
 
@@ -127,6 +130,11 @@ export class ApplicationContext implements IApplicationContext {
     return this._environment
   }
 
+  get overlay(): IOverlayController {
+    if (!this._overlay) throw new Error(contextNotInitErrorMessage)
+    return this._overlay
+  }
+
   constructor(
     private readonly payload: ApplicationContextPayload,
     public readonly isEmbedded = false
@@ -148,6 +156,7 @@ export class ApplicationContext implements IApplicationContext {
       settings,
       animations,
       environment,
+      overlay,
     ] = await Promise.all([
       this.payload.walletFactory(),
       this.payload.tokenControllerFactory(),
@@ -163,6 +172,7 @@ export class ApplicationContext implements IApplicationContext {
       this.payload.settingsFactory(),
       this.payload.animationsFactory(),
       this.payload.environmentFactory(),
+      this.payload.overlayFactory(),
     ])
     this._wallet = wallet
     this._tokenController = tokenStorage
@@ -178,6 +188,7 @@ export class ApplicationContext implements IApplicationContext {
     this._settings = settings
     this._animations = animations
     this._environment = environment
+    this._overlay = overlay
     await Promise.all([
       this._logger.init(this),
       this._settings.init(this),
@@ -191,6 +202,7 @@ export class ApplicationContext implements IApplicationContext {
       this._chainController.init(this),
       this._notifications.init(this),
       this._animations.init(this),
+      this._overlay.init(this),
     ])
   }
 

@@ -1,5 +1,5 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
 import { formatSeconds, smartFormatNumber } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   async,
   dispatchEvent,
@@ -7,13 +7,7 @@ import {
   observe,
   translate,
 } from '@1inch-community/core/lit-utils'
-import {
-  FusionQuoteReceiveDto,
-  IApplicationContext,
-  ISwapContext,
-  IToken,
-  SwapSnapshot,
-} from '@1inch-community/models'
+import { FusionQuoteReceiveDto, ISwapContext, IToken, SwapSnapshot } from '@1inch-community/models'
 import {
   getSymbolFromWrapToken,
   getWrapperNativeToken,
@@ -44,8 +38,7 @@ export class ConfirmSwapElement extends LitElement {
 
   @property({ type: Object }) swapSnapshot!: SwapSnapshot<FusionQuoteReceiveDto>
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @consume({ context: SwapContextToken, subscribe: true })
   @property({ type: Object, attribute: false })
@@ -101,7 +94,7 @@ export class ConfirmSwapElement extends LitElement {
       const hash = await this.swapContext?.swap(this.swapSnapshot)
       dispatchEvent(this, 'backCard', null)
       if (hash) {
-        await this.applicationContext.notifications.show(
+        await this.applicationContext.value.notifications.show(
           'Swap status',
           html`<inch-notification-fusion-swap-view
             orderHash="${hash}"
@@ -111,7 +104,7 @@ export class ConfirmSwapElement extends LitElement {
       }
     } catch (error) {
       const errorText = parseError(error as Error)
-      await this.applicationContext.notifications.error(html`${translate(errorText)}`)
+      await this.applicationContext.value.notifications.error(html`${translate(errorText)}`)
       console.error(error)
     }
     this.swapInProgress = false
@@ -157,10 +150,10 @@ export class ConfirmSwapElement extends LitElement {
 
   private async getRateView() {
     const { chainId, rate, revertedRate, sourceToken, destinationToken } = this.swapSnapshot.rate
-    const primaryToken = await this.applicationContext.tokenStorage.getPriorityToken(chainId, [
-      sourceToken.address,
-      destinationToken.address,
-    ])
+    const primaryToken = await this.applicationContext.value.tokenStorage.getPriorityToken(
+      chainId,
+      [sourceToken.address, destinationToken.address]
+    )
     const secondaryToken = isTokensEqual(primaryToken, sourceToken) ? destinationToken : sourceToken
     const isRevertedRate = isTokensEqual(primaryToken, sourceToken)
     const targetRate = isRevertedRate ? revertedRate : rate
@@ -290,18 +283,20 @@ export class ConfirmSwapElement extends LitElement {
       return this.fiatAmountMap.get(token.address)!
     }
 
-    const stream = this.applicationContext.onChain.getBlockEmitter(this.swapSnapshot.chainId).pipe(
-      switchMap(async () => {
-        const usdPrice = await this.applicationContext.tokenStorage.getTokenUSDPrice(
-          this.swapSnapshot.chainId,
-          token.address
-        )
-        const balanceFormatted = formatUnits(amount, token.decimals)
-        const balanceUsd = Number(balanceFormatted) * Number(usdPrice)
-        return `~$${smartFormatNumber(balanceUsd.toString(), 2)}`
-      }),
-      shareReplay({ bufferSize: 1, refCount: true })
-    )
+    const stream = this.applicationContext.value.onChain
+      .getBlockEmitter(this.swapSnapshot.chainId)
+      .pipe(
+        switchMap(async () => {
+          const usdPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
+            this.swapSnapshot.chainId,
+            token.address
+          )
+          const balanceFormatted = formatUnits(amount, token.decimals)
+          const balanceUsd = Number(balanceFormatted) * Number(usdPrice)
+          return `~$${smartFormatNumber(balanceUsd.toString(), 2)}`
+        }),
+        shareReplay({ bufferSize: 1, refCount: true })
+      )
     this.fiatAmountMap.set(token.address, stream)
     return stream
   }

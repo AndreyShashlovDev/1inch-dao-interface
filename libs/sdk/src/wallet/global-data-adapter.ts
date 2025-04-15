@@ -1,4 +1,4 @@
-import { lazy, lazyAppContext } from '@1inch-community/core/utils'
+import { lazy, lazyAppContext } from '@1inch-community/core/lazy'
 import {
   ChainId,
   EIP6963ProviderInfo,

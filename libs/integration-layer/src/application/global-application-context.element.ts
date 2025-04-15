@@ -1,5 +1,5 @@
 import { ApplicationContextToken } from '@1inch-community/core/application-context'
-import { ContextProvider } from '@lit/context'
+import { lazyProvider } from '@1inch-community/core/lazy'
 import { css, html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { getContext } from './context'
@@ -16,12 +16,9 @@ export class GlobalApplicationContextElement extends LitElement {
     }
   `
 
-  // @provide({ context: ApplicationContextToken })
-  // context = getContext()
-
   constructor() {
     super()
-    new ContextProvider(this, { context: ApplicationContextToken, initialValue: getContext() })
+    lazyProvider(this, { context: ApplicationContextToken, initialValue: getContext() })
   }
 
   protected render() {
@@ -31,6 +28,6 @@ export class GlobalApplicationContextElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'global-application-context': GlobalApplicationContextElement
+    [GlobalApplicationContextElement.tagName]: GlobalApplicationContextElement
   }
 }

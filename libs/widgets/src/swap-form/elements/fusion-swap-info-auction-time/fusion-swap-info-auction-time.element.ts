@@ -1,15 +1,14 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   appendStyle,
   dispatchEvent,
   getMobileMatchMediaAndSubscribe,
   subscribe,
 } from '@1inch-community/core/lit-utils'
-import { IApplicationContext, SwapSettings } from '@1inch-community/models'
+import { SwapSettings } from '@1inch-community/models'
 import '@1inch-community/ui-components/icon'
 import '@1inch-community/ui-components/segmented-control'
 import type { SegmentedControlItem } from '@1inch-community/ui-components/segmented-control'
-import { consume } from '@lit/context'
 import { Maskito } from '@maskito/core'
 import { maskitoNumberOptionsGenerator } from '@maskito/kit'
 import { LitElement, html } from 'lit'
@@ -27,8 +26,7 @@ export class FusionSwapInfoAuctionTimeElement extends LitElement {
 
   @property({ type: Object }) settings?: SwapSettings['auctionTime']
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly segmentsCustom = {
     label: 'Custom',
@@ -161,10 +159,10 @@ export class FusionSwapInfoAuctionTimeElement extends LitElement {
       { label: '5m', value: 60 * 5 },
       { label: '10m', value: 60 * 10 },
       { label: '30m', value: 60 * 30 },
-      this.mobileMedia.matches || this.applicationContext?.isEmbedded
+      this.mobileMedia.matches || this.applicationContext.value.isEmbedded
         ? null
         : { label: '1H', value: 60 * 60 },
-      this.mobileMedia.matches || this.applicationContext?.isEmbedded
+      this.mobileMedia.matches || this.applicationContext.value.isEmbedded
         ? null
         : { label: '2H', value: 60 * 60 * 2 },
       this.segmentsCustom,

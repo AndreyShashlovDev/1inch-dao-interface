@@ -1,6 +1,6 @@
 import { IAnimationsManager, IApplicationContext } from '@1inch-community/models'
+import { lazy } from '../lazy'
 import { appendStyle } from '../lit-utils'
-import { lazy } from '../utils'
 
 const debug = false
 

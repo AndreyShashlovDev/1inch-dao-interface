@@ -1,14 +1,14 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { formatHex } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   getMobileMatchMediaAndSubscribe,
   getShadowDomElement,
   observe,
 } from '@1inch-community/core/lit-utils'
-import { ITokenStorage, IWallet } from '@1inch-community/models'
+import { ITokenStorage, IWallet, OverlayViewMode } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
-import { OverlayController } from '@1inch-community/ui-components/overlay'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
@@ -27,11 +27,9 @@ export class ConnectWalletViewElement extends LitElement {
 
   @property({ type: Object, attribute: false }) tokenStorageController?: ITokenStorage
 
-  private readonly mobileMatchMedia = getMobileMatchMediaAndSubscribe(this)
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
-  private readonly overlay = new OverlayController('#app-root', () =>
-    getShadowDomElement('swap-form')
-  )
+  private readonly mobileMatchMedia = getMobileMatchMediaAndSubscribe(this)
 
   private overlayId: number | null = null
 
@@ -86,15 +84,14 @@ export class ConnectWalletViewElement extends LitElement {
   private getConnectWalletButton() {
     return html`
       <inch-button
-          @click="${() => this.onOpenAccountView()}"
-          type="${this.mobileMatchMedia.matches ? 'primary-gray' : 'secondary'}"
-          size="${this.mobileMatchMedia.matches ? 'l' : 'xl'}"
+        @click="${() => this.onOpenAccountView()}"
+        type="${this.mobileMatchMedia.matches ? 'primary-gray' : 'secondary'}"
+        size="${this.mobileMatchMedia.matches ? 'l' : 'xl'}"
       >
         ${when(
-            this.mobileMatchMedia.matches,
-            () => html`
-              <inch-icon icon="wallet24"></inch-icon>`,
-            () => html`<span>Connect wallet</span>`
+          this.mobileMatchMedia.matches,
+          () => html` <inch-icon icon="wallet24"></inch-icon>`,
+          () => html`<span>Connect wallet</span>`
         )}
       </inch-button>
     `
@@ -116,45 +113,51 @@ export class ConnectWalletViewElement extends LitElement {
 
   @CacheActivePromise()
   private async onOpenAccountView() {
-    if (this.overlay.isOpenOverlay(this.overlayId)) {
-      await this.overlay.close(this.overlayId)
+    if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
+      await this.applicationContext.value.overlay.close(this.overlayId)
       this.overlayId = null
       return
     }
-    this.overlayId = await this.overlay.open(html`
-      <inch-wallet-account-view
-        @closeCard="${() => {
-          if (!this.overlayId) {
-            return
-          }
-          this.overlay.close(this.overlayId)
-          this.overlayId = null
-        }}"
-        .walletController="${this.getWalletController()}"
-        .tokenStorageController="${this.getTokenStorageController()}"
-      ></inch-wallet-account-view>
-    `)
+    this.overlayId = await this.applicationContext.value.overlay.open(
+      html`
+        <inch-wallet-account-view
+          @closeCard="${() => {
+            if (!this.overlayId) {
+              return
+            }
+            this.applicationContext.value.overlay.close(this.overlayId)
+            this.overlayId = null
+          }}"
+          .walletController="${this.getWalletController()}"
+          .tokenStorageController="${this.getTokenStorageController()}"
+        ></inch-wallet-account-view>
+      `,
+      { targetFactory: () => getShadowDomElement('swap-form'), mode: OverlayViewMode.auto }
+    )
   }
 
   @CacheActivePromise()
   private async onOpenConnectView() {
-    if (this.overlay.isOpenOverlay(this.overlayId)) {
-      await this.overlay.close(this.overlayId)
+    if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
+      await this.applicationContext.value.overlay.close(this.overlayId)
       this.overlayId = null
       return
     }
-    this.overlayId = await this.overlay.open(html`
-      <inch-wallet-manage
-        @closeCard="${() => {
-          if (!this.overlayId) {
-            return
-          }
-          this.overlay.close(this.overlayId)
-          this.overlayId = null
-        }}"
-        .controller="${this.getWalletController()}"
-      ></inch-wallet-manage>
-    `)
+    this.overlayId = await this.applicationContext.value.overlay.open(
+      html`
+        <inch-wallet-manage
+          @closeCard="${() => {
+            if (!this.overlayId) {
+              return
+            }
+            this.applicationContext.value.overlay.close(this.overlayId)
+            this.overlayId = null
+          }}"
+          .controller="${this.getWalletController()}"
+        ></inch-wallet-manage>
+      `,
+      { targetFactory: () => getShadowDomElement('swap-form'), mode: OverlayViewMode.auto }
+    )
   }
 }
 

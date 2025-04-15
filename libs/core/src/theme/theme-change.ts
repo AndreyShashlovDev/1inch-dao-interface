@@ -1,12 +1,13 @@
 import { AccentColors, MainColors } from '@1inch-community/models'
 import { Observable, ReplaySubject } from 'rxjs'
+import { asyncFrame } from '../async'
 import { applyStyle, createAndAppendInHeaderElement } from '../lit-utils'
 import { brandColorStyleElement, mainColorStyleElement } from './theme-elements'
 import { brandColorMap, mainColorMap } from './themes'
+import { interpolateColorHex } from './utils/hex-interpolation'
 
 let currentMainColor: MainColors
 let currentBrandColor: AccentColors
-let isEmbeddedMode = false
 
 const browserMetaColors: Record<MainColors, () => string> = {
   [MainColors.systemSync]: () => getBrowserMetaColor(),
@@ -22,10 +23,6 @@ const changeAppTheme$ = new ReplaySubject<{ mainColor: MainColors; brandColor: A
 
 let metaColorFilter: ((currentColor: string, isDarkTheme: boolean) => string) | null = null
 
-export function setEmbeddedMode() {
-  isEmbeddedMode = true
-}
-
 export function getBrowserMetaColor() {
   if (mediaQuery.matches) {
     return browserMetaColors[MainColors.dark]()
@@ -33,13 +30,12 @@ export function getBrowserMetaColor() {
   return browserMetaColors[MainColors.light]()
 }
 
-export function setBrowserMetaColorFilter(filter: typeof metaColorFilter) {
+export async function setBrowserMetaColorFilter(filter: typeof metaColorFilter) {
   metaColorFilter = filter
-  setBrowserMetaColorColor(browserMetaColors[currentMainColor]())
+  await setBrowserMetaColorColor(browserMetaColors[currentMainColor]())
 }
 
-function setBrowserMetaColorColor(color: string) {
-  if (isEmbeddedMode) return
+async function setBrowserMetaColorColor(color: string) {
   const themeMetaElement = document.head.querySelector('#theme-color') as HTMLMetaElement
   if (!themeMetaElement) {
     createAndAppendInHeaderElement('meta', (meta) => {
@@ -49,17 +45,23 @@ function setBrowserMetaColorColor(color: string) {
     })
     return
   }
-  themeMetaElement.content = metaColorFilter
-    ? metaColorFilter(color, isDarkTheme(currentMainColor))
-    : color
+  const endColor = metaColorFilter ? metaColorFilter(color, isDarkTheme(currentMainColor)) : color
+  await transitionThemeMetaElement(themeMetaElement, themeMetaElement.content, endColor)
 }
 
-export async function themeChangeMainColor(mainColorName: MainColors, event?: MouseEvent) {
-  return await themeChange(mainColorName, currentBrandColor, event)
-}
-
-export async function themeChangeBrandColor(brandColorName: AccentColors, event?: MouseEvent) {
-  return await themeChange(currentMainColor, brandColorName, event)
+export async function transitionThemeMetaElement(
+  element: HTMLMetaElement,
+  startColor: string,
+  endColor: string
+) {
+  const maxIterations = 7
+  let iteration = 0
+  while (iteration < maxIterations) {
+    element.content = interpolateColorHex(startColor, endColor, iteration, maxIterations)
+    await asyncFrame()
+    iteration++
+  }
+  element.content = endColor
 }
 
 export function getThemeChange(): Observable<{ mainColor: MainColors; brandColor: AccentColors }> {

@@ -1,4 +1,4 @@
-import { dispatchEvent } from '@1inch-community/core/lit-utils'
+import { appendClass, dispatchEvent } from '@1inch-community/core/lit-utils'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
@@ -16,6 +16,8 @@ export class CardHeaderElement extends LitElement {
   @property({ type: String, attribute: true }) headerTextPosition: 'center' | 'left' = 'center'
   @property({ type: Boolean, attribute: true }) backButton = false
   @property({ type: Boolean, attribute: true }) closeButton = false
+  @property({ type: Boolean, attribute: true }) separator = false
+  @property({ type: Boolean, attribute: true }) mini = false
 
   private slotDirty: Record<string, boolean> = {}
 
@@ -25,6 +27,10 @@ export class CardHeaderElement extends LitElement {
   }
 
   protected override render() {
+    appendClass(this, {
+      separator: this.separator,
+      mini: this.mini,
+    })
     return html`
       <div class="card-header-container">
         <div class="position-container left-container">
@@ -44,9 +50,9 @@ export class CardHeaderElement extends LitElement {
   }
 
   protected override firstUpdated() {
-    if (this.parentElement?.localName !== 'inch-card') {
-      this.classList.add('not-native-mode')
-    }
+    appendClass(this, {
+      'not-native-mode': this.parentElement?.localName !== 'inch-card',
+    })
   }
 
   private getHeader(containerName: 'center' | 'left') {
@@ -99,6 +105,6 @@ export class CardHeaderElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-card-header': CardHeaderElement
+    [CardHeaderElement.tahName]: CardHeaderElement
   }
 }

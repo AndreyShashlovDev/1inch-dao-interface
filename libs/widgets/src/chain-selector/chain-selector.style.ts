@@ -13,6 +13,8 @@ export const chainSelectorStyle = css`
     position: absolute;
     border-radius: 50%;
     transition:
+      width 0.2s,
+      height 0.2s,
       transform 0.2s,
       opacity 0.2s;
   }

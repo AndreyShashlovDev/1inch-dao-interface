@@ -1,13 +1,11 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer, lazyProvider } from '@1inch-community/core/lazy'
 import {
   getMobileMatchMedia,
   getMobileMatchMediaAndSubscribe,
 } from '@1inch-community/core/lit-utils'
-import { IApplicationContext, ISwapContext } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import '@1inch-community/ui-components/card'
 import '@1inch-community/widgets/swap-form'
-import { consume, provide } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 
@@ -15,25 +13,24 @@ import { customElement } from 'lit/decorators.js'
 export class SwapFormElement extends LitElement {
   static tagName = 'inch-swap-form-container' as const
 
-  @provide({ context: SwapContextToken })
-  swapContext!: ISwapContext
+  swapContext = lazyProvider(this, { context: SwapContextToken })
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   async connectedCallback() {
     await this.preloadForm(getMobileMatchMedia().matches)
     super.connectedCallback()
-    this.swapContext = await this.applicationContext.makeSwapContext()
+    const context = await this.applicationContext.value.makeSwapContext()
+    this.swapContext.set(context)
     this.requestUpdate()
     this.preloadForm(!this.mobileMedia.matches).catch(console.error)
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.swapContext.destroy()
+    this.swapContext.value.destroy()
   }
 
   protected render() {

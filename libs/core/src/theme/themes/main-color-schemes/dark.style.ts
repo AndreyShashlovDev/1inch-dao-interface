@@ -5,6 +5,7 @@ export const themeDark = (targetName = ':root') => css`
   ${unsafeCSS(targetName)} {
     --logo-text-color: var(--color-core-white);
 
+    --color-background-bg-overlay: #ffffff;
     --color-background-bg-active: #3d3d3d;
     --color-background-bg-body: #0e0e0e;
     --color-background-bg-critical: #f048322e;

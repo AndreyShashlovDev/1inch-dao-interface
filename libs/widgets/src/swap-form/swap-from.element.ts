@@ -1,13 +1,7 @@
-import {
-  ApplicationContextToken,
-  EmbeddedConfigToken,
-} from '@1inch-community/core/application-context'
+import { EmbeddedConfigToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { observe, translate } from '@1inch-community/core/lit-utils'
-import {
-  EmbeddedBootstrapConfigSwapForm,
-  IApplicationContext,
-  ISwapContext,
-} from '@1inch-community/models'
+import { EmbeddedBootstrapConfigSwapForm, ISwapContext } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
@@ -27,8 +21,7 @@ export class SwapFromElement extends LitElement {
 
   static lastFusionRenderIsEmptyState = true
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @consume({ context: SwapContextToken, subscribe: true })
   swapContext?: ISwapContext
@@ -37,7 +30,7 @@ export class SwapFromElement extends LitElement {
   config?: EmbeddedBootstrapConfigSwapForm
 
   private readonly fusionView$ = combineLatest([
-    defer(() => this.getWalletController().data.activeAddress$),
+    defer(() => this.applicationContext.value.wallet.data.activeAddress$),
     defer(() => this.swapContext!.getTokenByType('source')),
     defer(() => this.swapContext!.getTokenByType('destination')),
   ]).pipe(
@@ -75,11 +68,6 @@ export class SwapFromElement extends LitElement {
         <inch-swap-button></inch-swap-button>
       </div>
     `
-  }
-
-  private getWalletController() {
-    if (!this.applicationContext.wallet) throw new Error('')
-    return this.applicationContext.wallet
   }
 }
 

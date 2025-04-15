@@ -86,16 +86,16 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     return mergeProxyResultBalance(result.flat())
   }
 
+  async getTokenList(): Promise<ITokenV2Dto[]> {
+    return await import('./token-list.json').then((data) => data.default as ITokenV2Dto[])
+  }
+
   getGasPrice(): Promise<GasPriceDto | null> {
     throw new Error('Method not implemented.')
   }
 
   getTokenPrice(): Promise<ProxyResultTokenPrice> {
     throw new Error('Method not implemented.')
-  }
-
-  getTokenList(): Promise<ITokenV2Dto[]> {
-    throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getTokenList call')
   }
 
   getProxyClient(): IProxyClient {
@@ -174,7 +174,7 @@ export class OneInchDevPortalCrossChainOnChainAdapter
           }
           const { chainId, tokenAddress, walletAddress } = contracts[i]._resultData
           if (result.status === 'failure') {
-            console.warn(
+            console.error(
               `Load token balance error ${chainId} ${tokenAddress} ${walletAddress} \n`,
               result.error.message
             )
@@ -239,7 +239,7 @@ export class OneInchDevPortalCrossChainOnChainAdapter
           ]
         })
         .catch((err) => {
-          console.warn(`Load balance from helper error`, err)
+          console.error(`Load balance from helper error`, err)
           return [
             {
               id: [chainId, walletAddress].join(':'),

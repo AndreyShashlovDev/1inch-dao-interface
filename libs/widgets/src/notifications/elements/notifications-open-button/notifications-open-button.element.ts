@@ -1,9 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { subscribe } from '@1inch-community/core/lit-utils'
-import { IApplicationContext } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
@@ -17,20 +15,22 @@ export class NotificationsOpenButtonElement extends LitElement {
 
   static override styles = [notificationsOpenButtonStyle]
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @state() count = 0
 
-  private readonly count$ = defer(() => this.applicationContext.notifications.notificationsCount$)
+  private readonly count$ = defer(
+    () => this.applicationContext.value.notifications.notificationsCount$
+  )
 
   protected firstUpdated() {
     this.count =
-      this.applicationContext.storage.get('inch-notifications-open-button__count', Number) ?? 0
+      this.applicationContext.value.storage.get('inch-notifications-open-button__count', Number) ??
+      0
     subscribe(this, [
       this.count$.pipe(
         tap((count) => {
-          this.applicationContext.storage.set('inch-notifications-open-button__count', count)
+          this.applicationContext.value.storage.set('inch-notifications-open-button__count', count)
           this.count = count
         })
       ),
@@ -41,7 +41,7 @@ export class NotificationsOpenButtonElement extends LitElement {
     return html`
       <inch-button
         disabled="${ifDefined(this.count === 0 ? '' : undefined)}"
-        @click="${() => this.applicationContext.notifications.openAllNotifications()}"
+        @click="${() => this.applicationContext.value.notifications.openAllNotifications()}"
         size="l"
         type="primary-gray"
       >

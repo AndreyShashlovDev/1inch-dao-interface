@@ -96,7 +96,7 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
       if (isUserRejectError(error as WalletError)) {
         throw error
       }
-      console.log(error)
+      console.error(error)
     }
     const data = JSON.stringify(typeData, stringifyReplacer)
     return (await this.providerDetail.provider.request({

@@ -1,5 +1,5 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
-import { lazyAppContext } from '@1inch-community/core/utils'
+import { lazyAppContext } from '@1inch-community/core/lazy'
 import { IApplicationContext, IProxyClient } from '@1inch-community/models'
 
 type AuthData = {
@@ -20,14 +20,11 @@ export class PrivateProxyClient implements IProxyClient {
     return this.context.value.environment.get('oneInchDevPortalHost')
   }
 
-  constructor() {}
-
   async init(context: IApplicationContext) {
     this.context.set(context)
     this.expirationTime =
       this.context.value.storage.get('private-proxy-client-expiration-time', Number) ?? null
     this.token = this.context.value.storage.get('private-proxy-client-token', String) ?? null
-    this.auth().catch(console.error)
   }
 
   async get<T>(url: string): Promise<T> {
@@ -58,15 +55,7 @@ export class PrivateProxyClient implements IProxyClient {
   @CacheActivePromise()
   private async auth() {
     if (this.isAuth) return
-    let turnstileToken = this.context.value.turnstile.getToken()
-    if (turnstileToken === null) {
-      if (!this.context.value.turnstile.getVerificationInProgress()) {
-        this.context.value.turnstile.startTurnstile()
-      }
-      await this.context.value.turnstile.turnstileComplete()
-      turnstileToken = this.context.value.turnstile.getToken()
-    }
-    if (turnstileToken === null) return
+    const turnstileToken = await this.context.value.turnstile.getToken()
     const response = await fetch(`${this.host}/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -79,6 +68,6 @@ export class PrivateProxyClient implements IProxyClient {
     this.expirationTime = expiration_time * 1000 - 2000
     this.context.value.storage.set('private-proxy-client-token', this.token)
     this.context.value.storage.set('private-proxy-client-expiration-time', this.expirationTime)
-    console.log('auth complete')
+    console.warn('auth complete')
   }
 }

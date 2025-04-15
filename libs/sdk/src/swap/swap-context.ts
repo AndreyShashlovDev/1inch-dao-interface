@@ -1,4 +1,4 @@
-import { lazy } from '@1inch-community/core/utils'
+import { lazy } from '@1inch-community/core/lazy'
 import {
   FusionQuoteReceiveDto,
   IApplicationContext,

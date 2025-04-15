@@ -1,8 +1,7 @@
-import { ApplicationContextToken } from '@1inch-community/core/application-context'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
-import { IApplicationContext, Locale } from '@1inch-community/models'
+import { Locale } from '@1inch-community/models'
 import { SceneController, shiftAnimation } from '@1inch-community/ui-components/scene'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { settingsStyle } from './settings.style'
@@ -23,8 +22,7 @@ export class Settings extends LitElement {
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
-  @consume({ context: ApplicationContextToken })
-  applicationContext!: IApplicationContext
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly scene = new SceneController(
     'main',
@@ -57,8 +55,9 @@ export class Settings extends LitElement {
         ${this.scene.render({
           main: () => getMainSettingsView(this.scene, this),
           personalization: () =>
-            getPersonalizationSettingsView(this.scene, this.applicationContext, this),
-          localization: () => getLocalizationSettingsView(this.scene, this.applicationContext),
+            getPersonalizationSettingsView(this.scene, this.applicationContext.value, this),
+          localization: () =>
+            getLocalizationSettingsView(this.scene, this.applicationContext.value),
         })}
       </div>
     `

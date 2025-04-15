@@ -25,7 +25,7 @@ export class StorageManager implements IPersistSyncStorage {
       const strData = typeof data !== 'string' ? JSON.stringify(data) : data
       this.storage.setItem(_key, strData)
     } catch (error) {
-      console.warn(error)
+      console.error(error)
     }
   }
 
@@ -36,7 +36,7 @@ export class StorageManager implements IPersistSyncStorage {
       if (strData === null) return null
       return parser(strData)
     } catch (error) {
-      console.warn(error)
+      console.error(error)
       return null
     }
   }
@@ -46,7 +46,7 @@ export class StorageManager implements IPersistSyncStorage {
       const _key = this.key(key)
       this.storage.removeItem(_key)
     } catch (error) {
-      console.warn(error)
+      console.error(error)
     }
   }
 

@@ -1,4 +1,5 @@
 import type { TemplateResult } from 'lit'
+import { InitializingEntity } from '../base'
 
 export enum OverlayViewMode {
   /**
@@ -28,15 +29,19 @@ export type OverlayViewConfig = {
   /**
    * Default value OverlayViewMode.auto
    * */
-  mode: OverlayViewMode
+  mode?: OverlayViewMode
+  /**
+   *
+   * */
+  targetFactory?: () => HTMLElement | null
 }
 
 export interface IOverlayContext {
   config: OverlayViewConfig
 }
 
-export interface IOverlayController {
-  open(openTarget: TemplateResult | HTMLElement, viewConfig?: OverlayViewConfig): Promise<number>
+export interface IOverlayController extends InitializingEntity {
+  open(content: TemplateResult | HTMLElement, viewConfig?: OverlayViewConfig): Promise<number>
   close(overlayId: number): Promise<void>
   isOpenOverlay(overlayId: number | null | undefined): overlayId is number
 }

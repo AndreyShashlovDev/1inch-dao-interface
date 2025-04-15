@@ -217,6 +217,6 @@ export class WalletViewElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-wallet-view': WalletViewElement
+    [WalletViewElement.tagName]: WalletViewElement
   }
 }

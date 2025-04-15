@@ -5,6 +5,7 @@ export const themeLightBlue = (targetName = ':root') => css`
   ${unsafeCSS(targetName)} {
     --logo-text-color: #1b314f;
 
+    --color-background-bg-overlay: #000000;
     --color-background-bg-active: #ffffff;
     --color-background-bg-body: #eaecf0;
     --color-background-bg-critical: #f048322e;

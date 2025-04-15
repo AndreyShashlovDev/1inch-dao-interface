@@ -8,7 +8,6 @@ export const tokenListStubItemStyle = css`
   }
 
   .item-container {
-    padding: 12px 16px;
     display: flex;
     gap: 8px;
     align-items: center;
