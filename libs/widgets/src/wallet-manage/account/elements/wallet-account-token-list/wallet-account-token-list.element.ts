@@ -49,42 +49,42 @@ export class WalletAccountTokenListElement extends LitElement {
     const chain = getChainById(this.chainId ?? ChainId.eth)
     return html`
       ${when(
-          unsupportedChainId,
-          () => html`
-            <div class="overlay-message">
+        unsupportedChainId,
+        () => html`
+          <div class="overlay-message">
             <h3>Unsupported chain</h3>
           </div>
-          `
+        `
       )}
       ${when(
-          this.isEmpty,
-          () => html`
-            <div class="overlay-message">
+        this.isEmpty,
+        () => html`
+          <div class="overlay-message">
             <inch-icon icon="emptySearch"></inch-icon>
             <h3>Token not found on ${chain.name} Network</h3>
             <span>Switch to another Network</span>
           </div>
-          `
+        `
       )}
       <inch-scroll-view-virtualizer-consumer
-          .header="${this.header}"
-          .items=${observe(this.indexList$, this.getStubAddresses())}
-          .keyFunction="${(_: 0, index: number) => this.getListItemKeyByIndex(index)}"
-          .renderItem=${(_: 0, index: number) => {
-            const normalizedIndex = index - 1
-            const record = this.extractTokenViewDataByIndex(normalizedIndex)
-            
-            if (!record) {
-              return html``
-            }
-            
-            return html`
-              <inch-wallet-account-token-list-item
-                  .crossChainTokensBindingRecord="${record}"
-                  .walletAddress="${ifDefined(this.walletAddress ?? undefined)}"
-              ></inch-wallet-account-token-list-item>
-            `
-          }}
+        .header="${this.header}"
+        .items=${observe(this.indexList$, this.getStubAddresses())}
+        .keyFunction="${(_: 0, index: number) => this.getListItemKeyByIndex(index)}"
+        .renderItem=${(_: 0, index: number) => {
+          const normalizedIndex = index - 1
+          const record = this.extractTokenViewDataByIndex(normalizedIndex)
+
+          if (!record) {
+            return html``
+          }
+
+          return html`
+            <inch-wallet-account-token-list-item
+              .crossChainTokensBindingRecord="${record}"
+              .walletAddress="${ifDefined(this.walletAddress ?? undefined)}"
+            ></inch-wallet-account-token-list-item>
+          `
+        }}
       ></inch-scroll-view-virtualizer-consumer>
     `
   }

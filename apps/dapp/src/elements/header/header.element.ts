@@ -50,7 +50,8 @@ export class HeaderElement extends LitElement {
           () => html`
             <div class="right-content">
               <inch-connect-wallet-view
-                .controller="${this.applicationContext}"
+                .walletController="${this.applicationContext.wallet}"
+                .tokenStorageController="${this.applicationContext.tokenStorage}"
               ></inch-connect-wallet-view>
               <inch-notifications-open-button></inch-notifications-open-button>
             </div>

@@ -1,23 +1,27 @@
 import { getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
+import { ITokenStorage, IWallet, IWalletAccountContext } from '@1inch-community/models'
+import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
-import { IApplicationContext, IWalletAccountContext } from '@1inch-community/models'
 import { provide } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { walletAccountContext } from './context'
-import { walletAccountViewStyle } from './wallet-account-view.style'
-import './elements/wallet-account-token-list'
-import { WalletAccountContext } from './wallet-account.context'
 import './elements/wallet-account-header'
+import './elements/wallet-account-token-list'
+import { walletAccountViewStyle } from './wallet-account-view.style'
+import { WalletAccountContext } from './wallet-account.context'
 
 @customElement(WalletAccountView.tagName)
 export class WalletAccountView extends LitElement {
-  static readonly tagName = 'inch-wallet-account-vew' as const
+  static readonly tagName = 'inch-wallet-account-view' as const
 
   static override styles = walletAccountViewStyle
-  @property({ type: Object, attribute: false }) controller!: IApplicationContext
+
+  @property({ type: Object, attribute: false }) walletController!: IWallet
+
+  @property({ type: Object, attribute: false }) tokenStorageController!: ITokenStorage
 
   @property({ type: Boolean }) showShadow?: boolean
 
@@ -27,19 +31,21 @@ export class WalletAccountView extends LitElement {
   walletAccountContext!: IWalletAccountContext
 
   private initContext() {
-    if (!this.controller) {
+    if (!this.walletController || !this.tokenStorageController) {
       return
     }
 
     this.walletAccountContext = new WalletAccountContext(
-      this.controller
+      this.walletController,
+      this.tokenStorageController
     )
   }
 
   protected override render() {
-    if (!this.controller) {
+    if (!this.walletController || !this.tokenStorageController) {
       throw new Error(
-        'For the inch-wallet-manage widget to work, you need to pass the controller corresponding to the interface in the controller field'
+        'For the inch-wallet-account widget to work, you need to pass the walletController and tokenStorageController' +
+          ' corresponding to the interface in the controller field'
       )
     }
 
@@ -52,11 +58,19 @@ export class WalletAccountView extends LitElement {
             () => html`
               <inch-card-close-overlay></inch-card-close-overlay> `
         )}
-        <inch-card-header headerTextPosition="left" headerText="Account"></inch-card-header>
+        <inch-card-header headerTextPosition="left" headerText="Account">
+          <inch-button
+              slot="right-container"
+              @click="${() => {}}"
+              type="secondary"
+              size="l"
+          >
+             <inch-icon icon="plus24"></inch-icon>
+          </inch-button>
+        </inch-card-header>
         <inch-wallet-account-token-list
-            header="${() => html`
-              <inch-wallet-account-header></inch-wallet-account-header>
-            `}"
+            .header="${() => html`
+              <inch-wallet-account-header></inch-wallet-account-header> `}"
         ></inch-wallet-account-token-list>
       </inch-card>
     `
@@ -65,6 +79,6 @@ export class WalletAccountView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-wallet-account-vew': WalletAccountView
+    'inch-wallet-account-view': WalletAccountView
   }
 }
