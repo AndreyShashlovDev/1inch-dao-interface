@@ -17,7 +17,6 @@ import {
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
-import '@1inch-community/widgets/token-icon'
 import { consume } from '@lit/context'
 import { Maskito } from '@maskito/core'
 import { maskitoNumberOptionsGenerator } from '@maskito/kit'
@@ -41,6 +40,7 @@ import {
   tap,
 } from 'rxjs'
 import { Address, formatUnits, parseUnits } from 'viem'
+import '../../../shared-elements/token-icon'
 import '../balance'
 import '../fiat-balance'
 import { inputStyle } from './input.style'

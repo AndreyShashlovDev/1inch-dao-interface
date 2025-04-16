@@ -1,18 +1,17 @@
 import { lazyAppContextConsumer, lazyProvider } from '@1inch-community/core/lazy'
-import { LitCustomEvent, observe, subscribe } from '@1inch-community/core/lit-utils'
-import { ChainId, ISwapContext, TokenType } from '@1inch-community/models'
+import { dispatchEvent, LitCustomEvent, observe } from '@1inch-community/core/lit-utils'
+import { ChainId, ISwapContext, IToken, TokenType } from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import '@1inch-community/ui-components/card'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { classMap } from 'lit/directives/class-map.js'
-import { defer, tap } from 'rxjs'
+import { defer } from 'rxjs'
 import '../chain-selector'
+import '../shared-elements/token-list'
 import { selectTokenContext } from './context'
 import './elements/favorite-tokens'
 import './elements/search-token-input'
-import './elements/token-list'
 import { SelectTokenContext } from './select-token.context'
 import { selectTokenStyle } from './select-token.style'
 
@@ -32,18 +31,28 @@ export class SelectTokenElement extends LitElement {
 
   private readonly selectTokenContext = lazyProvider(this, { context: selectTokenContext })
 
-  private isEmpty = true
-
   private readonly chainListView$ = defer(() => this.selectTokenContext.value.chainFilter$)
+  private readonly activeAddress$ = defer(
+    () => this.applicationContext.value.wallet.data.activeAddress$
+  )
+  private readonly searchToken$ = defer(() => this.selectTokenContext.value.searchToken$)
 
   protected override render() {
-    const classes = {
-      empty: this.isEmpty,
-    }
     this.initContext()
     return html`
       <inch-token-list
-        class="${classMap(classes)}"
+        showFavoriteTokenToggle
+        type="accordion"
+        @selectToken="${(event: LitCustomEvent<IToken>) => {
+          this.selectTokenContext.value.onSelectToken(event.detail.value)
+          dispatchEvent(this, 'backCard', null)
+        }}"
+        @changeSearchState="${(event: LitCustomEvent<boolean>) => {
+          this.selectTokenContext.value.setSearchState(event.detail.value)
+        }}"
+        .searchFilter="${observe(this.searchToken$)}"
+        .chainIds="${observe(this.chainListView$)}"
+        .walletAddress="${observe(this.activeAddress$)}"
         .header="${() => html`
           <div style="margin-left: 1px; margin-right: 1px; pointer-events: auto;">
             <inch-card-header backButton>
@@ -62,16 +71,6 @@ export class SelectTokenElement extends LitElement {
     `
   }
 
-  protected override firstUpdated() {
-    subscribe(this, [
-      this.selectTokenContext.value.tokenViewData$.pipe(
-        tap((data) => {
-          this.isEmpty = data.allTokensInfo.length === 0 && data.userTokensInfo.length === 0
-        })
-      ),
-    ])
-  }
-
   private initContext() {
     if (this.selectTokenContext.isInit || !this.swapContext || !this.tokenType) return
     const context = new SelectTokenContext(
@@ -85,6 +84,6 @@ export class SelectTokenElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-select-token': SelectTokenElement
+    [SelectTokenElement.tagName]: SelectTokenElement
   }
 }
