@@ -339,6 +339,84 @@ export class TokenController implements ITokenStorage {
     return result
   }
 
+  @CacheActivePromise()
+  async getTokenIdList(
+    chainIds: ChainId[],
+    searchFilter?: string,
+    walletAddress?: Address
+  ): Promise<TokenRecordId[]> {
+    const { tokens, balances, tokenPrice } = this.schema
+    const chainIdSet = new Set(chainIds)
+    const result = new Set<TokenRecordId>()
+    const tokenRecordMap = new Map<TokenRecordId, IToken>()
+    const searchFilterLower = searchFilter?.toLowerCase()
+    const searchFilterHandler = (value: string) => {
+      if (!searchFilterLower) return true
+      return value.toLowerCase().startsWith(searchFilterLower)
+    }
+    await tokens
+      .orderBy('priority')
+      .and((record) => {
+        if (!chainIdSet.has(record.chainId)) return false
+        return (
+          searchFilterHandler(record.symbol) ||
+          searchFilterHandler(record.name) ||
+          searchFilterHandler(record.address)
+        )
+      })
+      .reverse()
+      .each((record) => tokenRecordMap.set(record.id, record))
+    if (walletAddress) {
+      const balanceList: [TokenRecordId, BigFloat][] = []
+      const fiatBalanceList: [TokenRecordId, BigFloat][] = []
+      const tokenIdListWithBalance: TokenRecordId[] = []
+      const tokenPriceMap = new Map<TokenRecordId, BigFloat>()
+      await balances
+        .where('walletAddress')
+        .equals(walletAddress.toLowerCase())
+        .each((record) => {
+          if (record.amount === '0' || !tokenRecordMap.has(record.tokenRecordId)) return
+          const token = tokenRecordMap.get(record.tokenRecordId)
+          if (!token) return
+          tokenIdListWithBalance.push(record.tokenRecordId)
+          balanceList.push([
+            record.tokenRecordId,
+            BigFloat.fromBigInt(BigInt(record.amount), token.decimals),
+          ])
+        })
+      await tokenPrice
+        .where('tokenRecordId')
+        .anyOf(tokenIdListWithBalance)
+        .each((record) =>
+          tokenPriceMap.set(record.tokenRecordId, BigFloat.fromString(record.price))
+        )
+      balanceList.forEach(([id, balance]) => {
+        const tokenPrice = tokenPriceMap.get(id)
+        if (!tokenPrice) {
+          fiatBalanceList.push([id, BigFloat.zero()])
+          return
+        }
+        const fiatBalance = balance.mul(tokenPrice)
+        fiatBalanceList.push([id, fiatBalance])
+      })
+      fiatBalanceList
+        .sort(([, fiatBalance1], [, fiatBalance2]) => {
+          const result = fiatBalance1.sub(fiatBalance2)
+          if (result.isZero()) return 0
+          return result.isNegative() ? 1 : -1
+        })
+        .forEach(([id]) => {
+          result.add(id)
+        })
+    }
+
+    tokenRecordMap.forEach((_, id) => {
+      result.add(id)
+    })
+
+    return result.values().toArray()
+  }
+
   isSupportedTokenPermit(): Promise<boolean> {
     throw new Error('Method not implemented.')
   }
@@ -358,19 +436,23 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTokenBalanceById(id: TokenRecordId): Promise<IBigFloat> {
+  async getTokenBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat> {
     const { balances } = this.schema
     const token = await this.getTokenById(id)
     if (!token) return BigFloat.zero()
-    const balanceRecord = await balances.where('tokenRecordId').equals(id).first()
+    const balanceRecord = await balances
+      .where('tokenRecordId')
+      .equals(id)
+      .and((record) => isAddressEqual(record.walletAddress, walletAddress))
+      .first()
     if (!balanceRecord) return BigFloat.zero()
     return BigFloat.fromBigInt(BigInt(balanceRecord.amount), token.decimals)
   }
 
   @CacheActivePromise()
-  async getTokenFiatBalanceById(id: TokenRecordId): Promise<IBigFloat> {
+  async getTokenFiatBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat> {
     const { tokenPrice } = this.schema
-    const balance = await this.getTokenBalanceById(id)
+    const balance = await this.getTokenBalanceById(id, walletAddress)
     const tokenPriceRecord = await tokenPrice.where('tokenRecordId').equals(id).first()
     if (!tokenPriceRecord) return BigFloat.zero()
     return balance.mul(BigFloat.fromString(tokenPriceRecord.price))

@@ -12,7 +12,7 @@ import { tap } from 'rxjs'
 import { Address, formatUnits, Hash } from 'viem'
 import { notificationFusionSwapViewStyles } from './notification-fusion-swap-view.styles'
 
-import('../../../token-icon')
+import('../../../shared-elements/token-icon')
 import('@1inch-community/ui-components/timer')
 import('@1inch-community/ui-components/button')
 

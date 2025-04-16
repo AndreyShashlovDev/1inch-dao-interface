@@ -1,17 +1,23 @@
 import { css } from 'lit'
 
-export const tokenListItemChainStyle = css`
+export const tokenItemCrossChainAccordionChainViewStyle = css`
   :host {
     display: flex;
-    align-content: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    box-sizing: border-box;
     height: 60px;
-    color: var(--color-content-content-primary);
+    width: 100%;
     cursor: pointer;
     border-radius: 16px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    color: var(--color-content-content-primary);
     transition: background-color 0.2s;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .corner-icon:dir(rtl) {
+    transform: scaleX(-1);
   }
 
   .left {
@@ -24,6 +30,12 @@ export const tokenListItemChainStyle = css`
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    margin-left: auto;
+  }
+
+  .right:dir(rtl) {
+    margin-right: auto;
+    margin-left: 0;
   }
 
   .balance {
