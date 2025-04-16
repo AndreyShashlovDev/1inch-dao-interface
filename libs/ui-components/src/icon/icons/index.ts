@@ -240,6 +240,21 @@ export const icons: Record<string, IconsRecord> = {
     height: '199px',
     loader: () => import('./unicorn_background.svg').then((m) => m.unicornBackground),
   },
+  logout16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./logout_16.svg').then((m) => m.Logout16Svg),
+  },
+  copy16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./copy_16.svg').then((m) => m.Copy16Svg),
+  },
+  externalLink16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./external-link_16.svg').then((m) => m.ExternalLink16Svg),
+  },
 
   // chain icons
   eth24: {

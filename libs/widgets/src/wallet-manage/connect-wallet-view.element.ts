@@ -6,26 +6,23 @@ import {
   getShadowDomElement,
   observe,
 } from '@1inch-community/core/lit-utils'
-import { ITokenStorage, IWallet, OverlayViewMode } from '@1inch-community/models'
+import { IWallet, OverlayViewMode } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { customElement } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
 import { defer, map } from 'rxjs'
 import './account'
 import { connectWalletViewStyle } from './connect-wallet-view.style'
 import './elements/wallet-view-address-balance'
+import './wallet-manager-route.element'
 
 @customElement(ConnectWalletViewElement.tagName)
 export class ConnectWalletViewElement extends LitElement {
   static tagName = 'inch-connect-wallet-view' as const
 
   static override styles = connectWalletViewStyle
-
-  @property({ type: Object, attribute: false }) walletController?: IWallet
-
-  @property({ type: Object, attribute: false }) tokenStorageController?: ITokenStorage
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
@@ -54,11 +51,15 @@ export class ConnectWalletViewElement extends LitElement {
     return html`${observe(this.view$)}`
   }
 
+  /**
+   * Component like a ConnectButton
+   * @private
+   */
   private getConnectedView() {
     return html`
       <div
         class="connect-wallet-view-container"
-        @click="${() => this.mobileMatchMedia.matches && this.onOpenAccountView()}"
+        @click="${() => this.mobileMatchMedia.matches && this.onManagerRouteView()}"
       >
         <img
           class="connect-wallet-view-icon"
@@ -72,7 +73,7 @@ export class ConnectWalletViewElement extends LitElement {
               address="${observe(this.activeAddress$)}"
               chainId="${observe(this.chainId$)}"
             ></inch-wallet-view-address-balance>
-            <inch-button @click="${() => this.onOpenAccountView()}" type="secondary" size="m">
+            <inch-button @click="${() => this.onManagerRouteView()}" type="secondary" size="m">
               ${observe(this.activeAddressView$)}
             </inch-button>
           `
@@ -84,7 +85,7 @@ export class ConnectWalletViewElement extends LitElement {
   private getConnectWalletButton() {
     return html`
       <inch-button
-        @click="${() => this.onOpenAccountView()}"
+        @click="${() => this.onManagerRouteView()}"
         type="${this.mobileMatchMedia.matches ? 'primary-gray' : 'secondary'}"
         size="${this.mobileMatchMedia.matches ? 'l' : 'xl'}"
       >
@@ -98,21 +99,11 @@ export class ConnectWalletViewElement extends LitElement {
   }
 
   private getWalletController(): IWallet {
-    if (!this.walletController) {
-      throw new Error('')
-    }
-    return this.walletController
-  }
-
-  private getTokenStorageController(): ITokenStorage {
-    if (!this.tokenStorageController) {
-      throw new Error('')
-    }
-    return this.tokenStorageController
+    return this.applicationContext.value.wallet
   }
 
   @CacheActivePromise()
-  private async onOpenAccountView() {
+  private async onManagerRouteView() {
     if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
       await this.applicationContext.value.overlay.close(this.overlayId)
       this.overlayId = null
@@ -120,7 +111,7 @@ export class ConnectWalletViewElement extends LitElement {
     }
     this.overlayId = await this.applicationContext.value.overlay.open(
       html`
-        <inch-wallet-account-view
+        <inch-wallet-manager-route
           @closeCard="${() => {
             if (!this.overlayId) {
               return
@@ -128,33 +119,7 @@ export class ConnectWalletViewElement extends LitElement {
             this.applicationContext.value.overlay.close(this.overlayId)
             this.overlayId = null
           }}"
-          .walletController="${this.getWalletController()}"
-          .tokenStorageController="${this.getTokenStorageController()}"
-        ></inch-wallet-account-view>
-      `,
-      { targetFactory: () => getShadowDomElement('swap-form'), mode: OverlayViewMode.auto }
-    )
-  }
-
-  @CacheActivePromise()
-  private async onOpenConnectView() {
-    if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
-      await this.applicationContext.value.overlay.close(this.overlayId)
-      this.overlayId = null
-      return
-    }
-    this.overlayId = await this.applicationContext.value.overlay.open(
-      html`
-        <inch-wallet-manage
-          @closeCard="${() => {
-            if (!this.overlayId) {
-              return
-            }
-            this.applicationContext.value.overlay.close(this.overlayId)
-            this.overlayId = null
-          }}"
-          .controller="${this.getWalletController()}"
-        ></inch-wallet-manage>
+        ></inch-wallet-manager-route>
       `,
       { targetFactory: () => getShadowDomElement('swap-form'), mode: OverlayViewMode.auto }
     )

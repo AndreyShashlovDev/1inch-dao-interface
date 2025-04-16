@@ -51,9 +51,7 @@ export class FooterElement extends LitElement {
   private getMobileFooter() {
     return html`
       <div class="footer-container mobile-footer">
-        <inch-connect-wallet-view
-          .controller="${this.applicationContext.value.wallet}"
-        ></inch-connect-wallet-view>
+        <inch-connect-wallet-view></inch-connect-wallet-view>
 
         <inch-notifications-open-button></inch-notifications-open-button>
 

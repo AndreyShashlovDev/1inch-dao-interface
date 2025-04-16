@@ -1,9 +1,9 @@
 import { formatHex } from '@1inch-community/core/formatters'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { appendStyle, async, subscribe, translate } from '@1inch-community/core/lit-utils'
-import { ChainId, EIP6963ProviderInfo, IWallet } from '@1inch-community/models'
+import { ChainId, EIP6963ProviderInfo } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
@@ -12,13 +12,14 @@ import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
 import { tap } from 'rxjs'
 import { Address } from 'viem'
-import { controllerContext } from '../../context'
-import '../wallet-view-address-balance'
+import '../../../elements/wallet-view-address-balance'
 import { walletViewStyle } from './wallet-view.style'
 
 @customElement(WalletViewElement.tagName)
 export class WalletViewElement extends LitElement {
   static tagName = 'inch-wallet-view' as const
+
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   static override styles = walletViewStyle
 
@@ -37,9 +38,6 @@ export class WalletViewElement extends LitElement {
   @state() private isActiveWallet = false
 
   @state() private chainId?: ChainId
-
-  @consume({ context: controllerContext })
-  private controller?: IWallet
 
   protected override firstUpdated() {
     if (!this.info) {
@@ -184,7 +182,9 @@ export class WalletViewElement extends LitElement {
   }
 
   private async onConnect(event?: MouseEvent) {
-    if (!this.info || this.showLoader) return
+    if (!this.info || this.showLoader) {
+      return
+    }
     event?.preventDefault()
     event?.stopPropagation()
     this.showLoader = true
@@ -198,19 +198,20 @@ export class WalletViewElement extends LitElement {
   }
 
   private async setActiveAddress(address: Address) {
-    if (!this.info) return
+    if (!this.info) {
+      return
+    }
     await this.getController().setActiveAddress(this.info, address)
   }
 
   private getController() {
-    if (!this.controller) {
-      throw new Error('')
-    }
-    return this.controller
+    return this.applicationContext.value.wallet
   }
 
   private isActiveAddress(address: Address): Promise<boolean> {
-    if (!this.info) throw new Error('')
+    if (!this.info) {
+      throw new Error('')
+    }
     return this.getController().data.isActiveAddress(this.info, address)
   }
 }

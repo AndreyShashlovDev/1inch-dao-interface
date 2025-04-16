@@ -46,10 +46,7 @@ export class HeaderElement extends LitElement {
           this.applicationContext.value.wallet.isConnected,
           () => html`
             <div class="right-content">
-              <inch-connect-wallet-view
-                .walletController="${this.applicationContext.value.wallet}"
-                .tokenStorageController="${this.applicationContext.value.tokenStorage}"
-              ></inch-connect-wallet-view>
+              <inch-connect-wallet-view></inch-connect-wallet-view>
               <inch-notifications-open-button></inch-notifications-open-button>
             </div>
           `

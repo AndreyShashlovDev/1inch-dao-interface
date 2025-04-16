@@ -24,6 +24,10 @@ export const walletAccountCardStyle = css`
     }
   }
 
+  .card-item__color {
+    color: var(--color-core-white);  
+  }
+  
   .card {
     display: flex;
     gap: 28px;
@@ -36,6 +40,7 @@ export const walletAccountCardStyle = css`
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
+    color: var(--color-core-white);
   }
 
   .card-wallet-container {
@@ -65,7 +70,7 @@ export const walletAccountCardStyle = css`
     width: 24px;
     height: 24px;
     overflow: hidden;
-    background-color: white;
+    background-color: var(--color-core-white);
     padding: 4px;
     box-sizing: border-box;
 
@@ -81,6 +86,15 @@ export const walletAccountCardStyle = css`
     line-height: 24px;
     font-weight: 500;
     letter-spacing: 0;
+  }
+
+  .card-wallet-balance {
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: 0;
+    vertical-align: middle;
+    color: var(--color-core-white);
   }
 
   .card-actions {
@@ -100,7 +114,7 @@ export const walletAccountCardStyle = css`
   }
 
   .btn-receive-icon-arrow {
-    color: white;
+    color: var(--color-core-white);
     transform: rotate(138deg);
     width: 16px;
     height: auto;
@@ -108,7 +122,7 @@ export const walletAccountCardStyle = css`
 
   .background-unicorn {
     position: absolute;
-    right: 0;
-    top: 0;
+    right: -64px;
+    top: -12px;
   }
 `

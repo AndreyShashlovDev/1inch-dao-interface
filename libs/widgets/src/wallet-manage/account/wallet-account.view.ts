@@ -1,5 +1,7 @@
-import { getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
-import { ITokenStorage, IWallet, IWalletAccountContext } from '@1inch-community/models'
+import { throttle } from '@1inch-community/core/decorators'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { dispatchEvent, getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
+import { IWalletAccountContext } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
 import { provide } from '@lit/context'
@@ -19,9 +21,7 @@ export class WalletAccountView extends LitElement {
 
   static override styles = walletAccountViewStyle
 
-  @property({ type: Object, attribute: false }) walletController!: IWallet
-
-  @property({ type: Object, attribute: false }) tokenStorageController!: ITokenStorage
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   @property({ type: Boolean }) showShadow?: boolean
 
@@ -31,49 +31,47 @@ export class WalletAccountView extends LitElement {
   walletAccountContext!: IWalletAccountContext
 
   private initContext() {
-    if (!this.walletController || !this.tokenStorageController) {
+    if (!this.applicationContext) {
       return
     }
 
     this.walletAccountContext = new WalletAccountContext(
-      this.walletController,
-      this.tokenStorageController
+      this.applicationContext.value.wallet,
+      this.applicationContext.value.tokenStorage
     )
   }
 
-  protected override render() {
-    if (!this.walletController || !this.tokenStorageController) {
-      throw new Error(
-        'For the inch-wallet-account widget to work, you need to pass the walletController and tokenStorageController' +
-          ' corresponding to the interface in the controller field'
-      )
-    }
+  @throttle(300)
+  private onChangeWalletClick() {
+    dispatchEvent(this, 'changeWalletClick', undefined)
+  }
 
+  protected override render() {
     this.initContext()
 
     return html`
-      <inch-card showShadow="${ifDefined(this.showShadow)}" overlayView>
-        ${when(
-            !this.mobileMedia.matches,
-            () => html`
-              <inch-card-close-overlay></inch-card-close-overlay> `
-        )}
-        <inch-card-header headerTextPosition="left" headerText="Account">
-          <inch-button
-              slot="right-container"
-              @click="${() => {}}"
-              type="secondary"
-              size="l"
-          >
-             <inch-icon icon="plus24"></inch-icon>
-          </inch-button>
-        </inch-card-header>
-        <inch-wallet-account-token-list
-            .header="${() => html`
-              <inch-wallet-account-header></inch-wallet-account-header> `}"
-        ></inch-wallet-account-token-list>
-      </inch-card>
+      <inch-wallet-account-header></inch-wallet-account-header>
+      <inch-wallet-account-token-list></inch-wallet-account-token-list>
     `
+    // return html`
+    //   <inch-card showShadow="${ifDefined(this.showShadow)}" overlayView>
+    //     ${when(
+    //       !this.mobileMedia.matches,
+    //       () => html` <inch-card-close-overlay></inch-card-close-overlay> `
+    //     )}
+    //     <inch-card-header headerTextPosition="left" headerText="Account">
+    //       <inch-button
+    //         slot="right-container"
+    //         @click="${() => this.onChangeWalletClick()}"
+    //         type="secondary"
+    //         size="l"
+    //       >
+    //         <inch-icon icon="plus24"></inch-icon>
+    //       </inch-button>
+    //     </inch-card-header>
+    //
+    //   </inch-card>
+    // `
   }
 }
 

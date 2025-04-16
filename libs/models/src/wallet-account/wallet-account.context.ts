@@ -11,4 +11,8 @@ export interface IWalletAccountContext {
   readonly walletBalance$: Observable<IBigFloat>
   readonly chainId$: Observable<ChainId | null>
   readonly tokenViewData$: Observable<ITokenListViewData>
+
+  copyAddress(walletAddress: Address): void
+  openExplorer(chainId: ChainId, walletAddress: Address): void
+  disconnectWallet(): void
 }
