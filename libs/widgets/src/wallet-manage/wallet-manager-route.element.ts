@@ -1,7 +1,7 @@
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { getMobileMatchMediaAndSubscribe } from '@1inch-community/core/lit-utils'
 import '@1inch-community/ui-components/card'
-import { SceneController, slideAnimation } from '@1inch-community/ui-components/scene'
+import { SceneController, shiftAnimation } from '@1inch-community/ui-components/scene'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
@@ -35,7 +35,7 @@ export class WalletManagerRoute extends LitElement {
         minHeight: 240,
       },
     },
-    slideAnimation()
+    shiftAnimation()
   )
 
   private getAccountView() {

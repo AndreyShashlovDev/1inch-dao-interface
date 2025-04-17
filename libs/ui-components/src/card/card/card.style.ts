@@ -38,5 +38,6 @@ export const cardStyle = css`
     box-sizing: border-box;
     flex-direction: column;
     gap: 8px;
+    overflow: hidden;
   }
 `

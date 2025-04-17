@@ -1,14 +1,16 @@
+import { JsonParser } from '@1inch-community/core/storage'
 import {
   ChainId,
   EIP6963ProviderInfo,
-  IBigFloat,
+  IBigFloat, IPersistSyncStorage,
   ITokenListViewData,
   ITokenStorage,
   IWallet,
   IWalletAccountContext,
 } from '@1inch-community/models'
-import { getWalletExplorerUrl } from '@1inch-community/sdk/chain'
+import { getChainIdList, getWalletExplorerUrl } from '@1inch-community/sdk/chain'
 import {
+  BehaviorSubject,
   combineLatest,
   defer,
   distinctUntilChanged,
@@ -45,10 +47,20 @@ export class WalletAccountContext implements IWalletAccountContext {
     switchMap((address) => this.tokenStorage.getCrossChainTotalFiatBalance(address))
   )
 
+  readonly chainFilter$ = new BehaviorSubject<ChainId[]>([])
+
   constructor(
     private readonly wallet: IWallet,
-    private readonly tokenStorage: ITokenStorage
-  ) {}
+    private readonly tokenStorage: ITokenStorage,
+    readonly persistSyncStorage: IPersistSyncStorage
+  ) {
+    const chainFilter =
+      persistSyncStorage.get<ChainId[]>(
+        'inch-select-token_chain-filter',
+        JsonParser
+      ) ?? getChainIdList()
+    this.chainFilter$.next(chainFilter)
+  }
 
   public copyAddress(walletAddress: Address): void {
     navigator.clipboard.writeText(walletAddress.toString()).catch((e) => console.warn(e))
