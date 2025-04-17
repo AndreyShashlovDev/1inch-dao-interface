@@ -1,6 +1,6 @@
 import { throttle } from '@1inch-community/core/decorators'
 import { formatHex } from '@1inch-community/core/formatters'
-import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { lazyAppContextConsumer, lazyConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, subscribe, translate } from '@1inch-community/core/lit-utils'
 import {
   ChainId,
@@ -10,6 +10,7 @@ import {
 } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
+import { scrollContext } from '@1inch-community/ui-components/scroll'
 import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
@@ -50,6 +51,9 @@ export class WalletAccountCardElement extends LitElement {
   @state()
   private chainId?: ChainId
 
+  @state()
+  private isCollapsed = false
+
   private overlayId: number | null = null
 
   private readonly menuItems: MenuItem[] = [
@@ -79,10 +83,27 @@ export class WalletAccountCardElement extends LitElement {
     },
   ]
 
+  private readonly scrollConsumer = lazyConsumer(this, { context: scrollContext })
+
   protected override firstUpdated() {
     if (!this.context) {
       throw new Error('setup context before')
     }
+
+    const collapseThreshold = 100
+
+    subscribe(
+      this,
+      this.scrollConsumer.value.scrollTopFromConsumer$.pipe(
+        tap((value) => {
+          this.isCollapsed = value > collapseThreshold
+
+          if (this.isCollapsed) {
+            this.closeMenuMore()
+          }
+        })
+      )
+    )
 
     subscribe(
       this,
@@ -140,8 +161,7 @@ export class WalletAccountCardElement extends LitElement {
   @throttle(300)
   private async onMoreClick(target: HTMLElement) {
     if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
-      await this.applicationContext.value.overlay.close(this.overlayId)
-      this.overlayId = null
+      await this.closeMenuMore()
       return
     }
 
@@ -159,6 +179,13 @@ export class WalletAccountCardElement extends LitElement {
     )
   }
 
+  private async closeMenuMore() {
+    if (this.overlayId) {
+      await this.applicationContext.value.overlay.close(this.overlayId)
+      this.overlayId = null
+    }
+  }
+
   protected override render() {
     const address = this.walletAddress
     const icon = this.walletInfo?.icon
@@ -166,11 +193,14 @@ export class WalletAccountCardElement extends LitElement {
     const hasData = address && icon && name
 
     return html`
-      <div class="card">
-        <inch-icon class="background-unicorn" icon="unicornBackground"></inch-icon>
+      <div class="card ${this.isCollapsed ? 'collapsed' : ''}" ">
+        <inch-icon
+            class="background-unicorn ${this.isCollapsed ? 'collapsed' : ''}"
+            icon="unicornBackground"
+        ></inch-icon>
 
-        <div class="card-wallet-container">
-          <div class="card-wallet ${hasData ? '' : 'loader'}">
+        <div class="card-wallet-container ${this.isCollapsed ? 'fade-out' : ''}">
+          <div class="card-wallet ${hasData ? '' : 'loader'} ${this.isCollapsed ? 'fade-out' : ''}">
             ${when(
               hasData,
               () => html`
@@ -201,7 +231,7 @@ export class WalletAccountCardElement extends LitElement {
           ></inch-wallet-view-address-balance>
         </div>
 
-        <div class="card-actions">
+        <div class="card-actions ${this.isCollapsed ? 'fade-out' : ''}">
           <inch-button @click="${() => {}}" type="tertiary" fullSize="${true}" size="l">
             <inch-icon class="btn-send-icon-arrow" icon="arrowLeft24"></inch-icon>
             <span class="card-item__color">

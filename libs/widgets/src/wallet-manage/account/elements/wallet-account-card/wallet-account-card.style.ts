@@ -34,7 +34,7 @@ export const walletAccountCardStyle = css`
     flex-direction: column;
     padding: 16px;
     width: 100%;
-    height: fit-content;
+    height: 200px;
     background:
       linear-gradient(14deg, rgba(0, 0, 0, 0.7) 11%, rgba(0, 0, 0, 0) 85%), var(--primary-hover);
     border-radius: 16px;
@@ -42,6 +42,9 @@ export const walletAccountCardStyle = css`
     position: relative;
     overflow: hidden;
     color: var(--color-core-white);
+    transition:
+      height 0.3s ease,
+      gap 0.3s ease;
   }
 
   .card-wallet-container {
@@ -125,5 +128,31 @@ export const walletAccountCardStyle = css`
     position: absolute;
     right: -64px;
     top: -12px;
+    transition:
+      top 0.3s ease,
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  .background-unicorn.collapsed {
+    top: -74px;
+  }
+
+  .card.collapsed {
+    height: 72px;
+    gap: 6px;
+  }
+
+  .fade-out {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    transition:
+      opacity 0.3s ease,
+      height 0.3s ease,
+      margin 0.3s ease,
+      padding 0.3s ease;
   }
 `
