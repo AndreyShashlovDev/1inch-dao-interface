@@ -1,6 +1,7 @@
 import { asyncFrame } from '@1inch-community/core/async'
 import { appendStyle } from '@1inch-community/core/lit-utils'
 import { html, render, TemplateResult } from 'lit'
+import { distinctUntilChanged, map, Observable, shareReplay, startWith, Subject } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
 import { slideAnimation } from './animations'
 import { Animation } from './animations/animation'
@@ -24,6 +25,8 @@ export class SceneController<T extends string, U extends T> {
 
   private currentScenes?: RenderConfig<T>
 
+  private readonly takeUpdate$ = new Subject<void>()
+
   private sceneStack: string[] = []
 
   private readonly sceneContainer = buildSceneContainer()
@@ -33,6 +36,13 @@ export class SceneController<T extends string, U extends T> {
   get activeScene() {
     return this.sceneStack[this.sceneStack.length - 1]
   }
+
+  readonly currentSceneName$: Observable<T> = this.takeUpdate$.pipe(
+    startWith(null),
+    map(() => this.getCurrentSceneName()),
+    distinctUntilChanged(),
+    shareReplay({ bufferSize: 1, refCount: true })
+  )
 
   constructor(
     private readonly rootSceneName: U,
@@ -59,24 +69,32 @@ export class SceneController<T extends string, U extends T> {
       this.sceneContainerAppendChild(sceneWrapper)
       this.applySceneConfigBySceneName(sceneName)
     }
+    this.takeUpdate$.next()
     return html`${this.sceneContainer}`
   }
 
   async nextTo(sceneName: T) {
-    if (this.transitionInProgress) return
+    if (this.transitionInProgress) {
+      return
+    }
     await this.transition(sceneName)
     this.sceneStack.push(sceneName)
+    this.takeUpdate$.next()
   }
 
   async back() {
-    if (this.transitionInProgress) return
+    if (this.transitionInProgress) {
+      return
+    }
     const sceneName = (this.sceneStack[this.sceneStack.length - 2] ?? this.rootSceneName) as T
     await this.transition(sceneName, true)
     this.sceneStack.pop()
+    this.takeUpdate$.next()
   }
 
   resetScene() {
     this.sceneStack = []
+    this.takeUpdate$.next()
   }
 
   getCurrentSceneName(): T {
@@ -88,7 +106,9 @@ export class SceneController<T extends string, U extends T> {
   }
 
   private getCurrentScene() {
-    if (!this.currentScenes) return null
+    if (!this.currentScenes) {
+      return null
+    }
     const currentScene = this.getCurrentSceneName()
     return this.getScene(currentScene)
   }
@@ -97,9 +117,13 @@ export class SceneController<T extends string, U extends T> {
     this.transitionInProgress = true
     try {
       const currentScene = this.getCurrentSceneName()
-      if (currentScene === sceneName) return
+      if (currentScene === sceneName) {
+        return
+      }
       const nextSceneFactory = this.getScene(sceneName)
-      if (!nextSceneFactory) throw new Error(`Scene ${sceneName} not exist`)
+      if (!nextSceneFactory) {
+        throw new Error(`Scene ${sceneName} not exist`)
+      }
       const nextSceneWrapper = this.buildSceneWrapper(nextSceneFactory(), sceneName)
       const currentSceneWrapper = this.sceneContainer.firstChild as SceneWrapperElement
 
@@ -152,7 +176,9 @@ export class SceneController<T extends string, U extends T> {
   }
 
   private getScene(sceneName: T) {
-    if (!this.currentScenes) return null
+    if (!this.currentScenes) {
+      return null
+    }
     return this.currentScenes[sceneName] ?? null
   }
 
@@ -181,7 +207,9 @@ export class SceneController<T extends string, U extends T> {
 
   private applySceneSizes(config: SceneConfigItem) {
     const formatValue = (value?: number | string) => {
-      if (!value) return ''
+      if (!value) {
+        return ''
+      }
       return typeof value === 'number' ? `${value}px` : value
     }
     if (config.maxHeight) {

@@ -10,7 +10,7 @@ export class WalletManageElement extends LitElement {
   static override styles = walletManageStyle
 
   protected override render() {
-    return html` <div><inch-wallet-list></inch-wallet-list></div>`
+    return html` <inch-wallet-list></inch-wallet-list>`
   }
 }
 

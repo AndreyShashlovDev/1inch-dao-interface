@@ -43,12 +43,14 @@ export class WalletAccountView extends LitElement {
     this.initContext()
 
     return html`
-      <inch-token-list
-        type="flat"
-        .chainIds="${observe(this.chainListView$)}"
-        .walletAddress="${observe(this.activeAddress$)}"
-        .header="${() => html` <inch-wallet-account-header></inch-wallet-account-header> `}"
-      ></inch-token-list>
+      <div>
+        <inch-wallet-account-header></inch-wallet-account-header>
+        <inch-token-list
+            type="flat"
+            .chainIds="${observe(this.chainListView$)}"
+            .walletAddress="${observe(this.activeAddress$)}"
+        ></inch-token-list>
+      </div>
     `
   }
 }

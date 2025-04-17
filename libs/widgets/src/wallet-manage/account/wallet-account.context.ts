@@ -2,23 +2,14 @@ import { JsonParser } from '@1inch-community/core/storage'
 import {
   ChainId,
   EIP6963ProviderInfo,
-  IBigFloat, IPersistSyncStorage,
-  ITokenListViewData,
+  IBigFloat,
+  IPersistSyncStorage,
   ITokenStorage,
   IWallet,
   IWalletAccountContext,
 } from '@1inch-community/models'
 import { getChainIdList, getWalletExplorerUrl } from '@1inch-community/sdk/chain'
-import {
-  BehaviorSubject,
-  combineLatest,
-  defer,
-  distinctUntilChanged,
-  filter,
-  Observable,
-  shareReplay,
-  switchMap,
-} from 'rxjs'
+import { BehaviorSubject, defer, distinctUntilChanged, filter, Observable, switchMap } from 'rxjs'
 import type { Address } from 'viem'
 
 export class WalletAccountContext implements IWalletAccountContext {
@@ -29,17 +20,6 @@ export class WalletAccountContext implements IWalletAccountContext {
     () => this.wallet.data.activeAddress$
   )
   readonly chainId$: Observable<ChainId | null> = defer(() => this.wallet.data.chainId$)
-
-  readonly tokenViewData$: Observable<ITokenListViewData> = combineLatest([
-    this.chainId$,
-    this.connectedWalletAddress$,
-  ]).pipe(
-    filter(([chainId, address]) => chainId !== null && address !== null),
-    switchMap(([chainId, address]) =>
-      this.tokenStorage.getSymbolData([chainId!], address ?? undefined)
-    ),
-    shareReplay({ bufferSize: 1, refCount: true })
-  )
 
   readonly walletBalance$: Observable<IBigFloat> = this.connectedWalletAddress$.pipe(
     distinctUntilChanged(),
@@ -52,21 +32,19 @@ export class WalletAccountContext implements IWalletAccountContext {
   constructor(
     private readonly wallet: IWallet,
     private readonly tokenStorage: ITokenStorage,
-    readonly persistSyncStorage: IPersistSyncStorage
+    private readonly persistSyncStorage: IPersistSyncStorage
   ) {
     const chainFilter =
-      persistSyncStorage.get<ChainId[]>(
-        'inch-select-token_chain-filter',
-        JsonParser
-      ) ?? getChainIdList()
+      persistSyncStorage.get<ChainId[]>('inch-select-token_chain-filter', JsonParser) ??
+      getChainIdList()
     this.chainFilter$.next(chainFilter)
   }
 
-  public copyAddress(walletAddress: Address): void {
+  copyAddress(walletAddress: Address): void {
     navigator.clipboard.writeText(walletAddress.toString()).catch((e) => console.warn(e))
   }
 
-  public openExplorer(chainId: ChainId, walletAddress: Address): void {
+  openExplorer(chainId: ChainId, walletAddress: Address): void {
     const url = getWalletExplorerUrl(chainId, walletAddress)
 
     if (url) {
@@ -74,7 +52,12 @@ export class WalletAccountContext implements IWalletAccountContext {
     }
   }
 
-  public disconnectWallet(): void {
+  disconnectWallet(): void {
     this.wallet.disconnect().catch((e) => console.warn(e))
+  }
+
+  onChangeChainFilter(chainIdList: ChainId[]): void {
+    this.chainFilter$.next(chainIdList)
+    this.persistSyncStorage.set('inch-select-token_chain-filter', chainIdList)
   }
 }

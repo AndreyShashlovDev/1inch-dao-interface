@@ -21,7 +21,7 @@ export class ChainSelectorElement extends LitElement {
 
   static override styles = chainSelectorStyle
 
-  @property({ type: Array, attribute: false }) selectedChainIdList: ChainId[] = [ChainId.eth]
+  @property({ type: Array, attribute: false }) selectedChainIdList: ChainId[] = []
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 

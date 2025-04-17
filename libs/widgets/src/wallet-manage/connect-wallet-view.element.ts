@@ -12,8 +12,7 @@ import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
-import { defer, map } from 'rxjs'
-import './account'
+import { defer, map, tap } from 'rxjs'
 import { connectWalletViewStyle } from './connect-wallet-view.style'
 import './elements/wallet-view-address-balance'
 import './wallet-manager-route.element'
@@ -42,6 +41,11 @@ export class ConnectWalletViewElement extends LitElement {
   )
 
   private readonly view$ = defer(() => this.getWalletController().data.isConnected$).pipe(
+    tap((isConnected) => {
+      if (!isConnected) {
+        this.closeCurrentOverlay()
+      }
+    }),
     map((isConnected) => {
       return isConnected ? this.getConnectedView() : this.getConnectWalletButton()
     })
@@ -105,8 +109,7 @@ export class ConnectWalletViewElement extends LitElement {
   @CacheActivePromise()
   private async onManagerRouteView() {
     if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
-      await this.applicationContext.value.overlay.close(this.overlayId)
-      this.overlayId = null
+      await this.closeCurrentOverlay()
       return
     }
     this.overlayId = await this.applicationContext.value.overlay.open(
@@ -116,13 +119,19 @@ export class ConnectWalletViewElement extends LitElement {
             if (!this.overlayId) {
               return
             }
-            this.applicationContext.value.overlay.close(this.overlayId)
-            this.overlayId = null
+            this.closeCurrentOverlay()
           }}"
         ></inch-wallet-manager-route>
       `,
       { targetFactory: () => getShadowDomElement('swap-form'), mode: OverlayViewMode.auto }
     )
+  }
+
+  private async closeCurrentOverlay() {
+    if (this.overlayId) {
+      await this.applicationContext.value.overlay.close(this.overlayId)
+      this.overlayId = null
+    }
   }
 }
 
