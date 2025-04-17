@@ -96,7 +96,7 @@ export class OverlayPopupController implements IOverlayController {
       alignItems: 'flex-end',
       width: 'fit-content',
       height: 'fit-content',
-      zIndex: '2000',
+      zIndex: '999999',
     })
     render(html`${openTarget}`, overlayContainer)
     this.container.appendChild(overlayContainer)
