@@ -44,11 +44,11 @@ export class WalletAccountView extends LitElement {
 
     return html`
       <div>
-        <inch-wallet-account-header></inch-wallet-account-header>
         <inch-token-list
           type="flat"
           .chainIds="${observe(this.chainListView$)}"
           .walletAddress="${observe(this.activeAddress$)}"
+          .header="${() => html`<inch-wallet-account-header></inch-wallet-account-header>`}"
         ></inch-token-list>
       </div>
     `

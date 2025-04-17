@@ -34,18 +34,8 @@ export class WalletManagerRoute extends LitElement {
   private readonly scene = new SceneController(
     this.currentSceneName,
     {
-      wallets: {
-        minWidth: 470,
-        maxWidth: 470,
-        maxHeight: 500,
-        minHeight: 500,
-      },
-      account: {
-        minWidth: 470,
-        maxWidth: 470,
-        maxHeight: 500,
-        minHeight: 500,
-      },
+      wallets: {},
+      account: {},
     },
     shiftAnimation()
   )

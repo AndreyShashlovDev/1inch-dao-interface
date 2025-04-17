@@ -1,3 +1,4 @@
+import { lazyConsumer } from '@1inch-community/core/lazy'
 import {
   appendStyle,
   getMobileMatchMediaAndSubscribe,
@@ -11,13 +12,12 @@ import { getScrollbarStyle, scrollbarStyle } from '@1inch-community/core/theme'
 import '@lit-labs/virtualizer'
 import { type LitVirtualizer } from '@lit-labs/virtualizer'
 import { virtualizerRef } from '@lit-labs/virtualizer/virtualize.js'
-import { consume } from '@lit/context'
 import { css, html, LitElement, TemplateResult } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
 import { when } from 'lit/directives/when.js'
 import { fromEvent, merge, tap } from 'rxjs'
-import { scrollContext, type ScrollContext } from './scroll-context'
+import { scrollContext } from './scroll-context'
 
 @customElement(ScrollViewVirtualizerConsumerElement.tagName)
 export class ScrollViewVirtualizerConsumerElement extends LitElement {
@@ -73,8 +73,7 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   @property({ type: Object }) renderItem?: (item: unknown, index: number) => TemplateResult<1>
   @property({ type: Object }) header?: () => TemplateResult<1>
 
-  @consume({ context: scrollContext, subscribe: true })
-  private context!: ScrollContext
+  private context = lazyConsumer(this, { context: scrollContext, subscribe: true })
 
   private globalOffsetY: number | null = null
 
@@ -86,7 +85,9 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   get virtualizerHost() {
-    if (!this.virtualizerRef.value) throw new Error('')
+    if (!this.virtualizerRef.value) {
+      throw new Error('')
+    }
     return this.virtualizerRef.value
   }
 
@@ -97,7 +98,9 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   async scrollToIndex(index: number) {
     const normalizeIndex = index + 1 - (this.virtualizer?._first ?? 0)
     const element = this.virtualizer?._children[normalizeIndex]
-    if (!element) return
+    if (!element) {
+      return
+    }
     const rectElement = element.getBoundingClientRect()
     const rectHost = this.virtualizerHost.getBoundingClientRect()
     let top = rectElement.top - rectHost.top + this.virtualizerHost.scrollTop
@@ -111,7 +114,9 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 
   protected override firstUpdated() {
-    if (!this.context || !this.virtualizerRef.value) return
+    if (!this.virtualizerRef.value) {
+      return
+    }
     const style = document.createElement('style')
     style.textContent = scrollbarStyle.cssText
     this.virtualizerRef.value.shadowRoot?.appendChild(style)
@@ -122,7 +127,7 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
       [
         merge(
           getMobileMatchMediaEmitter(),
-          resizeObserver(this.context),
+          resizeObserver(this.context.value),
           resizeObserver(this.virtualizerHost)
         ).pipe(
           tap(() => {
@@ -139,7 +144,7 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
           resizeObserver(this.headerRef.value).pipe(tap(() => this.updateHeaderSize())),
           fromEvent<MouseEvent>(this.virtualizerRef.value, 'scroll', { passive: true }).pipe(
             tap(() => {
-              this.context.setScrollTopFromConsumer(this.virtualizerRef.value?.scrollTop ?? 0)
+              this.context.value.setScrollTopFromConsumer(this.virtualizerRef.value?.scrollTop ?? 0)
               this.updateHeaderBackground()
             })
           ),
@@ -178,25 +183,31 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 
   private updateViewMobile() {
-    if (!this.context || !this.virtualizerRef.value) return
+    if (!this.context || !this.virtualizerRef.value) {
+      return
+    }
     const contextRect = this.getViewPortBoundingClientRect()
     const virtualizerRect = this.virtualizerHost.getBoundingClientRect()
     this.globalOffsetY = virtualizerRect.top - contextRect.top + 8 * 2
-    this.virtualizerHost.style.minHeight = `${(this.context.maxHeight ?? 0) - this.globalOffsetY}px`
+    this.virtualizerHost.style.minHeight = `${(this.context.value.maxHeight ?? 0) - this.globalOffsetY}px`
   }
 
   private updateViewDesktop() {
-    if (!this.context || !this.virtualizerRef.value || !this.headerRef.value) return
+    if (!this.context || !this.virtualizerRef.value || !this.headerRef.value) {
+      return
+    }
     const contextRect = this.getViewPortBoundingClientRect()
     this.virtualizerHost.style.minHeight = `${contextRect.height}px`
   }
 
   private getViewPortBoundingClientRect() {
-    return this.context.getBoundingClientRect()
+    return this.context.value.getBoundingClientRect()
   }
 
   private getItems() {
-    if (this.header) return [null, ...this.items]
+    if (this.header) {
+      return [null, ...this.items]
+    }
     return this.items
   }
 
@@ -219,7 +230,9 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 
   private renderItemInternal(item: unknown, index: number): TemplateResult {
-    if (this.header && index === 0) return html`${this.headerStub}`
+    if (this.header && index === 0) {
+      return html`${this.headerStub}`
+    }
     return this.renderItem?.(item, index - 1) ?? html``
   }
 

@@ -16,6 +16,9 @@ export class LazyValue<T> implements ILazyValue<T> {
   }
 
   get isInit() {
+    if (this._value === undefined && this.setter) {
+      this._value = this.setter()
+    }
     return this._value !== undefined
   }
 
