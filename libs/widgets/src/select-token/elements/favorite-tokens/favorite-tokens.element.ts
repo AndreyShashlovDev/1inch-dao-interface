@@ -12,7 +12,6 @@ import {
 import { ISelectTokenContext, IToken } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
-import '@1inch-community/widgets/token-icon'
 import { consume } from '@lit/context'
 import { html, LitElement, TemplateResult } from 'lit'
 import { customElement } from 'lit/decorators.js'
@@ -30,6 +29,7 @@ import {
   switchMap,
   tap,
 } from 'rxjs'
+import '../../../shared-elements/token-list'
 import { selectTokenContext } from '../../context'
 import { favoriteTokensStyles } from './favorite-tokens.styles'
 

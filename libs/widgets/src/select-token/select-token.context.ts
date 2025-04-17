@@ -8,20 +8,7 @@ import {
   TokenType,
 } from '@1inch-community/models'
 import { getChainIdList } from '@1inch-community/sdk/chain'
-import {
-  BehaviorSubject,
-  combineLatest,
-  debounceTime,
-  defer,
-  distinctUntilChanged,
-  mergeMap,
-  Observable,
-  shareReplay,
-  startWith,
-  Subject,
-  switchMap,
-  tap,
-} from 'rxjs'
+import { BehaviorSubject, defer, mergeMap, Observable, Subject } from 'rxjs'
 import { type Address } from 'viem'
 
 export class SelectTokenContext implements ISelectTokenContext {
@@ -46,20 +33,6 @@ export class SelectTokenContext implements ISelectTokenContext {
     })
   )
 
-  readonly tokenViewData$ = combineLatest([
-    this.connectedWalletAddress$,
-    this.chainFilter$,
-    this.searchToken$.pipe(debounceTime(300), startWith(''), distinctUntilChanged()),
-  ]).pipe(
-    switchMap(([address, chainIds]: [Address | null, ChainId[], string]) => {
-      return this.applicationContext.tokenStorage.liveQuery(() =>
-        this.applicationContext.tokenStorage.getSymbolData(chainIds, address ?? undefined)
-      )
-    }),
-    tap(() => this.searchInProgress$.next(false)),
-    shareReplay({ bufferSize: 1, refCount: true })
-  )
-
   constructor(
     private readonly tokenType: TokenType,
     private readonly applicationContext: IApplicationContext,
@@ -78,8 +51,11 @@ export class SelectTokenContext implements ISelectTokenContext {
     this.changeFavoriteTokenState$.next([chainId, address])
   }
 
+  setSearchState(state: boolean): void {
+    this.searchInProgress$.next(state)
+  }
+
   setSearchToken(state: string): void {
-    this.searchInProgress$.next(true)
     this.searchToken$.next(state)
   }
 
