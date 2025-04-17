@@ -30,11 +30,11 @@ export class WalletAccountCardMoreElement extends LitElement {
           this.items,
           (item) => html`
             <inch-button
-                class="popup-item"
-                @click="${() => this.onMenuItemClick(item.id)}"
-                type="tertiary-gray"
-                fullSize="${true}"
-                size="l"
+              class="popup-item"
+              @click="${() => this.onMenuItemClick(item.id)}"
+              type="tertiary-gray"
+              fullSize="${true}"
+              size="l"
             >
               <div class="popup-item-content-container popup-item-content-container__${item.style}">
                 <inch-icon class="popup-item-content-icon" icon="${item.icon}"></inch-icon>

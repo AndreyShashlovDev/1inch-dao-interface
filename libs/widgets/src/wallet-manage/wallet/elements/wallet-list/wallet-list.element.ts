@@ -21,8 +21,7 @@ export class WalletListElement extends LitElement {
 
   protected override render() {
     return this.task.render({
-      pending: () => html`
-        <inch-icon icon="unicornRun"></inch-icon>`,
+      pending: () => html` <inch-icon icon="unicornRun"></inch-icon>`,
       complete: (infoList) => html`
         <inch-scroll-view-consumer>
           ${map(infoList, (info) => html` <inch-wallet-view .info="${info}"></inch-wallet-view>`)}

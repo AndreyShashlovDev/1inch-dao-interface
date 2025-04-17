@@ -13,7 +13,7 @@ export const walletAccountCardMoreStyle = css`
     font-weight: 400;
     font-size: 16px;
   }
-  
+
   .popup-container {
     background: var(--color-background-bg-primary);
     border-radius: 8px;

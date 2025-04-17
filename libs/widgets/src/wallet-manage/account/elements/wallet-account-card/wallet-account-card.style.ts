@@ -25,9 +25,9 @@ export const walletAccountCardStyle = css`
   }
 
   .card-item__color {
-    color: var(--color-core-white);  
+    color: var(--color-core-white);
   }
-  
+
   .card {
     display: flex;
     gap: 28px;
@@ -35,7 +35,8 @@ export const walletAccountCardStyle = css`
     padding: 16px;
     width: 100%;
     height: fit-content;
-    background: linear-gradient(14deg, rgba(0, 0, 0, 0.7) 11%, rgba(0, 0, 0, 0) 85%), var(--primary-hover);
+    background:
+      linear-gradient(14deg, rgba(0, 0, 0, 0.7) 11%, rgba(0, 0, 0, 0) 85%), var(--primary-hover);
     border-radius: 16px;
     box-sizing: border-box;
     position: relative;
