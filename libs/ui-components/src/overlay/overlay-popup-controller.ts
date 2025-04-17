@@ -1,12 +1,13 @@
 import { asyncFrame } from '@1inch-community/core/async'
 import { appendStyle, isRTLCurrentLocale } from '@1inch-community/core/lit-utils'
-import { IOverlayController, OverlayViewConfig } from '@1inch-community/models'
+import { IOverlayController, OverlayViewConfig, OverlayViewMode } from '@1inch-community/models'
 import { html, render, TemplateResult } from 'lit'
 import { fromEvent, Subscription } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
 import { getContainer } from './overlay-container'
 import { getOverlayId } from './overlay-id-generator'
 import { viewConfigDefault } from './overlay-view-config-default'
+import { zIndexMap } from './z-index-map'
 
 export class OverlayPopupController implements IOverlayController {
   private readonly activeOverlayMap = new Map<number, [HTMLElement, HTMLElement]>()
@@ -96,7 +97,7 @@ export class OverlayPopupController implements IOverlayController {
       alignItems: 'flex-end',
       width: 'fit-content',
       height: 'fit-content',
-      zIndex: '2000',
+      zIndex: `${zIndexMap[OverlayViewMode.popup]}`,
     })
     render(html`${openTarget}`, overlayContainer)
     this.container.appendChild(overlayContainer)
@@ -105,7 +106,7 @@ export class OverlayPopupController implements IOverlayController {
 
   private subscribe(overlayId: number) {
     const subscription = new Subscription()
-    const overlayContainer = this.activeOverlayMap.get(overlayId)
+    const [, overlayContainer] = this.activeOverlayMap.get(overlayId) ?? []
     if (!overlayContainer) return
     subscription.add(fromEvent(window, 'resize').subscribe(() => this.close(overlayId).catch()))
     const rootNode = document.querySelector(this.rootNodeName) as HTMLElement

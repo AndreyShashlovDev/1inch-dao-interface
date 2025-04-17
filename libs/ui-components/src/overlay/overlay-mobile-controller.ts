@@ -7,7 +7,7 @@ import {
   resizeObserver,
 } from '@1inch-community/core/lit-utils'
 import { applyColorBrightness, setBrowserMetaColorFilter } from '@1inch-community/core/theme'
-import { IOverlayController } from '@1inch-community/models'
+import { IOverlayController, OverlayViewMode } from '@1inch-community/models'
 import { html, render, TemplateResult } from 'lit'
 import {
   distinctUntilChanged,
@@ -25,6 +25,7 @@ import {
 import { ScrollViewProviderElement } from '../scroll'
 import { getContainer } from './overlay-container'
 import { getOverlayId } from './overlay-id-generator'
+import { zIndexMap } from './z-index-map'
 
 const lerp = (min: number, max: number, percent: number): number => {
   return min + (max - min) * (percent / 100)
@@ -155,6 +156,7 @@ export class OverlayMobileController implements IOverlayController {
     const [startKeyframe] = this.getStyleForOverlayContainer('open', overlayContainer)
     const startPosition: Partial<CSSStyleDeclaration> =
       startKeyframe as Partial<CSSStyleDeclaration>
+    const zIndex = zIndexMap[OverlayViewMode.mobile]
     appendStyle(overlayContainer, {
       position: 'fixed',
       display: 'flex',
@@ -163,7 +165,7 @@ export class OverlayMobileController implements IOverlayController {
       alignItems: 'flex-end',
       bottom: '0',
       left: '0',
-      zIndex: `${2000 + id * 10 + 1}`,
+      zIndex: `${zIndex + id * 10 + 1}`,
       boxSizing: 'border-box',
       borderRadius: overlayBorderRadius(this.overlayBorderRadius),
       // transition: 'all 10ms',
@@ -184,6 +186,7 @@ export class OverlayMobileController implements IOverlayController {
     overlayBackground.id = 'overlay-background'
     overlayBackground.setAttribute('overlay-background-id', id.toString())
     const [start] = this.getStyleForOverlayBackground('open')
+    const zIndex = zIndexMap[OverlayViewMode.mobile]
     appendStyle(overlayBackground, {
       position: 'fixed',
       top: '0',
@@ -191,7 +194,7 @@ export class OverlayMobileController implements IOverlayController {
       width: '100vw',
       height: '100vh',
       background: 'rgba(0, 0, 0, 0.4)',
-      zIndex: `${2000 + id * 10}`,
+      zIndex: `${zIndex + id * 10}`,
       ...start,
     })
     this.container.appendChild(overlayBackground)
