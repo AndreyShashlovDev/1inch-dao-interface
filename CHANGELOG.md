@@ -1,3 +1,11 @@
+# [1.0.0-rc.4](https://github.com/1inch-community/interface/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2025-04-17)
+
+
+### Features
+
+* **overlay:** introduce z-index map for overlay components ([4baf9f2](https://github.com/1inch-community/interface/commit/4baf9f21dde7a38c6099ba3ea6d97db4b0d5c74b))
+* **setup-environment:** update default Node.js version to 23 ([8b3e7bc](https://github.com/1inch-community/interface/commit/8b3e7bc057c96c03c1786a333efc1d4dcdf34cc9))
+
 # [1.0.0-rc.3](https://github.com/1inch-community/interface/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2025-04-15)
 
 

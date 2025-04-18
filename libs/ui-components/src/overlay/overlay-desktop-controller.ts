@@ -1,11 +1,12 @@
 import { appendStyle } from '@1inch-community/core/lit-utils'
-import { IOverlayController, OverlayViewConfig } from '@1inch-community/models'
+import { IOverlayController, OverlayViewConfig, OverlayViewMode } from '@1inch-community/models'
 import { html, render, TemplateResult } from 'lit'
 import { fromEvent, Subscription } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
 import { getContainer } from './overlay-container'
 import { getOverlayId } from './overlay-id-generator'
 import { viewConfigDefault } from './overlay-view-config-default'
+import { zIndexMap } from './z-index-map'
 
 export class OverlayDesktopController implements IOverlayController {
   private readonly activeOverlayMap = new Map<
@@ -67,7 +68,7 @@ export class OverlayDesktopController implements IOverlayController {
     const overlap = windowWidth - overlayWidth
     const result = targetRect.right - overlap + this.overlayPadding * 3
     if (targetRect.width + targetRect.left + result + 16 > windowWidth || result < 0) {
-      return [0, true]
+      return [0, result > 0]
     }
     return [result, false]
   }
@@ -141,6 +142,7 @@ export class OverlayDesktopController implements IOverlayController {
     overlayContainer.maxHeight = window.innerHeight - padding * 2
     overlayContainer.setMaxHeight = true
     overlayContainer.setAttribute('overlay-index', overlayIndex.toString())
+    const zIndex = zIndexMap[OverlayViewMode.desktop]
     appendStyle(overlayContainer, {
       position: 'fixed',
       display: 'flex',
@@ -149,7 +151,7 @@ export class OverlayDesktopController implements IOverlayController {
       alignItems: 'flex-end',
       top: `${padding}px`,
       right: `${padding}px`,
-      zIndex: `${2000 + id * 10 + 5}`,
+      zIndex: `${zIndex + id * 10 + 5}`,
       borderRadius: '24px',
       boxSizing: 'border-box',
       boxShadow: '0px 4px 4px -2px rgba(24, 39, 75, 0.08), 0px 2px 4px -2px rgba(24, 39, 75, 0.12)',
@@ -162,6 +164,7 @@ export class OverlayDesktopController implements IOverlayController {
 
   private createOverlayBackground(id: number) {
     const overlayBackground = document.createElement('div')
+    const zIndex = zIndexMap[OverlayViewMode.desktop]
     appendStyle(overlayBackground, {
       position: 'fixed',
       top: '0',
@@ -171,7 +174,7 @@ export class OverlayDesktopController implements IOverlayController {
       backdropFilter: 'blur(2px)',
       opacity: '0',
       cursor: 'pointer',
-      zIndex: `${2000 + id * 10}`,
+      zIndex: `${zIndex + id * 10}`,
     })
     this.container.appendChild(overlayBackground)
     return overlayBackground
