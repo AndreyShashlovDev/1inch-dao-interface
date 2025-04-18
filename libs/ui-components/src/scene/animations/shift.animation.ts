@@ -24,8 +24,9 @@ export function shiftAnimation(): Animation {
     backfaceVisibility: '',
     height: '',
   }
+  const DEFAULT_DURATION = 500
   const animationConfig: KeyframeAnimationOptions = {
-    duration: 500,
+    duration: DEFAULT_DURATION,
     easing: 'cubic-bezier(.2, .8, .2, 1)',
   }
 
@@ -48,9 +49,7 @@ export function shiftAnimation(): Animation {
       isBack: boolean,
       immediate: boolean
     ) => {
-      if (immediate) {
-        animationConfig.duration = 1
-      }
+      animationConfig.duration = immediate ? 1 : DEFAULT_DURATION
 
       await Promise.all([
         upLayer.animate(

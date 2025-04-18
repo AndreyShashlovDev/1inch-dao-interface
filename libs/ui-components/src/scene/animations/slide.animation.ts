@@ -25,8 +25,9 @@ export function slideAnimation(): Animation {
     willChange: '',
     height: '',
   }
+  const DEFAULT_DURATION = 800
   const animationConfig: KeyframeAnimationOptions = {
-    duration: 800,
+    duration: DEFAULT_DURATION,
     easing: 'cubic-bezier(.2, .8, .2, 1)',
   }
 
@@ -51,9 +52,7 @@ export function slideAnimation(): Animation {
       isBack: boolean,
       immediate: boolean
     ) => {
-      if (immediate) {
-        animationConfig.duration = 1
-      }
+      animationConfig.duration = immediate ? 1 : DEFAULT_DURATION
 
       await Promise.all([
         upLayer.animate(

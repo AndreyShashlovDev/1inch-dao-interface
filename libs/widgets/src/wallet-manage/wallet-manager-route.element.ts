@@ -50,7 +50,6 @@ export class WalletManagerRoute extends LitElement {
 
   protected firstUpdated() {
     const wallet = this.applicationContext.value.wallet
-    let alreadyConnected: boolean | undefined
 
     subscribe(
       this,
@@ -59,16 +58,8 @@ export class WalletManagerRoute extends LitElement {
           if (!isConnected && address === null && this.currentSceneName !== 'wallets') {
             this.navigateTo('wallets', true)
           }
-          if (
-            isConnected &&
-            address &&
-            alreadyConnected !== undefined &&
-            this.currentSceneName !== 'account'
-          ) {
+          if (isConnected && address && this.currentSceneName !== 'account') {
             this.onBackPress()
-          }
-          if (isConnected) {
-            alreadyConnected = true
           }
         })
       )
@@ -134,7 +125,7 @@ export class WalletManagerRoute extends LitElement {
 
   private onBackPress() {
     this.sceneStack.pop()
-    this.currentSceneName = this.sceneStack[0]
+    this.currentSceneName = this.sceneStack[this.sceneStack.length - 1]
     this.scene.back()
   }
 
