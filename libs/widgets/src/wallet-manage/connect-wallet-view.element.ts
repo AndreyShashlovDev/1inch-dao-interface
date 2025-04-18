@@ -132,6 +132,6 @@ export class ConnectWalletViewElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-connect-wallet-view': ConnectWalletViewElement
+    [ConnectWalletViewElement.tagName]: ConnectWalletViewElement
   }
 }

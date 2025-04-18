@@ -1,9 +1,7 @@
-import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { lazyAppContextConsumer, lazyProvider } from '@1inch-community/core/lazy'
 import { observe } from '@1inch-community/core/lit-utils'
-import { IWalletAccountContext } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
-import { provide } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { defer } from 'rxjs'
@@ -21,21 +19,24 @@ export class WalletAccountView extends LitElement {
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
-  @provide({ context: walletAccountContext })
-  walletAccountContext!: IWalletAccountContext
+  private readonly walletAccountContext = lazyProvider(this, { context: walletAccountContext })
 
-  private readonly chainListView$ = defer(() => this.walletAccountContext.chainFilter$)
-  private readonly activeAddress$ = defer(() => this.walletAccountContext.connectedWalletAddress$)
+  private readonly chainListView$ = defer(() => this.walletAccountContext.value.chainFilter$)
+  private readonly activeAddress$ = defer(
+    () => this.walletAccountContext.value.connectedWalletAddress$
+  )
 
   private initContext() {
     if (!this.applicationContext) {
       return
     }
 
-    this.walletAccountContext = new WalletAccountContext(
-      this.applicationContext.value.wallet,
-      this.applicationContext.value.tokenStorage,
-      this.applicationContext.value.storage
+    this.walletAccountContext.set(
+      new WalletAccountContext(
+        this.applicationContext.value.wallet,
+        this.applicationContext.value.tokenStorage,
+        this.applicationContext.value.storage
+      )
     )
   }
 
@@ -57,6 +58,6 @@ export class WalletAccountView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-wallet-account-view': WalletAccountView
+    [WalletAccountView.tagName]: WalletAccountView
   }
 }

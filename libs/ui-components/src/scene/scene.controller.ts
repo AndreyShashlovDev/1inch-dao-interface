@@ -27,13 +27,13 @@ export class SceneController<T extends string, U extends T> {
 
   private readonly takeUpdate$ = new Subject<void>()
 
-  private sceneStack: string[] = []
+  private sceneStack: T[] = []
 
   private readonly sceneContainer = buildSceneContainer()
 
   private transitionInProgress = false
 
-  get activeScene() {
+  get activeScene(): T {
     return this.sceneStack[this.sceneStack.length - 1]
   }
 
@@ -48,7 +48,9 @@ export class SceneController<T extends string, U extends T> {
     private readonly rootSceneName: U,
     private readonly config: SceneConfig<T>,
     private readonly animation: Animation = slideAnimation()
-  ) {}
+  ) {
+    this.sceneStack.push(rootSceneName)
+  }
 
   render(config: RenderConfig<T>): TemplateResult {
     if (this.transitionInProgress) {
@@ -77,8 +79,8 @@ export class SceneController<T extends string, U extends T> {
     if (this.transitionInProgress) {
       return
     }
-    await this.transition(sceneName, false, immediate)
     this.sceneStack.push(sceneName)
+    await this.transition(sceneName, false, immediate)
     this.takeUpdate$.next()
   }
 
@@ -87,8 +89,8 @@ export class SceneController<T extends string, U extends T> {
       return
     }
     const sceneName = (this.sceneStack[this.sceneStack.length - 2] ?? this.rootSceneName) as T
-    await this.transition(sceneName, true)
     this.sceneStack.pop()
+    await this.transition(sceneName, true)
     this.takeUpdate$.next()
   }
 
@@ -103,14 +105,6 @@ export class SceneController<T extends string, U extends T> {
       currentScene = (this.sceneContainer.firstChild as HTMLElement).id as T
     }
     return currentScene
-  }
-
-  private getCurrentScene() {
-    if (!this.currentScenes) {
-      return null
-    }
-    const currentScene = this.getCurrentSceneName()
-    return this.getScene(currentScene)
   }
 
   private async transition(sceneName: T, isBack: boolean = false, immediate: boolean = false) {

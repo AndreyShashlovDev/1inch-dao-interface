@@ -1,6 +1,6 @@
+import { lazyConsumer } from '@1inch-community/core/lazy'
 import { LitCustomEvent, observe, translate } from '@1inch-community/core/lit-utils'
-import { ChainId, IWalletAccountContext } from '@1inch-community/models'
-import { consume } from '@lit/context'
+import { ChainId } from '@1inch-community/models'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { defer } from 'rxjs'
@@ -16,10 +16,9 @@ export class WalletAccountHeaderElement extends LitElement {
 
   static override styles = [walletAccountHeaderStyle]
 
-  @consume({ context: walletAccountContext })
-  context!: IWalletAccountContext
+  private readonly context = lazyConsumer(this, { context: walletAccountContext })
 
-  private readonly chainListView$ = defer(() => this.context.chainFilter$)
+  private readonly chainListView$ = defer(() => this.context.value.chainFilter$)
 
   protected override render() {
     return html`
@@ -32,7 +31,7 @@ export class WalletAccountHeaderElement extends LitElement {
           <inch-chain-selector
             .selectedChainIdList="${observe(this.chainListView$)}"
             @changeSelectedChainIdList="${(event: LitCustomEvent<ChainId[]>) =>
-              this.context.onChangeChainFilter(event.detail.value)}"
+              this.context.value.onChangeChainFilter(event.detail.value)}"
           ></inch-chain-selector>
         </div>
       </div>
@@ -42,6 +41,6 @@ export class WalletAccountHeaderElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-wallet-account-header': WalletAccountHeaderElement
+    [WalletAccountHeaderElement.tagName]: WalletAccountHeaderElement
   }
 }

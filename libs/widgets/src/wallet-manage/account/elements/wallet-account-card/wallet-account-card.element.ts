@@ -3,20 +3,14 @@ import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer, lazyConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, subscribe, translate } from '@1inch-community/core/lit-utils'
 import { getRandomBrightColor } from '@1inch-community/core/theme'
-import {
-  ChainId,
-  EIP6963ProviderInfo,
-  IWalletAccountContext,
-  OverlayViewMode,
-} from '@1inch-community/models'
+import { ChainId, EIP6963ProviderInfo, OverlayViewMode } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { scrollContext } from '@1inch-community/ui-components/scroll'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
-import { combineLatest, distinctUntilChanged, filter, tap } from 'rxjs'
+import { combineLatest, filter, tap } from 'rxjs'
 import { Address } from 'viem'
 import '../../../elements/wallet-view-address-balance'
 import { walletAccountContext } from '../../context'
@@ -40,8 +34,7 @@ export class WalletAccountCardElement extends LitElement {
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
-  @consume({ context: walletAccountContext })
-  context?: IWalletAccountContext
+  private readonly context = lazyConsumer(this, { context: walletAccountContext })
 
   @state()
   private walletAddress?: Address
@@ -110,11 +103,10 @@ export class WalletAccountCardElement extends LitElement {
       this,
       [
         combineLatest([
-          this.context.connectedWalletAddress$,
-          this.context.connectedWalletInfo$,
-          this.context.chainId$,
+          this.context.value.connectedWalletAddress$,
+          this.context.value.connectedWalletInfo$,
+          this.context.value.chainId$,
         ]).pipe(
-          distinctUntilChanged(),
           filter(
             ([address, info, chainId]) => address !== null && info !== null && chainId !== null
           ),
@@ -145,16 +137,16 @@ export class WalletAccountCardElement extends LitElement {
 
     switch (id) {
       case MenuItemIds.CopyAddress:
-        this.context.copyAddress(this.walletAddress)
+        this.context.value.copyAddress(this.walletAddress)
         break
       case MenuItemIds.ExternalView:
-        this.context.openExplorer(this.chainId, this.walletAddress)
+        this.context.value.openExplorer(this.chainId, this.walletAddress)
         break
       case MenuItemIds.Switch:
         this.onChangeWalletClick()
         break
       case MenuItemIds.Disconnect:
-        this.context.disconnectWallet()
+        this.context.value.disconnectWallet()
         break
     }
   }
@@ -272,6 +264,6 @@ export class WalletAccountCardElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-wallet-account-card': WalletAccountCardElement
+    [WalletAccountCardElement.tagName]: WalletAccountCardElement
   }
 }

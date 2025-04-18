@@ -243,17 +243,17 @@ export const icons: Record<string, IconsRecord> = {
   logout16: {
     width: '16px',
     height: '16px',
-    loader: () => import('./logout_16.svg').then((m) => m.Logout16Svg),
+    loader: () => import('./logout_16.svg').then((m) => m.logout16Svg),
   },
   copy16: {
     width: '16px',
     height: '16px',
-    loader: () => import('./copy_16.svg').then((m) => m.Copy16Svg),
+    loader: () => import('./copy_16.svg').then((m) => m.сopy16Svg),
   },
   externalLink16: {
     width: '16px',
     height: '16px',
-    loader: () => import('./external-link_16.svg').then((m) => m.ExternalLink16Svg),
+    loader: () => import('./external-link_16.svg').then((m) => m.externalLink16Svg),
   },
 
   // chain icons

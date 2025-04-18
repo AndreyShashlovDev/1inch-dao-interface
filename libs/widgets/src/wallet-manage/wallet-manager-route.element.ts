@@ -30,23 +30,16 @@ export class WalletManagerRoute extends LitElement {
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
-  @state() currentSceneName: Scenes = 'account'
-
-  /**
-   * use it because scene controller return next scene name only after render finished
-   * and we end up getting an extra view update (the screen is twitching).
-   * @private
-   */
-  private readonly sceneStack: Scenes[] = [this.currentSceneName]
-
   private readonly scene = new SceneController(
-    this.currentSceneName,
+    'account',
     {
       wallets: {},
       account: {},
     },
     shiftAnimation()
   )
+
+  @state() currentSceneName: Scenes = this.scene.activeScene
 
   protected firstUpdated() {
     const wallet = this.applicationContext.value.wallet
@@ -119,19 +112,17 @@ export class WalletManagerRoute extends LitElement {
 
   private navigateTo(scene: Scenes, immediate: boolean = false) {
     this.currentSceneName = scene
-    this.sceneStack.push(scene)
     this.scene.nextTo(scene, immediate)
   }
 
   private onBackPress() {
-    this.sceneStack.pop()
-    this.currentSceneName = this.sceneStack[this.sceneStack.length - 1]
     this.scene.back()
+    this.currentSceneName = this.scene.activeScene
   }
 
   protected render() {
     return html`
-      <inch-card class="route-container" showShadow="${ifDefined(this.showShadow)}">
+      <inch-card class="route-container" showShadow="${ifDefined(this.showShadow)}" overlayView>
         ${when(
           !this.mobileMedia.matches,
           () => html` <inch-card-close-overlay></inch-card-close-overlay> `
@@ -148,6 +139,6 @@ export class WalletManagerRoute extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-wallet-manager-route': WalletManagerRoute
+    [WalletManagerRoute.tagName]: WalletManagerRoute
   }
 }
