@@ -73,11 +73,11 @@ export class SceneController<T extends string, U extends T> {
     return html`${this.sceneContainer}`
   }
 
-  async nextTo(sceneName: T) {
+  async nextTo(sceneName: T, immediate: boolean = false) {
     if (this.transitionInProgress) {
       return
     }
-    await this.transition(sceneName)
+    await this.transition(sceneName, false, immediate)
     this.sceneStack.push(sceneName)
     this.takeUpdate$.next()
   }
@@ -113,7 +113,7 @@ export class SceneController<T extends string, U extends T> {
     return this.getScene(currentScene)
   }
 
-  private async transition(sceneName: T, isBack: boolean = false) {
+  private async transition(sceneName: T, isBack: boolean = false, immediate: boolean = false) {
     this.transitionInProgress = true
     try {
       const currentScene = this.getCurrentSceneName()
@@ -149,8 +149,8 @@ export class SceneController<T extends string, U extends T> {
         this.applySceneConfigBySceneName(sceneName)
       }
       await Promise.all([
-        this.animation.transition(upScene, downScene, isBack ?? false),
-        this.resizeContainer(nextSceneWrapperRect, currentSceneWrapperRect),
+        this.animation.transition(upScene, downScene, isBack ?? false, immediate),
+        this.resizeContainer(nextSceneWrapperRect, currentSceneWrapperRect, immediate),
       ])
       if (nextSceneWrapperRect.height < currentSceneWrapperRect.height) {
         this.applySceneConfigBySceneName(sceneName)
@@ -221,7 +221,7 @@ export class SceneController<T extends string, U extends T> {
     })
   }
 
-  private async resizeContainer(nextRect: DOMRect, currentRect: DOMRect) {
+  private async resizeContainer(nextRect: DOMRect, currentRect: DOMRect, immediate: boolean) {
     const fromKeyframe: Record<string, string> = {
       height: `${currentRect.height}px`,
       width: `${currentRect.width}px`,
@@ -232,7 +232,7 @@ export class SceneController<T extends string, U extends T> {
     }
     appendStyle(this.sceneContainer, fromKeyframe)
     await this.sceneContainer.animate([fromKeyframe, toKeyframe], {
-      duration: 500,
+      duration: immediate ? 1 : 500,
       easing: 'cubic-bezier(.2, .8, .2, 1)',
     }).finished
 

@@ -42,7 +42,16 @@ export function shiftAnimation(): Animation {
         transform: isBack ? 'translate3d(-110%, 0, 0)' : 'translate3d(0, 0, 0)',
       })
     },
-    transition: async (upLayer: HTMLElement, downLayer: HTMLElement, isBack: boolean) => {
+    transition: async (
+      upLayer: HTMLElement,
+      downLayer: HTMLElement,
+      isBack: boolean,
+      immediate: boolean
+    ) => {
+      if (immediate) {
+        animationConfig.duration = 1
+      }
+
       await Promise.all([
         upLayer.animate(
           [

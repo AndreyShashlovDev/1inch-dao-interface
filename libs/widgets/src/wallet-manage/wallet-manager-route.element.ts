@@ -1,10 +1,16 @@
-import { getMobileMatchMediaAndSubscribe, translate } from '@1inch-community/core/lit-utils'
+import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import {
+  getMobileMatchMediaAndSubscribe,
+  subscribe,
+  translate,
+} from '@1inch-community/core/lit-utils'
 import '@1inch-community/ui-components/card'
 import { SceneController, shiftAnimation } from '@1inch-community/ui-components/scene'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
+import { combineLatest, tap } from 'rxjs'
 import './account'
 import './i18n'
 import './wallet'
@@ -19,6 +25,8 @@ export class WalletManagerRoute extends LitElement {
   static override styles = [WalletManagerRouteStyle]
 
   @property({ type: Boolean }) showShadow?: boolean
+
+  private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
@@ -39,6 +47,33 @@ export class WalletManagerRoute extends LitElement {
     },
     shiftAnimation()
   )
+
+  protected firstUpdated() {
+    const wallet = this.applicationContext.value.wallet
+    let alreadyConnected: boolean | undefined
+
+    subscribe(
+      this,
+      combineLatest([wallet.data.isConnected$, wallet.data.activeAddress$]).pipe(
+        tap(([isConnected, address]) => {
+          if (!isConnected && address === null && this.currentSceneName !== 'wallets') {
+            this.navigateTo('wallets', true)
+          }
+          if (
+            isConnected &&
+            address &&
+            alreadyConnected !== undefined &&
+            this.currentSceneName !== 'account'
+          ) {
+            this.onBackPress()
+          }
+          if (isConnected) {
+            alreadyConnected = true
+          }
+        })
+      )
+    )
+  }
 
   private getAccountView() {
     return html`
@@ -77,19 +112,24 @@ export class WalletManagerRoute extends LitElement {
   }
 
   private walletsHeaderView() {
+    const isConnected = this.applicationContext.value.wallet.isConnected
+    const title = isConnected
+      ? 'widgets.wallet-manager-route.wallets.manager'
+      : 'widgets.wallet-manager-route.wallets.connect'
+
     return html` <inch-card-header
       headerTextPosition="center"
-      headerText="${translate('widgets.wallet-manager-route.wallets')}"
-      backButton="${true}"
+      headerText="${translate(title)}"
+      backButton="${ifDefined(isConnected || undefined)}"
       @backCard="${() => this.onBackPress()}"
     >
     </inch-card-header>`
   }
 
-  private navigateTo(scene: Scenes) {
+  private navigateTo(scene: Scenes, immediate: boolean = false) {
     this.currentSceneName = scene
     this.sceneStack.push(scene)
-    this.scene.nextTo(scene)
+    this.scene.nextTo(scene, immediate)
   }
 
   private onBackPress() {

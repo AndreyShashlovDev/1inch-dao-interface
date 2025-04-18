@@ -45,7 +45,16 @@ export function slideAnimation(): Animation {
         filter: isBack ? 'blur(3px)' : 'blur(0)',
       })
     },
-    transition: async (upLayer: HTMLElement, downLayer: HTMLElement, isBack: boolean) => {
+    transition: async (
+      upLayer: HTMLElement,
+      downLayer: HTMLElement,
+      isBack: boolean,
+      immediate: boolean
+    ) => {
+      if (immediate) {
+        animationConfig.duration = 1
+      }
+
       await Promise.all([
         upLayer.animate(
           [

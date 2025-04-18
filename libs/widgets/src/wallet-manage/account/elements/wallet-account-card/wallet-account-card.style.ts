@@ -36,7 +36,8 @@ export const walletAccountCardStyle = css`
     width: 100%;
     height: 200px;
     background:
-      linear-gradient(14deg, rgba(0, 0, 0, 0.7) 11%, rgba(0, 0, 0, 0) 85%), var(--primary-hover);
+      linear-gradient(14deg, rgba(0, 0, 0, 0.7) 11%, rgba(0, 0, 0, 0) 85%),
+      var(--card-background, var(--primary-hover));
     border-radius: 16px;
     box-sizing: border-box;
     position: relative;
@@ -45,6 +46,13 @@ export const walletAccountCardStyle = css`
     transition:
       height 0.3s ease,
       gap 0.3s ease;
+  }
+
+  .card-wallet-info-container {
+    display: grid;
+    grid-template-columns: 1fr 24px;
+    grid-template-rows: auto auto;
+    width: 100%;
   }
 
   .card-wallet-container {
@@ -92,6 +100,11 @@ export const walletAccountCardStyle = css`
     letter-spacing: 0;
   }
 
+  .card-wallet-full-balance {
+    margin-top: 28px;
+    transition: margin-top 0.3s ease;
+  }
+
   .card-wallet-balance {
     font-weight: 600;
     font-size: 24px;
@@ -99,6 +112,12 @@ export const walletAccountCardStyle = css`
     letter-spacing: 0;
     vertical-align: middle;
     color: var(--color-core-white);
+  }
+
+  .card-menu-more {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    margin-top: 8px;
   }
 
   .card-actions {
@@ -138,9 +157,23 @@ export const walletAccountCardStyle = css`
     top: -74px;
   }
 
+  .background-unicorn:dir(rtl) {
+    right: auto;
+    left: -64px;
+    transform: scaleX(-1);
+  }
+
+  .background-unicorn.collapsed:dir(rtl) {
+    top: -74px;
+  }
+
   .card.collapsed {
     height: 72px;
     gap: 6px;
+  }
+
+  .card-wallet-full-balance.collapsed {
+    margin-top: 4px;
   }
 
   .fade-out {

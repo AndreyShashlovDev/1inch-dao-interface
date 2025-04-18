@@ -12,7 +12,7 @@ import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
-import { defer, map, tap } from 'rxjs'
+import { defer, map } from 'rxjs'
 import { connectWalletViewStyle } from './connect-wallet-view.style'
 import './elements/wallet-view-address-balance'
 import './wallet-manager-route.element'
@@ -41,11 +41,6 @@ export class ConnectWalletViewElement extends LitElement {
   )
 
   private readonly view$ = defer(() => this.getWalletController().data.isConnected$).pipe(
-    tap((isConnected) => {
-      if (!isConnected) {
-        this.closeCurrentOverlay()
-      }
-    }),
     map((isConnected) => {
       return isConnected ? this.getConnectedView() : this.getConnectWalletButton()
     })

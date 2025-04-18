@@ -1,4 +1,5 @@
 import { dispatchEvent, translate } from '@1inch-community/core/lit-utils'
+import '@1inch-community/ui-components/card'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { map as LitMap } from 'lit/directives/map.js'
@@ -25,7 +26,7 @@ export class WalletAccountCardMoreElement extends LitElement {
 
   protected override render() {
     return html`
-      <div class="popup-container">
+      <inch-card overlayView>
         ${LitMap(
           this.items,
           (item) => html`
@@ -43,7 +44,7 @@ export class WalletAccountCardMoreElement extends LitElement {
             </inch-button>
           `
         )}
-      </div>
+      </inch-card>
     `
   }
 }

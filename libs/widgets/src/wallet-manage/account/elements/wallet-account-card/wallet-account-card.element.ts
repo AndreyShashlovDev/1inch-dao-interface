@@ -2,6 +2,7 @@ import { throttle } from '@1inch-community/core/decorators'
 import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer, lazyConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, subscribe, translate } from '@1inch-community/core/lit-utils'
+import { getRandomBrightColor } from '@1inch-community/core/theme'
 import {
   ChainId,
   EIP6963ProviderInfo,
@@ -186,37 +187,62 @@ export class WalletAccountCardElement extends LitElement {
     }
   }
 
+  private generateColorByAddress(address: string): string {
+    return getRandomBrightColor(() => Number(address) / 10 ** 48)
+  }
+
   protected override render() {
     const address = this.walletAddress
     const icon = this.walletInfo?.icon
     const name = this.walletInfo?.name
     const hasData = address && icon && name
 
+    const color = address && this.generateColorByAddress(address)
+    const backgroundStyle = color
+      ? `--card-background: ${color}`
+      : `--card-background: var(--primary-hover)`
+
     return html`
-      <div class="card ${this.isCollapsed ? 'collapsed' : ''}" ">
+      <div class="card ${this.isCollapsed ? 'collapsed' : ''}" style="${backgroundStyle}">
         <inch-icon
-            class="background-unicorn ${this.isCollapsed ? 'collapsed' : ''}"
-            icon="unicornBackground"
+          class="background-unicorn ${this.isCollapsed ? 'collapsed' : ''}"
+          icon="unicornBackground"
         ></inch-icon>
 
-        <div class="card-wallet-container ${this.isCollapsed ? 'fade-out' : ''}">
-          <div class="card-wallet ${hasData ? '' : 'loader'} ${this.isCollapsed ? 'fade-out' : ''}">
-            ${when(
-              hasData,
-              () => html`
-                <div class="card-wallet-icon">
-                  <img class="wallet-icon" alt="${name}" src="${icon}" />
-                </div>
-                <div class="card-wallet-address">${formatHex(address!)}</div>
+        <div class="card-wallet-info-container">
+          <div class="card-wallet-container ${this.isCollapsed ? 'fade-out' : ''}">
+            <div
+              class="card-wallet ${hasData ? '' : 'loader'} ${this.isCollapsed ? 'fade-out' : ''}"
+            >
+              ${when(
+                hasData,
+                () => html`
+                  <div class="card-wallet-icon">
+                    <img class="wallet-icon" alt="${name}" src="${icon}" />
+                  </div>
+                  <div class="card-wallet-address">${formatHex(address!)}</div>
 
-                <inch-button @click="${() => this.onChangeWalletClick()}" type="tertiary" size="xs">
-                  <inch-icon class="card-item__color" icon="swap24"></inch-icon>
-                </inch-button>
-              `
-            )}
+                  <inch-button
+                    @click="${() => this.onChangeWalletClick()}"
+                    type="tertiary"
+                    size="xs"
+                  >
+                    <inch-icon class="card-item__color" icon="swap24"></inch-icon>
+                  </inch-button>
+                `
+              )}
+            </div>
+          </div>
+
+          <div class="card-wallet-full-balance ${this.isCollapsed ? 'collapsed' : ''}">
+            <inch-wallet-view-address-balance
+              class="card-wallet-balance"
+              .address="${this.walletAddress}"
+            ></inch-wallet-view-address-balance>
           </div>
 
           <inch-button
+            class="card-menu-more"
             @click="${(e: MouseEvent) => this.onMoreClick(e.target as HTMLElement)}"
             type="tertiary"
             size="xs"
@@ -224,13 +250,6 @@ export class WalletAccountCardElement extends LitElement {
             <inch-icon class="card-item__color" icon="more24"></inch-icon>
           </inch-button>
         </div>
-        <div>
-          <inch-wallet-view-address-balance
-            class="card-wallet-balance"
-            .address="${this.walletAddress}"
-          ></inch-wallet-view-address-balance>
-        </div>
-
         <div class="card-actions ${this.isCollapsed ? 'fade-out' : ''}">
           <inch-button @click="${() => {}}" type="tertiary" fullSize="${true}" size="l">
             <inch-icon class="btn-send-icon-arrow" icon="arrowLeft24"></inch-icon>

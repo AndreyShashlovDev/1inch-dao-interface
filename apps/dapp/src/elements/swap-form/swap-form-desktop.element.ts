@@ -154,12 +154,7 @@ export class SwapFormDesktopElement extends LitElement {
       return
     }
     this.connectWalletViewId = await this.applicationContext.value.overlay.open(
-      html`
-        <inch-wallet-manage
-          @closeCard="${close}"
-          .controller="${this.applicationContext.value.wallet}"
-        ></inch-wallet-manage>
-      `,
+      html` <inch-wallet-manager-route @closeCard="${close}"></inch-wallet-manager-route> `,
       { targetFactory: () => this }
     )
   }

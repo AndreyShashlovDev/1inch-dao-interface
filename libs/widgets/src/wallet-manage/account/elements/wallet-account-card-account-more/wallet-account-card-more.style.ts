@@ -14,16 +14,6 @@ export const walletAccountCardMoreStyle = css`
     font-size: 16px;
   }
 
-  .popup-container {
-    background: var(--color-background-bg-primary);
-    border-radius: 8px;
-    padding: 2px 0 0 4px;
-    min-width: 170px;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-  }
-
   .popup-item-content-container {
     display: flex;
     justify-content: start;
