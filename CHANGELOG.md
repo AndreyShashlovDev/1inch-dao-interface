@@ -1,3 +1,21 @@
+# [1.0.0-rc.5](https://github.com/1inch-community/interface/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2025-04-18)
+
+
+### Bug Fixes
+
+* code imporovements ([e5ff898](https://github.com/1inch-community/interface/commit/e5ff898cc5f0e79399bf388ebc87a84f243fba25))
+* ui imporovements ([3d5b67e](https://github.com/1inch-community/interface/commit/3d5b67e4efe202d275af3dd82bf5293720459d9f))
+* ui improvements ([587293a](https://github.com/1inch-community/interface/commit/587293aef946382fa0270b8da74d6db164fbedc2))
+
+
+### Features
+
+* wallet account widget (WIP) ([ebb4630](https://github.com/1inch-community/interface/commit/ebb46306a24cb401139416140b41fbc6d90eed2b))
+* wallet account widget (WIP) ([fde21dc](https://github.com/1inch-community/interface/commit/fde21dc5d074f927b5c29da2bbed591f64556cfa))
+* wallet account widget (WIP) ([7ab9150](https://github.com/1inch-community/interface/commit/7ab9150544e2b0e69f03df9f077bbad9995919f7))
+* wallet account widget (WIP) ([acb0873](https://github.com/1inch-community/interface/commit/acb0873592dc50220548bcba799826956924c9f1))
+* wallet account widget (WIP) ([49a4439](https://github.com/1inch-community/interface/commit/49a4439c6bfc9c49475be63a6838c2f213f75b6c))
+
 # [1.0.0-rc.4](https://github.com/1inch-community/interface/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2025-04-17)
 
 
