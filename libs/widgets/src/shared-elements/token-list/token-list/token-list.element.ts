@@ -85,14 +85,18 @@ export class TokenListElement extends LitElement {
       observeOn(asapScheduler),
       switchMap(([type, searchFilter, chainIds, walletAddress]) => {
         if (type === 'flat' || searchFilter.length > 0) {
-          return this.applicationContext.value.tokenStorage.getTokenIdList(
-            chainIds,
-            searchFilter || undefined,
-            walletAddress
+          return this.applicationContext.value.tokenStorage.liveQuery(() =>
+            this.applicationContext.value.tokenStorage.getTokenIdList(
+              chainIds,
+              searchFilter || undefined,
+              walletAddress
+            )
           )
         }
         if (type === 'accordion') {
-          return this.applicationContext.value.tokenStorage.getSymbolData(chainIds, walletAddress)
+          return this.applicationContext.value.tokenStorage.liveQuery(() =>
+            this.applicationContext.value.tokenStorage.getSymbolData(chainIds, walletAddress)
+          )
         }
         throw new Error(`TokenListElementError: Unknown type: ${type}`)
       })

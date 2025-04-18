@@ -10,12 +10,12 @@ import { IWallet, OverlayViewMode } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { customElement } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
 import { defer, map } from 'rxjs'
 import { connectWalletViewStyle } from './connect-wallet-view.style'
 import './elements/wallet-view-address-balance'
-import './wallet-manage.element'
+import './wallet-manager-route.element'
 
 @customElement(ConnectWalletViewElement.tagName)
 export class ConnectWalletViewElement extends LitElement {
@@ -23,17 +23,15 @@ export class ConnectWalletViewElement extends LitElement {
 
   static override styles = connectWalletViewStyle
 
-  @property({ type: Object, attribute: false }) controller?: IWallet
-
   private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly mobileMatchMedia = getMobileMatchMediaAndSubscribe(this)
 
   private overlayId: number | null = null
 
-  private readonly chainId$ = defer(() => this.getController().data.chainId$)
-  private readonly activeAddress$ = defer(() => this.getController().data.activeAddress$)
-  private readonly info$ = defer(() => this.getController().data.info$)
+  private readonly chainId$ = defer(() => this.getWalletController().data.chainId$)
+  private readonly activeAddress$ = defer(() => this.getWalletController().data.activeAddress$)
+  private readonly info$ = defer(() => this.getWalletController().data.info$)
   private readonly icon$ = this.info$.pipe(map((item) => item.icon))
   private readonly name$ = this.info$.pipe(map((item) => item.name))
   private readonly activeAddressView$ = this.activeAddress$.pipe(
@@ -42,7 +40,7 @@ export class ConnectWalletViewElement extends LitElement {
     })
   )
 
-  private readonly view$ = defer(() => this.getController().data.isConnected$).pipe(
+  private readonly view$ = defer(() => this.getWalletController().data.isConnected$).pipe(
     map((isConnected) => {
       return isConnected ? this.getConnectedView() : this.getConnectWalletButton()
     })
@@ -52,11 +50,15 @@ export class ConnectWalletViewElement extends LitElement {
     return html`${observe(this.view$)}`
   }
 
+  /**
+   * Component like a ConnectButton
+   * @private
+   */
   private getConnectedView() {
     return html`
       <div
         class="connect-wallet-view-container"
-        @click="${() => this.mobileMatchMedia.matches && this.onOpenConnectView()}"
+        @click="${() => this.mobileMatchMedia.matches && this.onManagerRouteView()}"
       >
         <img
           class="connect-wallet-view-icon"
@@ -70,7 +72,7 @@ export class ConnectWalletViewElement extends LitElement {
               address="${observe(this.activeAddress$)}"
               chainId="${observe(this.chainId$)}"
             ></inch-wallet-view-address-balance>
-            <inch-button @click="${() => this.onOpenConnectView()}" type="secondary" size="m">
+            <inch-button @click="${() => this.onManagerRouteView()}" type="secondary" size="m">
               ${observe(this.activeAddressView$)}
             </inch-button>
           `
@@ -82,7 +84,7 @@ export class ConnectWalletViewElement extends LitElement {
   private getConnectWalletButton() {
     return html`
       <inch-button
-        @click="${() => this.onOpenConnectView()}"
+        @click="${() => this.onManagerRouteView()}"
         type="${this.mobileMatchMedia.matches ? 'primary-gray' : 'secondary'}"
         size="${this.mobileMatchMedia.matches ? 'l' : 'xl'}"
       >
@@ -95,38 +97,41 @@ export class ConnectWalletViewElement extends LitElement {
     `
   }
 
-  private getController() {
-    if (!this.controller) {
-      throw new Error('')
-    }
-    return this.controller
+  private getWalletController(): IWallet {
+    return this.applicationContext.value.wallet
   }
 
   @CacheActivePromise()
-  private async onOpenConnectView() {
+  private async onManagerRouteView() {
     if (this.applicationContext.value.overlay.isOpenOverlay(this.overlayId)) {
-      await this.applicationContext.value.overlay.close(this.overlayId)
-      this.overlayId = null
+      await this.closeCurrentOverlay()
       return
     }
     this.overlayId = await this.applicationContext.value.overlay.open(
       html`
-        <inch-wallet-manage
+        <inch-wallet-manager-route
           @closeCard="${() => {
-            if (!this.overlayId) return
-            this.applicationContext.value.overlay.close(this.overlayId)
-            this.overlayId = null
+            if (!this.overlayId) {
+              return
+            }
+            this.closeCurrentOverlay()
           }}"
-          .controller="${this.controller}"
-        ></inch-wallet-manage>
+        ></inch-wallet-manager-route>
       `,
       { targetFactory: () => getShadowDomElement('swap-form'), mode: OverlayViewMode.auto }
     )
+  }
+
+  private async closeCurrentOverlay() {
+    if (this.overlayId) {
+      await this.applicationContext.value.overlay.close(this.overlayId)
+      this.overlayId = null
+    }
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-connect-wallet-view': ConnectWalletViewElement
+    [ConnectWalletViewElement.tagName]: ConnectWalletViewElement
   }
 }

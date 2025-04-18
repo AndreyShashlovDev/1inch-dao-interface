@@ -186,17 +186,17 @@ export function transformColor(hex: string): CSSResult {
   return unsafeCSS(rgbToHex(r, g, b))
 }
 
-export function getRandomBrightColor() {
+export function getRandomBrightColor(target: () => number = () => Math.random()) {
   const max = 200
   const min = 32
 
   const colors = [
-    Math.floor(Math.random() * (max - min) + min),
-    Math.floor(Math.random() * (max - min) + min),
+    Math.floor(target() * (max - min) + min),
+    Math.floor(target() * (max - min) + min),
     max,
   ]
 
-  colors.sort(() => Math.random() - 0.5)
+  colors.sort(() => target() - 0.5)
 
   return rgbToHex(colors[0], colors[1], colors[2])
 }

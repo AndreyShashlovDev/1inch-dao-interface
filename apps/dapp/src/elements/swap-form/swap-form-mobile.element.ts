@@ -129,11 +129,10 @@ export class SwapFormMobileElement extends LitElement {
 
   private async onOpenConnectWalletView() {
     const id = await this.applicationContext.value.overlay.open(html`
-      <inch-wallet-manage
+      <inch-wallet-manager-route
         showShadow
         @closeCard="${() => this.applicationContext.value.overlay.close(id)}"
-        .controller="${this.applicationContext.value.wallet}"
-      ></inch-wallet-manage>
+      ></inch-wallet-manager-route>
     `)
   }
 }

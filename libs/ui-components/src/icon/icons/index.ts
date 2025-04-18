@@ -225,6 +225,36 @@ export const icons: Record<string, IconsRecord> = {
     height: '160px',
     loader: () => import('./empty_search.svg').then((m) => m.emptySearch),
   },
+  more24: {
+    width: '24px',
+    height: '24px',
+    loader: () => import('./more_24.svg').then((m) => m.more24Svg),
+  },
+  swap24: {
+    width: '24px',
+    height: '24px',
+    loader: () => import('./swap_24.svg').then((m) => m.swap24Svg),
+  },
+  unicornBackground: {
+    width: '174px',
+    height: '199px',
+    loader: () => import('./unicorn_background.svg').then((m) => m.unicornBackground),
+  },
+  logout16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./logout_16.svg').then((m) => m.logout16Svg),
+  },
+  copy16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./copy_16.svg').then((m) => m.сopy16Svg),
+  },
+  externalLink16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./external-link_16.svg').then((m) => m.externalLink16Svg),
+  },
 
   // chain icons
   eth24: {

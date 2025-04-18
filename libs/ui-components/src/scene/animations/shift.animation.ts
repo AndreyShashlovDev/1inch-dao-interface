@@ -24,8 +24,9 @@ export function shiftAnimation(): Animation {
     backfaceVisibility: '',
     height: '',
   }
+  const DEFAULT_DURATION = 500
   const animationConfig: KeyframeAnimationOptions = {
-    duration: 500,
+    duration: DEFAULT_DURATION,
     easing: 'cubic-bezier(.2, .8, .2, 1)',
   }
 
@@ -42,7 +43,14 @@ export function shiftAnimation(): Animation {
         transform: isBack ? 'translate3d(-110%, 0, 0)' : 'translate3d(0, 0, 0)',
       })
     },
-    transition: async (upLayer: HTMLElement, downLayer: HTMLElement, isBack: boolean) => {
+    transition: async (
+      upLayer: HTMLElement,
+      downLayer: HTMLElement,
+      isBack: boolean,
+      immediate: boolean
+    ) => {
+      animationConfig.duration = immediate ? 1 : DEFAULT_DURATION
+
       await Promise.all([
         upLayer.animate(
           [
