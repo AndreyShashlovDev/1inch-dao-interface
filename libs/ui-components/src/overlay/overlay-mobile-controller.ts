@@ -80,7 +80,7 @@ export class OverlayMobileController implements IOverlayController {
     const overlayContainer = this.createOverlayContainer(id, openTarget)
     const rootNode = this.getRootNodeOrPreviousOverlay(previousOverlayId)
     const previousOverlayBackground = this.getPreviousOverlayBackground(previousOverlayId)
-    await asyncFrame()
+    await asyncFrame(10)
     const fullOverlayView = this.calculateIsFullOverlayView(overlayContainer)
     await this.transition(
       'open',
@@ -555,6 +555,7 @@ export class OverlayMobileController implements IOverlayController {
                   rootNodeOrPreviousOverlay,
                   previousOverlayBackground
                 )
+                clearTouchPositionMap()
               })
             )
           )

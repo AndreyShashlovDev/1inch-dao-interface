@@ -12,7 +12,6 @@ import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { combineLatest, tap } from 'rxjs'
 import './account'
-import './i18n'
 import './wallet'
 import { WalletManagerRouteStyle } from './wallet-manager-route.style'
 
@@ -22,7 +21,7 @@ type Scenes = 'account' | 'wallets'
 export class WalletManagerRoute extends LitElement {
   static tagName = 'inch-wallet-manager-route' as const
 
-  static override styles = [WalletManagerRouteStyle]
+  static override styles = [WalletManagerRouteStyle, SceneController.styles()]
 
   @property({ type: Boolean }) showShadow?: boolean
 
