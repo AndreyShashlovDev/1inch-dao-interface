@@ -7,8 +7,4 @@ export const selectTokenStyle = css`
     height: 100%;
     width: 100%;
   }
-
-  .empty {
-    pointer-events: none;
-  }
 `

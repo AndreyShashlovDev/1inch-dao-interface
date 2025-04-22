@@ -101,6 +101,7 @@ export class OverlayMobileController implements IOverlayController {
     this.activeOverlayMap.set(id, [overlayContainer, overlayBackground])
     this.overlayIdStack.unshift(id)
     this.subscribe(id, overlayContainer, overlayBackground, rootNode, previousOverlayBackground)
+    overlayContainer.onChangeStubView(false)
     return id
   }
 
@@ -149,6 +150,7 @@ export class OverlayMobileController implements IOverlayController {
     const overlayIndex = this.activeOverlayMap.size + 1
     const offsetStep = 5
     const innerHeight = isSafari() && isStandalone() ? window.innerHeight - 10 : window.innerHeight
+    overlayContainer.onChangeStubView(true)
     overlayContainer.maxHeight = ((100 - overlayIndex * offsetStep) * innerHeight) / 100
     overlayContainer.id = 'overlay-container'
     overlayContainer.setAttribute('overlay-id', id.toString())
@@ -168,7 +170,6 @@ export class OverlayMobileController implements IOverlayController {
       zIndex: `${zIndex + id * 10 + 1}`,
       boxSizing: 'border-box',
       borderRadius: overlayBorderRadius(this.overlayBorderRadius),
-      // transition: 'all 10ms',
       ...startPosition,
     })
     if (isSafari() && isStandalone()) {

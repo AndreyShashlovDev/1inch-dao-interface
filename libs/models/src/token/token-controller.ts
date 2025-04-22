@@ -8,6 +8,16 @@ import type { IToken } from './token'
 import type { ITokenListViewData } from './token-list-view-data'
 
 export interface ITokenStorage extends InitializingEntity {
+  getTotalTokenBalanceBySymbol(
+    chainIds: ChainId[],
+    symbol: string,
+    walletAddress: Address
+  ): Promise<IBigFloat>
+  getTotalTokenFiatBalanceBySymbol(
+    chainIds: ChainId[],
+    symbol: string,
+    walletAddress: Address
+  ): Promise<IBigFloat>
   getCrossChainTokenBalance(symbol: string, walletAddress: Address): Promise<IBigFloat>
   getCrossChainTokenByPriority(symbol: string): Promise<IToken | null>
   getCrossChainTokenName(symbol: string): Promise<string>
@@ -24,7 +34,6 @@ export interface ITokenStorage extends InitializingEntity {
     walletAddress?: Address
   ): Promise<TokenRecordId[]>
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
-  getSymbolDataWithFilter(filter: string, walletAddress?: Address): Promise<TokenRecordId[]>
   getSymbolData(chainIds: ChainId[], walletAddress?: Address): Promise<ITokenListViewData>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
   getTokenById(id: TokenRecordId): Promise<IToken | null>

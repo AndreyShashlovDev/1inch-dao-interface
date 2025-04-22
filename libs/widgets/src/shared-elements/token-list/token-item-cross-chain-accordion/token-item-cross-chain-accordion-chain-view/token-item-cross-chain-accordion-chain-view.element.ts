@@ -1,6 +1,6 @@
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { appendClass, subscribe } from '@1inch-community/core/lit-utils'
-import { IBigFloat, IToken, TokenRecordId } from '@1inch-community/models'
+import { IToken, TokenRecordId } from '@1inch-community/models'
 import { chainViewConfig } from '@1inch-community/sdk/chain'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
@@ -11,17 +11,23 @@ import { Address } from 'viem'
 import '../../../token-icon'
 import { favoriteToken, selectToken } from '../../events'
 import { favoriteTokenToggleStyle } from '../../styles/favorite-token-toggle.style'
+import { mobileListStyle } from '../../styles/mobile-list.style'
 import { tokenItemCrossChainAccordionChainViewStyle } from './token-item-cross-chain-accordion-chain-view.style'
 
 @customElement(TokenItemCrossChainAccordionChainViewElement.tagName)
 export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
   static tagName = 'inch-token-item-cross-chain-accordion-chain-view' as const
 
-  static override styles = [tokenItemCrossChainAccordionChainViewStyle, favoriteTokenToggleStyle]
+  static override styles = [
+    tokenItemCrossChainAccordionChainViewStyle,
+    favoriteTokenToggleStyle,
+    mobileListStyle,
+  ]
 
   @property({ type: String, attribute: false }) tokenId?: TokenRecordId
   @property({ type: String, attribute: false }) walletAddress?: Address
   @property({ type: Boolean, attribute: false }) showFavoriteTokenToggle = false
+  @property({ type: Boolean, attribute: false }) mobileView = false
 
   @state() private isFavorite = false
 
@@ -29,25 +35,14 @@ export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
 
   private readonly task = new Task(
     this,
-    async ([tokenId, walletAddress]) => {
+    async ([tokenId]) => {
       if (!tokenId) throw new Error('')
-      const [token, balance, fiatBalance] = await Promise.all([
-        this.applicationContext.value.tokenStorage.getTokenById(tokenId),
-        walletAddress
-          ? this.applicationContext.value.tokenStorage.getTokenBalanceById(tokenId, walletAddress)
-          : null,
-        walletAddress
-          ? this.applicationContext.value.tokenStorage.getTokenFiatBalanceById(
-              tokenId,
-              walletAddress
-            )
-          : null,
-      ])
+      const token = await this.applicationContext.value.tokenStorage.getTokenById(tokenId)
       if (!token) {
         console.error('token not found', tokenId)
         throw new Error('')
       }
-      return [token, balance, fiatBalance] as const
+      return token
     },
     () => [this.tokenId, this.walletAddress] as const
   )
@@ -58,9 +53,8 @@ export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
       [
         fromEvent(this, 'click').pipe(
           tap(() => {
-            if (!this.task.value || !this.task.value[0]) return
-            const token = this.task.value[0]
-            selectToken(this, token)
+            if (!this.task.value || !this.task.value) return
+            selectToken(this, this.task.value)
           })
         ),
       ],
@@ -78,21 +72,12 @@ export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
 
   private renderChainViewOrLoader() {
     if (!this.task.value) return this.renderLoader()
-    const [token, balance, fiatBalance] = this.task.value
-    return this.renderChainView(token, balance, fiatBalance)
+    return this.renderChainView(this.task.value)
   }
 
-  private renderChainView(token: IToken, balance: IBigFloat | null, fiatBalance: IBigFloat | null) {
+  private renderChainView(token: IToken) {
     const chainView = chainViewConfig[token.chainId]
     if (!chainView) return this.renderLoader()
-    let balanceFormat = '0'
-    let fiatBalanceFormat = '0'
-    if (balance) {
-      balanceFormat = balance.toFixedSmart(2)
-    }
-    if (fiatBalance) {
-      fiatBalanceFormat = fiatBalance.toFixedSmart(2)
-    }
     let favoriteIconStyle: Record<string, string> = {
       border: 'var(--color-content-content-secondary)',
     }
@@ -105,6 +90,7 @@ export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
     appendClass(this, {
       'show-favorite-token-toggle': this.showFavoriteTokenToggle,
       'favorite-token': this.isFavorite,
+      'mobile-view': this.mobileView,
     })
     return html`
       <div class="left">
@@ -112,9 +98,19 @@ export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
         <inch-icon icon="${chainView.iconName}"></inch-icon>
         <div>${chainView.name}</div>
       </div>
-      <div class="right">
-        <div class="balance">${balanceFormat} ${token.symbol}</div>
-        <div class="fiat-balance">$${fiatBalanceFormat}</div>
+      <div class="right favorite-icon-overflow">
+        <inch-token-balance
+          class="balance"
+          .tokenId="${this.tokenId}"
+          .symbol="${token.symbol}"
+          .walletAddress="${this.walletAddress}"
+        ></inch-token-balance>
+        <inch-token-fiat-balance
+          class="fiat-balance"
+          .tokenId="${this.tokenId}"
+          .symbol="${token.symbol}"
+          .walletAddress="${this.walletAddress}"
+        ></inch-token-fiat-balance>
       </div>
       ${when(
         this.showFavoriteTokenToggle,

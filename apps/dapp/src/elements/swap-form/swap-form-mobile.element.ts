@@ -109,6 +109,7 @@ export class SwapFormMobileElement extends LitElement {
     const id = await this.applicationContext.value.overlay.open(html`
       <inch-card overlayView style="width: 100%; height: 100%; display: flex;">
         <inch-select-token
+          mobileView
           .swapContext="${this.swapContext}"
           tokenType="${this.targetSelectToken!}"
           @backCard="${() => this.applicationContext.value.overlay.close(id)}"
@@ -128,9 +129,11 @@ export class SwapFormMobileElement extends LitElement {
   }
 
   private async onOpenConnectWalletView() {
+    debugger
     const id = await this.applicationContext.value.overlay.open(html`
       <inch-wallet-manager-route
         showShadow
+        mobileView
         @closeCard="${() => this.applicationContext.value.overlay.close(id)}"
       ></inch-wallet-manager-route>
     `)

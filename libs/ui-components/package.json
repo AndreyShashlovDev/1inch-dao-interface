@@ -54,6 +54,14 @@
       "types": "./dist/icon/index.d.ts",
       "import": "./dist/icon/index.js"
     },
+    "./loaders": {
+      "types": "./dist/loaders/index.d.ts",
+      "import": "./dist/loaders/index.js"
+    },
+    "./marquee": {
+      "types": "./dist/marquee/index.d.ts",
+      "import": "./dist/marquee/index.js"
+    },
     "./overlay": {
       "types": "./dist/overlay/index.d.ts",
       "import": "./dist/overlay/index.js"

@@ -1,17 +1,14 @@
 import { lazyAppContextConsumer, lazyProvider } from '@1inch-community/core/lazy'
 import { dispatchEvent, LitCustomEvent, observe } from '@1inch-community/core/lit-utils'
-import { ChainId, ISwapContext, IToken, TokenType } from '@1inch-community/models'
-import { SwapContextToken } from '@1inch-community/sdk/swap'
+import { IToken, TokenType } from '@1inch-community/models'
 import '@1inch-community/ui-components/card'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { defer } from 'rxjs'
-import '../chain-selector'
+import { defer, map } from 'rxjs'
 import '../shared-elements/token-list'
 import { selectTokenContext } from './context'
-import './elements/favorite-tokens'
-import './elements/search-token-input'
+
+import './elements/select-token-header'
 import { SelectTokenContext } from './select-token.context'
 import { selectTokenStyle } from './select-token.style'
 
@@ -22,27 +19,31 @@ export class SelectTokenElement extends LitElement {
   static override styles = selectTokenStyle
 
   @property({ type: String }) tokenType?: TokenType
+  @property({ type: Boolean, attribute: true }) mobileView = false
 
   private readonly applicationContext = lazyAppContextConsumer(this)
-
-  @consume({ context: SwapContextToken, subscribe: true })
-  @property({ type: Object })
-  swapContext?: ISwapContext
 
   private readonly selectTokenContext = lazyProvider(this, { context: selectTokenContext })
 
   private readonly chainListView$ = defer(() => this.selectTokenContext.value.chainFilter$)
+  private readonly tokenListFlatView$ = defer(
+    () => this.selectTokenContext.value.tokenListFlatView$
+  )
   private readonly activeAddress$ = defer(
     () => this.applicationContext.value.wallet.data.activeAddress$
   )
   private readonly searchToken$ = defer(() => this.selectTokenContext.value.searchToken$)
+
+  private readonly tokenListType$ = this.tokenListFlatView$.pipe(
+    map((state) => (state ? 'flat' : 'accordion'))
+  )
 
   protected override render() {
     this.initContext()
     return html`
       <inch-token-list
         showFavoriteTokenToggle
-        type="accordion"
+        type="${observe(this.tokenListType$, 'accordion')}"
         @selectToken="${(event: LitCustomEvent<IToken>) => {
           this.selectTokenContext.value.onSelectToken(event.detail.value)
           dispatchEvent(this, 'backCard', null)
@@ -53,30 +54,21 @@ export class SelectTokenElement extends LitElement {
         .searchFilter="${observe(this.searchToken$)}"
         .chainIds="${observe(this.chainListView$)}"
         .walletAddress="${observe(this.activeAddress$)}"
-        .header="${() => html`
-          <div style="margin-left: 1px; margin-right: 1px; pointer-events: auto;">
-            <inch-card-header backButton>
-              <inch-chain-selector
-                slot="center-container"
-                .selectedChainIdList="${observe(this.chainListView$)}"
-                @changeSelectedChainIdList="${(event: LitCustomEvent<ChainId[]>) =>
-                  this.selectTokenContext.value.onChangeChainFilter(event.detail.value)}"
-              ></inch-chain-selector>
-            </inch-card-header>
-            <inch-search-token-input></inch-search-token-input>
-            <inch-favorite-tokens></inch-favorite-tokens>
-          </div>
-        `}"
+        .mobileView="${this.mobileView}"
+        .header="${() => html`<inch-select-token-header></inch-select-token-header>`}"
       ></inch-token-list>
     `
   }
 
   private initContext() {
-    if (this.selectTokenContext.isInit || !this.swapContext || !this.tokenType) return
+    const swapContext = this.applicationContext.value.getActiveSwapContext()
+    if (this.selectTokenContext.isInit || !swapContext || !this.tokenType) {
+      throw new Error('error of init SelectTokenContext')
+    }
     const context = new SelectTokenContext(
       this.tokenType,
       this.applicationContext.value,
-      this.swapContext
+      swapContext
     )
     this.selectTokenContext.set(context)
   }

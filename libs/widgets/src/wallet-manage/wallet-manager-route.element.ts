@@ -1,9 +1,5 @@
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
-import {
-  getMobileMatchMediaAndSubscribe,
-  subscribe,
-  translate,
-} from '@1inch-community/core/lit-utils'
+import { subscribe, translate } from '@1inch-community/core/lit-utils'
 import '@1inch-community/ui-components/card'
 import { SceneController, shiftAnimation } from '@1inch-community/ui-components/scene'
 import { html, LitElement } from 'lit'
@@ -23,11 +19,10 @@ export class WalletManagerRoute extends LitElement {
 
   static override styles = [WalletManagerRouteStyle, SceneController.styles()]
 
-  @property({ type: Boolean }) showShadow?: boolean
+  @property({ type: Boolean, attribute: true }) showShadow?: boolean
+  @property({ type: Boolean, attribute: true }) mobileView?: boolean
 
   private readonly applicationContext = lazyAppContextConsumer(this)
-
-  private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   private readonly scene = new SceneController(
     'account',
@@ -61,6 +56,7 @@ export class WalletManagerRoute extends LitElement {
   private getAccountView() {
     return html`
       <inch-wallet-account-view
+        .mobileView="${this.mobileView}"
         @changeWalletClick="${() => this.navigateTo('wallets')}"
       ></inch-wallet-account-view>
     `
@@ -109,23 +105,20 @@ export class WalletManagerRoute extends LitElement {
     </inch-card-header>`
   }
 
-  private navigateTo(scene: Scenes, immediate: boolean = false) {
+  private async navigateTo(scene: Scenes, immediate: boolean = false) {
     this.currentSceneName = scene
-    this.scene.nextTo(scene, immediate)
+    await this.scene.nextTo(scene, immediate)
   }
 
-  private onBackPress() {
-    this.scene.back()
+  private async onBackPress() {
+    await this.scene.back()
     this.currentSceneName = this.scene.activeScene
   }
 
   protected render() {
     return html`
       <inch-card class="route-container" showShadow="${ifDefined(this.showShadow)}" overlayView>
-        ${when(
-          !this.mobileMedia.matches,
-          () => html` <inch-card-close-overlay></inch-card-close-overlay> `
-        )}
+        ${when(!this.mobileView, () => html` <inch-card-close-overlay></inch-card-close-overlay> `)}
         ${this.getHeaderView()}
         ${this.scene.render({
           wallets: () => this.getWalletsView(),

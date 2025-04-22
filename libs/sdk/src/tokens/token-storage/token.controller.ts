@@ -38,23 +38,79 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
+  async getTotalTokenBalanceBySymbol(chainIds: ChainId[], symbol: string, walletAddress: Address) {
+    await this.updateDatabase()
+    const { balances, tokens } = this.schema
+    const chainIdSet = new Set(chainIds)
+    const tokenMap = new Map<TokenRecordId, IToken>()
+    await tokens
+      .where('symbol')
+      .equals(symbol)
+      .each((record) => {
+        if (!chainIdSet.has(record.chainId)) return
+        tokenMap.set(record.id, record)
+      })
+    const tokenIdList = tokenMap.keys().toArray()
+    let totalBalance = BigFloat.zero()
+    await balances
+      .where('tokenRecordId')
+      .anyOf(tokenIdList)
+      .and((record) => isAddressEqual(record.walletAddress, walletAddress))
+      .each((record) => {
+        const token = tokenMap.get(record.tokenRecordId)
+        if (!token) return
+        const balance = BigFloat.fromBigInt(BigInt(record.amount), token.decimals)
+        totalBalance = totalBalance.add(balance)
+      })
+    return totalBalance
+  }
+
+  @CacheActivePromise()
+  async getTotalTokenFiatBalanceBySymbol(
+    chainIds: ChainId[],
+    symbol: string,
+    walletAddress: Address
+  ) {
+    await this.updateDatabase()
+    const { balances, tokens, tokenPrice } = this.schema
+    const chainIdSet = new Set(chainIds)
+    const tokenMap = new Map<TokenRecordId, IToken>()
+    await tokens
+      .where('symbol')
+      .equals(symbol)
+      .each((record) => {
+        if (!chainIdSet.has(record.chainId)) return
+        tokenMap.set(record.id, record)
+      })
+    const tokenIdList = tokenMap.keys().toArray()
+    const tokenPriceMap = new Map<TokenRecordId, BigFloat>()
+    await tokenPrice
+      .where('tokenRecordId')
+      .anyOf(tokenIdList)
+      .each((record) => tokenPriceMap.set(record.tokenRecordId, BigFloat.fromString(record.price)))
+    let totalFiatBalance = BigFloat.zero()
+    await balances
+      .where('tokenRecordId')
+      .anyOf(tokenIdList)
+      .and((record) => isAddressEqual(record.walletAddress, walletAddress))
+      .each((record) => {
+        const token = tokenMap.get(record.tokenRecordId)
+        if (!token) return
+        const balance = BigFloat.fromBigInt(BigInt(record.amount), token.decimals)
+        const fiatPrice = tokenPriceMap.get(record.tokenRecordId)
+        if (!fiatPrice) return
+        totalFiatBalance = totalFiatBalance.add(balance.mul(fiatPrice))
+      })
+    return totalFiatBalance
+  }
+
+  @CacheActivePromise()
   async getSymbolData(chainIds: ChainId[], walletAddress?: Address): Promise<ITokenListViewData> {
     await this.updateDatabase(walletAddress)
     if (walletAddress) {
       return this.getSymbolDataByWalletAddress(chainIds, walletAddress)
     }
     return this.getSymbolDataWithoutWalletAddress(chainIds)
-  }
-
-  @CacheActivePromise()
-  async getSymbolDataWithFilter(filter: string, walletAddress?: Address): Promise<TokenRecordId[]> {
-    await this.updateDatabase(walletAddress)
-    if (walletAddress) {
-      // return this.getSymbolDataByWalletAddress(walletAddress)
-    }
-    // return this.getSymbolDataWithoutWalletAddress()
-
-    return []
   }
 
   @CacheActivePromise()
@@ -333,6 +389,7 @@ export class TokenController implements ITokenStorage {
       .where('walletAddress')
       .equals(walletAddress)
       .each((record) => {
+        if (record.amount === '0') return
         if (!tokenIdSet.has(record.tokenRecordId)) return
         result.push(record.tokenRecordId)
       })

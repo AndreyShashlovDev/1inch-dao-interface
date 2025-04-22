@@ -18,6 +18,7 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
   `
 
   readonly scrollTopFromConsumer$ = new BehaviorSubject<number>(0)
+  readonly showStubView$ = new BehaviorSubject<boolean>(false)
 
   get scrollTopFromConsumer() {
     return this.scrollTopFromConsumer$.value ?? 0
@@ -32,6 +33,10 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
 
   setScrollTopFromConsumer(state: number): void {
     this.scrollTopFromConsumer$.next(state)
+  }
+
+  onChangeStubView(state: boolean): void {
+    this.showStubView$.next(state)
   }
 
   protected override firstUpdated() {

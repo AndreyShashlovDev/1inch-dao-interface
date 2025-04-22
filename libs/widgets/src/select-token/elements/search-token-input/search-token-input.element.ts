@@ -1,13 +1,11 @@
-import { subscribe } from '@1inch-community/core/lit-utils'
-import { ISelectTokenContext } from '@1inch-community/models'
+import { lazyConsumer } from '@1inch-community/core/lazy'
+import { observe, subscribe } from '@1inch-community/core/lit-utils'
 import '@1inch-community/ui-components/icon'
-import { ISceneContext, sceneContext } from '@1inch-community/ui-components/scene'
-import { consume } from '@lit/context'
 import { html, LitElement } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
 import { when } from 'lit/directives/when.js'
-import { of, tap } from 'rxjs'
+import { defer, map, of, tap } from 'rxjs'
 import { selectTokenContext } from '../../context'
 import { searchTokenInputStyle } from './search-token-input.style'
 
@@ -20,11 +18,13 @@ export class SearchTokenInputElement extends LitElement {
   @state() private isFocused = false
   @state() private searchInProgress = false
 
-  @consume({ context: sceneContext })
-  sceneContext?: ISceneContext
+  private readonly context = lazyConsumer(this, { context: selectTokenContext })
 
-  @consume({ context: selectTokenContext })
-  context?: ISelectTokenContext
+  private readonly tokenListFlatView$ = defer(() => this.context.value.tokenListFlatView$)
+
+  private readonly tokenListFlatViewToggleIcon$ = this.tokenListFlatView$.pipe(
+    map((value) => (value ? 'alignJustify16' : 'alignRight16'))
+  )
 
   protected override render() {
     const classes = {
@@ -50,6 +50,12 @@ export class SearchTokenInputElement extends LitElement {
           () => html`<span class="loader"></span>`,
           () => html``
         )}
+        <inch-button
+          type="tertiary-gray"
+          @click="${() => this.context.value.tokenListFlatViewToggle()}"
+        >
+          <inch-icon icon="${observe(this.tokenListFlatViewToggleIcon$)}"></inch-icon>
+        </inch-button>
       </div>
     `
   }
@@ -58,8 +64,9 @@ export class SearchTokenInputElement extends LitElement {
     subscribe(
       this,
       [
-        this.context?.searchInProgress$.pipe(tap((state) => (this.searchInProgress = state))) ??
-          of(),
+        this.context.value.searchInProgress$.pipe(
+          tap((state) => (this.searchInProgress = state))
+        ) ?? of(),
       ],
       { requestUpdate: false }
     )
@@ -67,7 +74,7 @@ export class SearchTokenInputElement extends LitElement {
 
   private onChange(event: InputEvent) {
     const value = (event.target as HTMLInputElement).value
-    this.context?.setSearchToken(value)
+    this.context.value.setSearchToken(value)
   }
 }
 

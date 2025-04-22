@@ -70,6 +70,16 @@ export const icons: Record<string, IconsRecord> = {
     height: '16px',
     loader: () => import('./link_16.svg').then((m) => m.link16Svg),
   },
+  alignRight16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./align-right_16.svg').then((m) => m.alignRight16Svg),
+  },
+  alignJustify16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./align-justify_16.svg').then((m) => m.alignJustify16Svg),
+  },
   plusCircle16: {
     width: '16px',
     height: '16px',

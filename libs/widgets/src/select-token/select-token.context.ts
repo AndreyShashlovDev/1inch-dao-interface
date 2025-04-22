@@ -18,6 +18,7 @@ export class SelectTokenContext implements ISelectTokenContext {
   readonly connectedWalletAddress$: Observable<Address | null> = defer(
     () => this.applicationContext.wallet.data.activeAddress$
   )
+  readonly tokenListFlatView$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false)
   readonly searchToken$: BehaviorSubject<string> = new BehaviorSubject<string>('')
   readonly changeFavoriteTokenState$: Subject<[ChainId, Address]> = new Subject()
   readonly searchInProgress$: Subject<boolean> = new BehaviorSubject(false)
@@ -49,6 +50,10 @@ export class SelectTokenContext implements ISelectTokenContext {
   async setFavoriteTokenState(chainId: ChainId, address: Address, state: boolean): Promise<void> {
     await this.applicationContext.tokenStorage.setFavoriteState(chainId, address, state)
     this.changeFavoriteTokenState$.next([chainId, address])
+  }
+
+  tokenListFlatViewToggle(): void {
+    this.tokenListFlatView$.next(!this.tokenListFlatView$.value)
   }
 
   setSearchState(state: boolean): void {

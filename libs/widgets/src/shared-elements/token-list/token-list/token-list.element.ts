@@ -1,33 +1,34 @@
 import { asyncTimeout } from '@1inch-community/core/async'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
-import { observe } from '@1inch-community/core/lit-utils'
+import { appendClass, observe, translate } from '@1inch-community/core/lit-utils'
 import { ChainId, type ITokenListViewData, type TokenRecordId } from '@1inch-community/models'
 import '@1inch-community/ui-components/scroll'
 import type { ScrollViewVirtualizerConsumerElement } from '@1inch-community/ui-components/scroll'
 import { html, LitElement, TemplateResult } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
+import { map as LitMap } from 'lit/directives/map.js'
 import { createRef, ref } from 'lit/directives/ref.js'
-import {
-  asapScheduler,
-  BehaviorSubject,
-  combineLatest,
-  map,
-  Observable,
-  observeOn,
-  switchMap,
-  tap,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, debounceTime, map, Observable, switchMap, tap } from 'rxjs'
 import { Address } from 'viem'
 import { changeSearchState } from '../events'
 import '../token-item-cross-chain-accordion'
 import '../token-item-cross-chain-flat'
+import '../token-item-loader'
 import { tokenListStyle } from './token-list.style'
 
 type TokenListByViewTypeAndSearchFilterAndChainIdsType = Observable<
   ITokenListViewData | TokenRecordId[]
 >
 
-type TokenListType = 'flat' | 'accordion'
+export type TokenListType = 'flat' | 'accordion'
+
+const debug$ = new BehaviorSubject<boolean>(false)
+
+const listDebugToggle = () => {
+  debug$.next(!debug$.value)
+}
+
+Reflect.set(window, 'listDebugToggle', listDebugToggle)
 
 @customElement(TokenListElement.tagName)
 export class TokenListElement extends LitElement {
@@ -36,6 +37,8 @@ export class TokenListElement extends LitElement {
   static override styles = tokenListStyle
 
   @property({ type: Boolean, attribute: true }) showFavoriteTokenToggle = false
+  @property({ type: Boolean, attribute: true }) showOnlyWithBalance = false
+  @property({ type: Boolean, attribute: false }) mobileView = false
   @property({ type: Function, attribute: false }) header?: () => TemplateResult<1>
 
   @property({ type: String, attribute: true })
@@ -59,6 +62,7 @@ export class TokenListElement extends LitElement {
   set searchFilter(value: string) {
     if (this.searchFilter$.value === value) return
     this.searchFilter$.next(value)
+    this.requestUpdate()
     if (!this.searchInProgress) {
       this.searchInProgress = true
       changeSearchState(this, this.searchInProgress)
@@ -68,6 +72,10 @@ export class TokenListElement extends LitElement {
   private searchInProgress = false
 
   @state() private expandedAccordionItemIndex: number | null = null
+
+  @state() private isEmpty = false
+
+  private readonly emptyList: 'loader'[] = new Array(50).fill('loader')
 
   private tokenListViewDataSnapshot: ITokenListViewData | null = null
 
@@ -82,7 +90,7 @@ export class TokenListElement extends LitElement {
 
   private readonly tokenListByViewTypeAndSearchFilterAndChainIds$: TokenListByViewTypeAndSearchFilterAndChainIdsType =
     combineLatest([this.type$, this.searchFilter$, this.chainIds$, this.walletAddress$]).pipe(
-      observeOn(asapScheduler),
+      debounceTime(0),
       switchMap(([type, searchFilter, chainIds, walletAddress]) => {
         if (type === 'flat' || searchFilter.length > 0) {
           return this.applicationContext.value.tokenStorage.liveQuery(() =>
@@ -102,38 +110,65 @@ export class TokenListElement extends LitElement {
       })
     )
 
-  private readonly dataIndexListOfFlatTokenIdList$ =
-    this.tokenListByViewTypeAndSearchFilterAndChainIds$.pipe(
-      map((data) => {
-        if (Array.isArray(data)) {
-          this.tokenListViewDataSnapshot = null
-          return data
-        }
-        const length = data.userTokensInfo.length + data.allTokensInfo.length
-        this.tokenListViewDataSnapshot = data
-        return new Array(length).fill(0) as 0[]
-      }),
-      tap(() => {
-        if (this.searchInProgress) {
-          this.searchInProgress = false
-          changeSearchState(this, this.searchInProgress)
-        }
-      })
-    )
+  private readonly dataIndexListOfFlatTokenIdList$ = combineLatest([
+    this.tokenListByViewTypeAndSearchFilterAndChainIds$,
+    debug$,
+  ]).pipe(
+    map(([data, debug$]) => {
+      if (debug$) {
+        return this.emptyList
+      }
+      if (Array.isArray(data)) {
+        this.tokenListViewDataSnapshot = null
+        return data
+      }
+      const length = data.userTokensInfo.length + data.allTokensInfo.length
+      this.tokenListViewDataSnapshot = data
+      return new Array(length).fill(0) as 0[]
+    }),
+    tap((data) => {
+      if (this.searchInProgress) {
+        this.searchInProgress = false
+        changeSearchState(this, this.searchInProgress)
+      }
+      this.isEmpty = data.length === 0
+    })
+  )
 
   protected render() {
+    appendClass(this, {
+      empty: this.isEmpty,
+      search: this.searchFilter$.value.length > 0,
+    })
     return html`
+      ${this.renderEmptySearchView()}
       <inch-scroll-view-virtualizer-consumer
         ${ref(this.virtualizedRef)}
         .header="${this.header}"
-        .items=${observe(this.dataIndexListOfFlatTokenIdList$)}
-        .keyFunction="${(id: TokenRecordId | 0, index: number) => this.keyFunction(id, index)}"
-        .renderItem="${(id: TokenRecordId | 0, index: number) => this.renderItem(id, index)}"
+        .stubView=${() => this.renderStubList()}
+        .items=${observe(this.dataIndexListOfFlatTokenIdList$, this.emptyList)}
+        .keyFunction="${(id: TokenRecordId | 0 | 'loader', index: number) =>
+          this.keyFunction(id, index)}"
+        .renderItem="${(id: TokenRecordId | 0 | 'loader', index: number) =>
+          this.renderItem(id, index)}"
       ></inch-scroll-view-virtualizer-consumer>
     `
   }
 
-  private renderItem(id: TokenRecordId | 0, index: number): TemplateResult<1> {
+  private renderEmptySearchView() {
+    return html`
+      <div class="empty-search">
+        <inch-icon icon="emptySearch"></inch-icon>
+        <h3>${translate('inch-token-list.search-empty', { name: this.searchFilter$.value })}</h3>
+        <span>${translate('inch-token-list.search-empty-description')}</span>
+      </div>
+    `
+  }
+
+  private renderItem(id: TokenRecordId | 0 | 'loader', index: number): TemplateResult<1> {
+    if (id === 'loader') {
+      return this.renderLoaderItem(index)
+    }
     if (id === 0) {
       return this.renderAccordionItem(index)
     }
@@ -141,6 +176,24 @@ export class TokenListElement extends LitElement {
       return this.renderFlatItem(id)
     }
     throw new Error(`TokenListElementError: Unsupported template`)
+  }
+
+  private renderStubList() {
+    return html`${LitMap(this.emptyList, (_, index) => this.renderLoaderItem(index))}`
+  }
+
+  private renderLoaderItem(index: number) {
+    return html`
+      <inch-token-item-loader
+        .iconAfterStyle="${this.type$.value === 'accordion'
+          ? { transform: 'rotate(-90deg)' }
+          : undefined}"
+        .showIconAfter="${this.type$.value === 'accordion'}"
+        .index="${index}"
+        .iconAfterName="${this.type$.value === 'accordion' ? 'chevronDown16' : undefined}"
+        .mobileView="${this.mobileView}"
+      ></inch-token-item-loader>
+    `
   }
 
   private renderAccordionItem(index: number) {
@@ -154,6 +207,8 @@ export class TokenListElement extends LitElement {
       .walletAddress="${walletAddress}"
       .showChainIds="${chainIds}"
       .expanded="${this.expandedAccordionItemIndex === index}"
+      .index="${index}"
+      .mobileView="${this.mobileView}"
     ></inch-token-item-cross-chain-accordion>`
   }
 
@@ -163,16 +218,20 @@ export class TokenListElement extends LitElement {
       .showFavoriteTokenToggle="${this.showFavoriteTokenToggle}"
       .tokenId="${id}"
       .walletAddress="${walletAddress}"
+      .mobileView="${this.mobileView}"
     ></inch-token-item-cross-chain-flat>`
   }
 
-  private keyFunction(id: TokenRecordId | 0, index: number): string {
+  private keyFunction(id: TokenRecordId | 0 | 'loader', index: number): string {
     if (id === 0 && this.tokenListViewDataSnapshot !== null) {
       const record = this.extractTokenViewDataByIndex(index)!
       return [record.symbol, ...record.tokenRecordIds].join('')
     }
-    if (typeof id === 'string') {
+    if (typeof id === 'string' && id !== 'loader') {
       return id
+    }
+    if (id !== 'loader') {
+      return `loader-${index}`
     }
     return index.toString()
   }
