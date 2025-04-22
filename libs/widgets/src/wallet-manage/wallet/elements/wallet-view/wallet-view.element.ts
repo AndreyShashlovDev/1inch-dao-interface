@@ -6,7 +6,6 @@ import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-import { classMap } from 'lit/directives/class-map.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
@@ -66,68 +65,110 @@ export class WalletViewElement extends LitElement {
     if (!this.info) {
       throw new Error('')
     }
-    const addressListLength = this.addressList?.length ?? 0
-    const height = (this.showAddresses && addressListLength > 1 ? addressListLength * 64 : 0) + 64
 
+    return this.isWalletConnected
+      ? this.getAlreadyConnectedWalletView(this.info)
+      : this.getConnectWalletView(this.info)
+  }
+
+  private getConnectWalletView(info: EIP6963ProviderInfo) {
+    return html`
+      <div class="wallet-view-container" @click="${() => this.onClick()}">
+        <div class="data-container left-data">
+          <img class="wallet-icon" alt="${info.name}" src="${info.icon}" />
+          <span class="wallet-name">${info.name}</span>
+        </div>
+        ${when(
+          this.isActiveWallet,
+          () => html`
+            <div class="data-container right-data">
+              <div class="wallet-view-recent">Recent</div>
+            </div>
+          `
+        )}
+      </div>
+    `
+  }
+
+  private getAlreadyConnectedWalletView(info: EIP6963ProviderInfo) {
+    const isMultiWallet = info.uuid === 'walletConnect' || (this.addressList?.length ?? 0) > 1
+    const title = !isMultiWallet && this.activeAddress ? formatHex(this.activeAddress) : info.name
+    const subtitle = isMultiWallet
+      ? html`${this.addressList?.length} ${translate('widgets.wallet-view.wallet-subtitle')}`
+      : html`
+          <inch-wallet-view-address-balance
+            class="wallet-sub-title"
+            chainId="${ifDefined(this.chainId)}"
+            address="${this.activeAddress}"
+          ></inch-wallet-view-address-balance>
+        `
+
+    const addressListLength = this.addressList?.length ?? 0
+    const height = (this.showAddresses && addressListLength > 1 ? addressListLength * 56 : 1) + 56
     appendStyle(this, {
       height: `${height}px`,
     })
 
-    const isWalletConnect = this.info.uuid === 'walletConnect'
+    return html`
+      <div class="wallet-view-container" @click="${() => this.onClick()}">
+        <div class="data-container left-data">
+          <img class="wallet-icon" alt="${info.name}" src="${info.icon}" />
+          <div class="wallet-info-container">
+            <span class="wallet-title">${title}</span>
+            <span class="wallet-sub-title">${subtitle}</span>
+          </div>
+        </div>
+        <div class="data-container right-data">
+          <inch-button @click="${() => {}}" type="tertiary" size="l">
+            <inch-icon
+              width="24"
+              height="24"
+              class="disconnect-address-check-icon"
+              icon="logout16"
+            ></inch-icon>
+          </inch-button>
 
-    const classes = {
-      'wallet-view-container': true,
-      'wallet-view-container__wc': isWalletConnect,
-      'wallet-view-container__connected': this.isWalletConnected,
-      'wallet-view-container__loading': this.showLoader,
+          ${this.getConnectButtonView(this.isWalletConnected, isMultiWallet)}
+        </div>
+      </div>
+      ${when(this.showAddresses, () => this.getAddressesSubList())}
+    `
+  }
+
+  private getConnectButtonView(isWalletConnect: boolean, isMultiWallet: boolean) {
+    if (!isMultiWallet) {
+      return html``
     }
 
     return html`
-      <div class="${classMap(classes)}" @click="${() => this.onClick()}">
-        <div class="data-container left-data">
-          <img class="wallet-icon" alt="${this.info.name}" src="${this.info.icon}" />
-          <span class="wallet-name">${this.info.name}</span>
-        </div>
-        <div class="data-container right-data">
-          ${when(this.activeAddress, (address) => html` <span>${formatHex(address)}</span> `)}
+      ${when(
+        this.showLoader,
+        () => html` <inch-icon class="loader-icon" icon="fire48"></inch-icon>`,
+        () => html`
           ${when(
             this.activeAddress === null && this.isActiveWallet,
-            () => html` <span>${translate('widgets.wallet-view.wallet-locked')}</span> `
+            () => html` <inch-icon icon="lock16"></inch-icon> `
           )}
           ${when(
-            this.showLoader,
-            () => html` <inch-icon class="loader-icon" icon="fire48"></inch-icon>`,
-            () => {
-              const classes = {
-                'connect-icon': true,
-                'connect-icon__connected': this.isWalletConnected,
-                'connect-icon__active': this.isActiveWallet,
-              }
-              return html`
-                <inch-icon class="${classMap(classes)}" icon="connect16"></inch-icon>
-                ${when(
-                  this.activeAddress === null && this.isActiveWallet,
-                  () => html` <inch-icon icon="lock16"></inch-icon> `
-                )}
-                ${when(
-                  isWalletConnect && this.activeAddress,
-                  () => html`
-                    <inch-button
-                      @click="${(event: MouseEvent) => this.onConnect(event)}"
-                      class="add-connection"
-                      size="l"
-                      type="tertiary"
-                    >
-                      <inch-icon icon="plusCircle16"></inch-icon>
-                    </inch-button>
-                  `
-                )}
-              `
-            }
+            isWalletConnect && this.activeAddress,
+            () => html`
+              <inch-button
+                @click="${(event: MouseEvent) => this.onConnect(event)}"
+                class="add-connection"
+                size="l"
+                type="tertiary"
+              >
+                <inch-icon width="24" height="24" icon="plusCircle16"></inch-icon>
+              </inch-button>
+            `
           )}
-        </div>
-      </div>
+        `
+      )}
+    `
+  }
 
+  private getAddressesSubList() {
+    return html`
       ${when(
         this.addressList && this.addressList.length > 1,
         () => html`
@@ -143,22 +184,33 @@ export class WalletViewElement extends LitElement {
                   )}"
                 >
                   <div class="data-container left-data">
-                    <inch-icon class="sub-wallet-icon" icon="cornerDownRight16"></inch-icon>
-                    <span>${formatHex(address, { width: this.offsetWidth })}</span>
+                    <inch-icon class="sub-wallet-icon" icon="arrowTopToRightRounded32"></inch-icon>
+                    <div class="wallet-info-container">
+                      <span class="wallet-title">${formatHex(address)}</span>
+                      <span>
+                        <inch-wallet-view-address-balance
+                          class="wallet-sub-title"
+                          chainId="${ifDefined(this.chainId)}"
+                          address="${address}"
+                        ></inch-wallet-view-address-balance>
+                      </span>
+                    </div>
                   </div>
                   <div class="data-container right-data">
-                    <inch-wallet-view-address-balance
-                      chainId="${ifDefined(this.chainId)}"
-                      address="${address}"
-                    ></inch-wallet-view-address-balance>
-                    <inch-icon
-                      class="connect-icon ${async(
-                        this.isActiveAddress(address).then((state) =>
-                          state ? 'connect-icon__active' : ''
-                        )
-                      )}"
-                      icon="link16"
-                    ></inch-icon>
+                    ${when(
+                      this.activeAddress === address,
+                      () => html`
+                        <inch-icon class="active-address-check-icon" icon="check24"></inch-icon>
+                      `
+                    )}
+                    <inch-button @click="${() => {}}" type="tertiary" size="l">
+                      <inch-icon
+                        width="24"
+                        height="24"
+                        class="disconnect-address-check-icon"
+                        icon="logout16"
+                      ></inch-icon>
+                    </inch-button>
                   </div>
                 </div>
               `
