@@ -1,3 +1,10 @@
+# [1.0.0-rc.6](https://github.com/1inch-community/interface/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2025-04-23)
+
+
+### Bug Fixes
+
+* disconnect wallet. ([3cec627](https://github.com/1inch-community/interface/commit/3cec6276c209db64c9e5defc96eb733d4f9a97d4))
+
 # [1.0.0-rc.5](https://github.com/1inch-community/interface/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2025-04-18)
 
 
