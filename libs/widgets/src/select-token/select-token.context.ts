@@ -8,7 +8,7 @@ import {
   TokenType,
 } from '@1inch-community/models'
 import { getChainIdList } from '@1inch-community/sdk/chain'
-import { BehaviorSubject, defer, mergeMap, Observable, Subject } from 'rxjs'
+import { BehaviorSubject, defer, Observable, Subject } from 'rxjs'
 import { type Address } from 'viem'
 
 export class SelectTokenContext implements ISelectTokenContext {
@@ -25,15 +25,6 @@ export class SelectTokenContext implements ISelectTokenContext {
   readonly openCrossChainView$ = new BehaviorSubject<[string, boolean]>(['', false])
   readonly chainFilter$ = new BehaviorSubject<ChainId[]>([])
 
-  readonly favoriteTokens$ = this.chainId$.pipe(
-    mergeMap((chainId) => {
-      if (chainId === null) return []
-      return this.applicationContext.tokenStorage.liveQuery(() =>
-        this.applicationContext.tokenStorage.getAllFavoriteTokenAddresses(chainId)
-      )
-    })
-  )
-
   constructor(
     private readonly tokenType: TokenType,
     private readonly applicationContext: IApplicationContext,
@@ -44,16 +35,18 @@ export class SelectTokenContext implements ISelectTokenContext {
         'inch-select-token_chain-filter',
         JsonParser
       ) ?? getChainIdList()
+    const tokenListFlatView =
+      this.applicationContext.storage.get<boolean>('inch-select-token_flat-list', Boolean) ?? false
     this.chainFilter$.next(chainFilter)
-  }
-
-  async setFavoriteTokenState(chainId: ChainId, address: Address, state: boolean): Promise<void> {
-    await this.applicationContext.tokenStorage.setFavoriteState(chainId, address, state)
-    this.changeFavoriteTokenState$.next([chainId, address])
+    this.tokenListFlatView$.next(tokenListFlatView)
   }
 
   tokenListFlatViewToggle(): void {
     this.tokenListFlatView$.next(!this.tokenListFlatView$.value)
+    this.applicationContext.storage.set(
+      'inch-select-token_flat-list',
+      this.tokenListFlatView$.value
+    )
   }
 
   setSearchState(state: boolean): void {

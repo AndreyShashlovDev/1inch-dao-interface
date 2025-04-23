@@ -1,6 +1,6 @@
 import { lazyAppContextConsumer, lazyProvider } from '@1inch-community/core/lazy'
 import { dispatchEvent, LitCustomEvent, observe } from '@1inch-community/core/lit-utils'
-import { IToken, TokenType } from '@1inch-community/models'
+import { IToken, TokenRecordId, TokenType } from '@1inch-community/models'
 import '@1inch-community/ui-components/card'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
@@ -38,12 +38,24 @@ export class SelectTokenElement extends LitElement {
     map((state) => (state ? 'flat' : 'accordion'))
   )
 
+  private favoriteTokenIds$ = defer(() =>
+    this.applicationContext.value.tokenStorage.liveQuery(() =>
+      this.applicationContext.value.tokenStorage.getAllFavoriteTokenIds()
+    )
+  )
+
   protected override render() {
     this.initContext()
     return html`
       <inch-token-list
         showFavoriteTokenToggle
         type="${observe(this.tokenListType$, 'accordion')}"
+        .searchFilter="${observe(this.searchToken$)}"
+        .chainIds="${observe(this.chainListView$)}"
+        .walletAddress="${observe(this.activeAddress$)}"
+        .mobileView="${this.mobileView}"
+        .favoriteTokenIds="${observe(this.favoriteTokenIds$)}"
+        .header="${() => html`<inch-select-token-header></inch-select-token-header>`}"
         @selectToken="${(event: LitCustomEvent<IToken>) => {
           this.selectTokenContext.value.onSelectToken(event.detail.value)
           dispatchEvent(this, 'backCard', null)
@@ -51,11 +63,10 @@ export class SelectTokenElement extends LitElement {
         @changeSearchState="${(event: LitCustomEvent<boolean>) => {
           this.selectTokenContext.value.setSearchState(event.detail.value)
         }}"
-        .searchFilter="${observe(this.searchToken$)}"
-        .chainIds="${observe(this.chainListView$)}"
-        .walletAddress="${observe(this.activeAddress$)}"
-        .mobileView="${this.mobileView}"
-        .header="${() => html`<inch-select-token-header></inch-select-token-header>`}"
+        @favoriteToken="${async (event: LitCustomEvent<[boolean, TokenRecordId]>) => {
+          const [isFavorite, tokenId] = event.detail.value
+          await this.applicationContext.value.tokenStorage.changeFavoriteToken(tokenId, isFavorite)
+        }}"
       ></inch-token-list>
     `
   }
