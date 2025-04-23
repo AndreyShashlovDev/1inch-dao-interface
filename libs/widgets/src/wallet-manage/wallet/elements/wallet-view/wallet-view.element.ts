@@ -1,6 +1,12 @@
 import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
-import { appendStyle, async, subscribe, translate } from '@1inch-community/core/lit-utils'
+import {
+  appendStyle,
+  async,
+  dispatchEvent,
+  subscribe,
+  translate,
+} from '@1inch-community/core/lit-utils'
 import { ChainId, EIP6963ProviderInfo } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
@@ -11,6 +17,7 @@ import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
 import { tap } from 'rxjs'
 import { Address } from 'viem'
+import { DisconnectEventModel } from '../../../disconnect/disconnect-event-model'
 import '../../../elements/wallet-view-address-balance'
 import { walletViewStyle } from './wallet-view.style'
 
@@ -72,8 +79,10 @@ export class WalletViewElement extends LitElement {
   }
 
   private getConnectWalletView(info: EIP6963ProviderInfo) {
+    const isMultiWallet = info.uuid === 'walletConnect' || (this.addressList?.length ?? 0) > 1
+
     return html`
-      <div class="wallet-view-container" @click="${() => this.onClick()}">
+      <div class="wallet-view-container" @click="${() => this.onClick(isMultiWallet)}">
         <div class="data-container left-data">
           <img class="wallet-icon" alt="${info.name}" src="${info.icon}" />
           <span class="wallet-name">${info.name}</span>
@@ -104,13 +113,14 @@ export class WalletViewElement extends LitElement {
         `
 
     const addressListLength = this.addressList?.length ?? 0
-    const height = (this.showAddresses && addressListLength > 1 ? addressListLength * 56 : 1) + 56
+    const height = (this.showAddresses && addressListLength >= 1 ? addressListLength * 56 : 0) + 56
+
     appendStyle(this, {
       height: `${height}px`,
     })
 
     return html`
-      <div class="wallet-view-container" @click="${() => this.onClick()}">
+      <div class="wallet-view-container" @click="${() => this.onClick(isMultiWallet)}">
         <div class="data-container left-data">
           <img class="wallet-icon" alt="${info.name}" src="${info.icon}" />
           <div class="wallet-info-container">
@@ -119,7 +129,7 @@ export class WalletViewElement extends LitElement {
           </div>
         </div>
         <div class="data-container right-data">
-          <inch-button @click="${() => {}}" type="tertiary" size="l">
+          <inch-button @click="${() => this.onDisconnectClick(info)}" type="tertiary" size="l">
             <inch-icon
               width="24"
               height="24"
@@ -131,7 +141,7 @@ export class WalletViewElement extends LitElement {
           ${this.getConnectButtonView(this.isWalletConnected, isMultiWallet)}
         </div>
       </div>
-      ${when(this.showAddresses, () => this.getAddressesSubList())}
+      ${when(this.showAddresses, () => this.getAddressesSubList(info))}
     `
   }
 
@@ -167,10 +177,10 @@ export class WalletViewElement extends LitElement {
     `
   }
 
-  private getAddressesSubList() {
+  private getAddressesSubList(info: EIP6963ProviderInfo) {
     return html`
       ${when(
-        this.addressList && this.addressList.length > 1,
+        this.addressList,
         () => html`
           <div class="address-list">
             ${litMap(this.addressList!, (address) => {
@@ -203,7 +213,11 @@ export class WalletViewElement extends LitElement {
                         <inch-icon class="active-address-check-icon" icon="check24"></inch-icon>
                       `
                     )}
-                    <inch-button @click="${() => {}}" type="tertiary" size="l">
+                    <inch-button
+                      @click="${() => this.onDisconnectClick(info, address)}"
+                      type="tertiary"
+                      size="l"
+                    >
                       <inch-icon
                         width="24"
                         height="24"
@@ -221,9 +235,13 @@ export class WalletViewElement extends LitElement {
     `
   }
 
-  private async onClick() {
+  private onDisconnectClick(info: EIP6963ProviderInfo | null, address?: Address | null) {
+    dispatchEvent(this, DisconnectEventModel.EVENT_TYPE, new DisconnectEventModel(info, address))
+  }
+
+  private async onClick(isMultiWallet: boolean) {
     if (this.isWalletConnected && this.addressList?.length) {
-      if (this.addressList.length === 1) {
+      if (!isMultiWallet) {
         await this.setActiveAddress(this.addressList[0])
       } else {
         this.showAddresses = !this.showAddresses

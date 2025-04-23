@@ -17,7 +17,7 @@ export interface IWalletAdapter {
   isConnected(): Promise<boolean>
   connect(chainId: ChainId): Promise<boolean>
   restoreConnect(chainId: ChainId, force: boolean): Promise<boolean>
-  disconnect(): Promise<boolean>
+  disconnect(address?: Address | null): Promise<boolean>
   changeChain(chainId: ChainId): Promise<boolean>
   setActiveAddress(address: Address | null): void
   writeContract(params: WriteContractParameters): Promise<WriteContractReturnType>

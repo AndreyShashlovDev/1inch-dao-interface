@@ -10,9 +10,10 @@ import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
-import { combineLatest, tap } from 'rxjs'
+import { combineLatest, distinctUntilChanged, tap } from 'rxjs'
 import './account'
 import './disconnect'
+import { DisconnectEventModel } from './disconnect/disconnect-event-model'
 import './wallet'
 import { WalletManagerRouteStyle } from './wallet-manager-route.style'
 
@@ -30,6 +31,8 @@ export class WalletManagerRoute extends LitElement {
 
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
+  private disconnectData: DisconnectEventModel | null = null
+
   private readonly scene = new SceneController(
     'account',
     {
@@ -42,14 +45,21 @@ export class WalletManagerRoute extends LitElement {
 
   @state() currentSceneName: Scenes = this.scene.activeScene
 
+  private isWalletConnected: boolean = false
+
   protected firstUpdated() {
     const wallet = this.applicationContext.value.wallet
 
     subscribe(
       this,
       combineLatest([wallet.data.isConnected$, wallet.data.activeAddress$]).pipe(
+        distinctUntilChanged(
+          (previous, current) => previous[0] === current[0] && previous[1] === current[1]
+        ),
         tap(([isConnected, address]) => {
+          this.isWalletConnected = isConnected
           if (!isConnected && address === null && this.currentSceneName !== 'wallets') {
+            this.scene.resetScene()
             this.navigateTo('wallets', true)
           }
           if (isConnected && address && this.currentSceneName !== 'account') {
@@ -64,16 +74,29 @@ export class WalletManagerRoute extends LitElement {
     return html`
       <inch-wallet-account-view
         @changeWalletClick="${() => this.navigateTo('wallets')}"
+        @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
       ></inch-wallet-account-view>
     `
   }
 
   private getWalletsView() {
-    return html` <inch-wallet-manage></inch-wallet-manage> `
+    return html`
+      <inch-wallet-manage
+        @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
+      ></inch-wallet-manage>
+    `
   }
 
   private getDisconnectView() {
-    return html` <inch-wallet-disconnect-view></inch-wallet-disconnect-view> `
+    const data = { ...this.disconnectData }
+    this.disconnectData = null
+
+    return html`
+      <inch-wallet-disconnect-view
+        .data="${data}"
+        @onBackClick="${() => this.onBackPress()}"
+      ></inch-wallet-disconnect-view>
+    `
   }
 
   private getHeaderView() {
@@ -85,7 +108,7 @@ export class WalletManagerRoute extends LitElement {
       case 'disconnect':
         return this.disconnectHeaderView()
       default:
-        throw new Error('unknown screen!')
+        throw new Error('unknown screen!', this.currentSceneName)
     }
   }
 
@@ -106,15 +129,14 @@ export class WalletManagerRoute extends LitElement {
   }
 
   private walletsHeaderView() {
-    const isConnected = this.applicationContext.value.wallet.isConnected
-    const title = isConnected
+    const title = this.isWalletConnected
       ? 'widgets.wallet-manager-route.wallets.manager'
       : 'widgets.wallet-manager-route.wallets.connect'
 
     return html` <inch-card-header
       headerTextPosition="center"
       headerText="${translate(title)}"
-      backButton="${ifDefined(isConnected || undefined)}"
+      backButton="${ifDefined(this.isWalletConnected || undefined)}"
       @backCard="${() => this.onBackPress()}"
     >
     </inch-card-header>`
@@ -128,6 +150,11 @@ export class WalletManagerRoute extends LitElement {
       @backCard="${() => this.onBackPress()}"
     >
     </inch-card-header>`
+  }
+
+  private onDisconnectClick(event: DisconnectEventModel) {
+    this.disconnectData = event
+    this.navigateTo('disconnect')
   }
 
   private navigateTo(scene: Scenes, immediate: boolean = false) {

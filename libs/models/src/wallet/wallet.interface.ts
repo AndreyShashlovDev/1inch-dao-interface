@@ -19,7 +19,7 @@ export interface IWallet extends InitializingEntity {
   getSupportedWallets(): Promise<EIP6963ProviderInfo[]>
   connect(info: EIP6963ProviderInfo): Promise<boolean>
   addConnection(info: EIP6963ProviderInfo): Promise<boolean>
-  disconnect(): Promise<boolean>
+  disconnect(info?: EIP6963ProviderInfo | null, address?: Address | null): Promise<boolean>
   setChainIds(chainIds: ChainId[]): void
   getDataAdapter(info: EIP6963ProviderInfo): IDataAdapter
   setActiveAddress(info: EIP6963ProviderInfo, address: Address): Promise<void>

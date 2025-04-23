@@ -34,15 +34,15 @@ export class MultiConnectProvider implements EIP1193Provider {
   private activeAddress: Address | null = null
   private readonly eventEmitter = new EventEmitter()
 
-  private get signer(): EthereumProvider | null {
-    if (this.activeAddress && this.storage.has(this.activeAddress)) {
-      return this.storage.get(this.activeAddress)?.provider ?? null
-    }
-    return null
+  get chainId() {
+    return this.signer()?.chainId ?? ChainId.eth
   }
 
-  get chainId() {
-    return this.signer?.chainId ?? ChainId.eth
+  private signer(address: Address | null = this.activeAddress): EthereumProvider | null {
+    if (address && this.storage.has(address)) {
+      return this.storage.get(address)?.provider ?? null
+    }
+    return null
   }
 
   async connect() {
@@ -110,13 +110,38 @@ export class MultiConnectProvider implements EIP1193Provider {
     this.eventEmitter.emit('accountsChanged', this.getAddresses())
   }
 
-  async disconnect() {
-    if (this.activeAddress) {
-      this.storage.delete(this.activeAddress)
+  private async disconnectAll() {
+    for (const address of this.storage.keys()) {
+      await this.signer(address)
+        ?.disconnect()
+        .catch(() => {
+          /* ignore */
+        })
     }
-    this.activeAddress = null
 
-    this.setActiveAddress(this.getAddresses()[0] ?? null)
+    this.storage.clear()
+    this.activeAddress = null
+    this.setActiveAddress(null)
+    this.updatePersist()
+  }
+
+  async disconnect(address?: Address | null) {
+    if (!address) {
+      await this.disconnectAll()
+    } else if (this.activeAddress === address) {
+      this.storage.delete(address)
+
+      await this.signer(address)
+        ?.disconnect()
+        .catch(() => {
+          /* ignore */
+        })
+
+      this.activeAddress = null
+
+      this.setActiveAddress(this.getAddresses()[0] ?? null)
+    }
+
     this.updatePersist()
   }
 
@@ -129,7 +154,7 @@ export class MultiConnectProvider implements EIP1193Provider {
     if (method === 'eth_requestAccounts' || method === 'eth_accounts') {
       return this.getAddresses()
     }
-    return (await this.signer?.request(args)) ?? null
+    return (await this.signer()?.request(args)) ?? null
   }
 
   async enable(): Promise<Address[]> {
@@ -144,7 +169,7 @@ export class MultiConnectProvider implements EIP1193Provider {
       this.eventEmitter.on(event, listener)
       return
     }
-    this.signer?.on(event, listener as any)
+    this.signer()?.on(event, listener as any)
   }
 
   removeListener<TEvent extends keyof EventMap>(
@@ -155,7 +180,7 @@ export class MultiConnectProvider implements EIP1193Provider {
       this.eventEmitter.removeListener(event, listener)
       return
     }
-    this.signer?.removeListener(event, listener as any)
+    this.signer()?.removeListener(event, listener as any)
   }
 
   private updatePersist() {

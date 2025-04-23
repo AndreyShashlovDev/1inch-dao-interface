@@ -12,6 +12,7 @@ import { customElement, state } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
 import { combineLatest, filter, tap } from 'rxjs'
 import { Address } from 'viem'
+import { DisconnectEventModel } from '../../../disconnect/disconnect-event-model'
 import '../../../elements/wallet-view-address-balance'
 import { walletAccountContext } from '../../context'
 import '../../i18n'
@@ -127,7 +128,7 @@ export class WalletAccountCardElement extends LitElement {
 
   @throttle(500)
   private onMenuItemClick(id: number) {
-    if (!this.context || !this.walletAddress || !this.chainId) {
+    if (!this.context || !this.walletAddress || !this.chainId || !this.walletInfo) {
       return
     }
 
@@ -146,7 +147,11 @@ export class WalletAccountCardElement extends LitElement {
         this.onChangeWalletClick()
         break
       case MenuItemIds.Disconnect:
-        this.context.value.disconnectWallet()
+        dispatchEvent(
+          this,
+          DisconnectEventModel.EVENT_TYPE,
+          new DisconnectEventModel(this.walletInfo, this.walletAddress)
+        )
         break
     }
   }

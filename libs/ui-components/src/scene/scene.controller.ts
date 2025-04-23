@@ -95,7 +95,7 @@ export class SceneController<T extends string, U extends T> {
   }
 
   resetScene() {
-    this.sceneStack = []
+    this.sceneStack = [this.rootSceneName]
     this.takeUpdate$.next()
   }
 

@@ -1,14 +1,13 @@
 import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, translate } from '@1inch-community/core/lit-utils'
-import { EIP6963ProviderInfo } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/chip'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
-import { Address } from 'viem'
+import { DisconnectEventModel } from './disconnect-event-model'
 import { walletDisconnectViewStyle } from './wallet-disconnect-view.style'
 
 @customElement(WalletDisconnectViewElement.tagName)
@@ -17,19 +16,29 @@ export class WalletDisconnectViewElement extends LitElement {
 
   static override styles = walletDisconnectViewStyle
 
-  @property({ type: Object }) info?: EIP6963ProviderInfo
-  @property({ type: String }) address?: Address
+  @property({ type: Object }) data?: DisconnectEventModel
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
   private getMessageView() {
-    if (this.address) {
+    if (this.data?.address) {
       return html`${translate('widgets.wallet-disconnect.msg.single-wallet')}`
     }
 
-    if (!this.info && !this.address) {
+    if (this.data?.info) {
+      return html`${translate('widgets.wallet-disconnect.msg.some-wallet')} ${this.data.info.name}?`
+    }
+
+    if (!this.data?.info && !this.data?.address) {
       return html`${translate('widgets.wallet-disconnect.msg.all-wallets')}`
     }
+  }
+
+  private onDisconnectClick() {
+    const info = this.data?.info
+    const address = this.data?.address
+
+    this.applicationContext.value.wallet.disconnect(info, address)
   }
 
   private onCancelClick() {
@@ -37,14 +46,12 @@ export class WalletDisconnectViewElement extends LitElement {
   }
 
   protected override render() {
-    const connected = this.applicationContext.value.wallet.isConnected
-
     return html`
       <div class="wallet-disconnect-container">
         <div class="wallet-disconnect-content">
           <inch-icon icon="disconnectImageBig"></inch-icon>
           ${when(
-            this.address,
+            this.data?.address,
             (address) => html`
               <div class="wallet-disconnect-content-chip">
                 <inch-chip value="${formatHex(address)}"></inch-chip>
@@ -58,7 +65,7 @@ export class WalletDisconnectViewElement extends LitElement {
         <div class="wallet-disconnect-actions">
           <inch-button
             class="bnt-action__resize"
-            @click="${() => {}}"
+            @click="${() => this.onDisconnectClick()}"
             type="primary-critical"
             size="xl"
             fullsize
@@ -67,7 +74,7 @@ export class WalletDisconnectViewElement extends LitElement {
           </inch-button>
           <inch-button
             class="bnt-action__resize"
-            @click="${() => this.onCancelClick()}}"
+            @click="${() => this.onCancelClick()}"
             type="secondary-gray"
             size="xl"
             fullsize

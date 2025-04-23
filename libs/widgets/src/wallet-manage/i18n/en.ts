@@ -16,5 +16,6 @@ export default {
   'widgets.wallet-disconnect.button.disconnect': 'Disconnect',
   'widgets.wallet-disconnect.button.cancel': 'Cancel',
   'widgets.wallet-disconnect.msg.single-wallet': 'Do you really want to disconnect wallet?',
-  'widgets.wallet-disconnect.msg.all-wallets': 'Do you really want to disconnect all wallet?',
+  'widgets.wallet-disconnect.msg.all-wallets': 'Do you really want to disconnect all wallets?',
+  'widgets.wallet-disconnect.msg.some-wallet': 'Do you really want to disconnect ',
 }

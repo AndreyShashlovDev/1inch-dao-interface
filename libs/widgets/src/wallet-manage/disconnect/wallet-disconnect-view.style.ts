@@ -1,3 +1,4 @@
+import { mobileMediaCSS } from '@1inch-community/core/lit-utils'
 import { css } from 'lit'
 
 export const walletDisconnectViewStyle = css`
@@ -16,7 +17,7 @@ export const walletDisconnectViewStyle = css`
     display: grid;
     grid-template-rows: 1fr fit-content(128px);
     overflow: hidden;
-    gap: 12px;
+    gap: 24px;
   }
 
   .wallet-disconnect-content {
@@ -24,12 +25,12 @@ export const walletDisconnectViewStyle = css`
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    padding: 0 16px 16px;
+    padding: 16px;
   }
 
   .wallet-disconnect-content-chip {
     display: flex;
-    margin-top: 32px;
+    margin-top: 16px;
     flex-wrap: wrap;
     justify-content: center;
     gap: 8px;
@@ -55,4 +56,21 @@ export const walletDisconnectViewStyle = css`
     align-items: center;
     gap: 16px;
   }
+
+  ${mobileMediaCSS(css`
+    .wallet-disconnect-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 0 16px;
+    }
+
+    .wallet-disconnect-container {
+      display: grid;
+      grid-template-rows: 1fr fit-content(128px);
+      overflow: hidden;
+      gap: 12px;
+    }
+  `)}
 `

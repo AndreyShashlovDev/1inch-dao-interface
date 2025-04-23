@@ -1,9 +1,11 @@
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
-import { translate } from '@1inch-community/core/lit-utils'
+import { dispatchEvent, subscribe, translate } from '@1inch-community/core/lit-utils'
 import '@1inch-community/ui-components/button'
 import { html, LitElement } from 'lit'
-import { customElement } from 'lit/decorators.js'
+import { customElement, state } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
+import { distinctUntilChanged, tap } from 'rxjs'
+import { DisconnectEventModel } from '../disconnect/disconnect-event-model'
 import './elements/wallet-list'
 import { walletManageStyle } from './wallet-manage.style'
 
@@ -15,20 +17,34 @@ export class WalletManageElement extends LitElement {
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
-  protected override render() {
-    const connected = this.applicationContext.value.wallet.isConnected
+  @state() connected?: boolean
 
+  private onDisconnectClick() {
+    dispatchEvent(this, DisconnectEventModel.EVENT_TYPE, new DisconnectEventModel())
+  }
+
+  protected firstUpdated() {
+    subscribe(
+      this,
+      this.applicationContext.value.wallet.data.isConnected$.pipe(
+        distinctUntilChanged(),
+        tap((connected) => (this.connected = connected))
+      )
+    )
+  }
+
+  protected override render() {
     return html`
       <div class="wallet-manager-container">
         <inch-wallet-list></inch-wallet-list>
 
         ${when(
-          connected,
+          this.connected,
           () => html`
             <div class="wallet-manager-actions">
               <inch-button
                 class="bnt-action__resize"
-                @click="${() => {}}"
+                @click="${() => this.onDisconnectClick()}"
                 type="primary-critical"
                 size="xl"
                 fullsize

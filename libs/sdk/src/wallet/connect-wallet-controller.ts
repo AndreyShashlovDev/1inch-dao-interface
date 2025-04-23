@@ -131,14 +131,39 @@ export class WalletController implements IWallet, IWalletInternal {
     return connectState
   }
 
-  async disconnect() {
-    const adapter = this.currentActiveAdapter
+  private async disconnectAllWallets(): Promise<boolean> {
+    if (this.currentActiveAdapterId) {
+      removeConnectedWallet(this.context.value.storage, this.currentActiveAdapterId)
+    }
 
-    if (adapter === null) return true
+    for (const [id, adapter] of this.adapters) {
+      const isWalletConnect = adapter.info.uuid === 'walletConnect'
+      await adapter.disconnect()
+
+      if (!isWalletConnect) {
+        this.activeAdapters.delete(id)
+      }
+    }
+
+    setActiveWallet(this.context.value.storage, null)
+    this.currentActiveAdapterId = null
+    this.update$.next()
+
+    return true
+  }
+
+  async disconnect(info?: EIP6963ProviderInfo | null, address?: Address | null): Promise<boolean> {
+    if (!info) {
+      return await this.disconnectAllWallets()
+    }
+    const id = adapterId(info)
+    const adapter = this.adapters.get(id)
+
+    if (!adapter) return true
 
     try {
       const isWalletConnect = adapter.info.uuid === 'walletConnect'
-      const state = await adapter.disconnect()
+      const state = await adapter.disconnect(address)
       const addresses = await adapter.data.getAddresses()
       const hasConnectedAddresses = addresses.length > 0
 

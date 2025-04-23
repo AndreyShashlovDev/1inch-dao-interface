@@ -1,3 +1,4 @@
+import { mobileMediaCSS } from '@1inch-community/core/lit-utils'
 import { css } from 'lit'
 
 export const walletViewStyle = css`
@@ -164,4 +165,16 @@ export const walletViewStyle = css`
       background-position: 100%;
     }
   }
+
+  ${mobileMediaCSS(css`
+    .add-connection {
+      transform: scale(1);
+    }
+
+    .disconnect-address-check-icon {
+      opacity: 1;
+      width: 24px;
+      height: 24px;
+    }
+  `)}
 `
