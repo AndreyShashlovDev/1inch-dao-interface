@@ -10,8 +10,8 @@ import { customElement, property } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { defer, map } from 'rxjs'
+import '../shared-elements/balance-view'
 import { connectWalletViewStyle } from './connect-wallet-view.style'
-import './elements/wallet-view-address-balance'
 import './wallet-manager-route.element'
 
 @customElement(ConnectWalletViewElement.tagName)
@@ -65,10 +65,9 @@ export class ConnectWalletViewElement extends LitElement {
         ${when(
           !this.mobileView,
           () => html`
-            <inch-wallet-view-address-balance
-              address="${observe(this.activeAddress$)}"
-              chainId="${observe(this.chainId$)}"
-            ></inch-wallet-view-address-balance>
+            <inch-wallet-total-fiat-balance
+              .address="${observe(this.activeAddress$)}"
+            ></inch-wallet-total-fiat-balance>
             <inch-button @click="${() => this.onManagerRouteView()}" type="secondary" size="m">
               ${observe(this.activeAddressView$)}
             </inch-button>

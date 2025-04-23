@@ -7,12 +7,11 @@ import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
-import { ifDefined } from 'lit/directives/if-defined.js'
 import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
 import { tap } from 'rxjs'
 import { Address } from 'viem'
-import '../../../elements/wallet-view-address-balance'
+import '../../../../shared-elements/balance-view'
 import { walletViewStyle } from './wallet-view.style'
 
 @customElement(WalletViewElement.tagName)
@@ -147,10 +146,9 @@ export class WalletViewElement extends LitElement {
                     <span>${formatHex(address, { width: this.offsetWidth })}</span>
                   </div>
                   <div class="data-container right-data">
-                    <inch-wallet-view-address-balance
-                      chainId="${ifDefined(this.chainId)}"
-                      address="${address}"
-                    ></inch-wallet-view-address-balance>
+                    <inch-wallet-total-fiat-balance
+                      .address="${address}"
+                    ></inch-wallet-total-fiat-balance>
                     <inch-icon
                       class="connect-icon ${async(
                         this.isActiveAddress(address).then((state) =>

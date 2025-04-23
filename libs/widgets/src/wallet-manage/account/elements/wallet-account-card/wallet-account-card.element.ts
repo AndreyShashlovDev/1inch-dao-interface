@@ -12,7 +12,7 @@ import { customElement, state } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
 import { combineLatest, filter, tap } from 'rxjs'
 import { Address } from 'viem'
-import '../../../elements/wallet-view-address-balance'
+import '../../../../shared-elements/balance-view'
 import { walletAccountContext } from '../../context'
 import '../../i18n'
 import '../wallet-account-card-account-more'
@@ -227,10 +227,10 @@ export class WalletAccountCardElement extends LitElement {
           </div>
 
           <div class="card-wallet-full-balance ${this.isCollapsed ? 'collapsed' : ''}">
-            <inch-wallet-view-address-balance
+            <inch-wallet-total-fiat-balance
               class="card-wallet-balance"
               .address="${this.walletAddress}"
-            ></inch-wallet-view-address-balance>
+            ></inch-wallet-total-fiat-balance>
           </div>
 
           <inch-button
