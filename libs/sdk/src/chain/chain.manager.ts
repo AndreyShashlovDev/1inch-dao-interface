@@ -193,7 +193,7 @@ export class OnChainManager implements IOnChain {
       switchMap(([client, time]) => {
         return blockListener(client, time)
       }),
-      distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
+      distinctUntilChanged((b1: Block, b2: Block) => b1.number === b2.number),
       shareReplay({ bufferSize: 1, refCount: true })
     )
     this.blockEmitterMap.set(chainId, block$)
