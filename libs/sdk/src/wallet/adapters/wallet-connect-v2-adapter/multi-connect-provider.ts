@@ -106,13 +106,18 @@ export class MultiConnectProvider implements EIP1193Provider {
   }
 
   setActiveAddress(address: Address | null): void {
-    if (!address) return
     this.activeAddress = address
     this.eventEmitter.emit('accountsChanged', this.getAddresses())
   }
 
   async disconnect() {
-    //
+    if (this.activeAddress) {
+      this.storage.delete(this.activeAddress)
+    }
+    this.activeAddress = null
+
+    this.setActiveAddress(this.getAddresses()[0] ?? null)
+    this.updatePersist()
   }
 
   isConnected() {
