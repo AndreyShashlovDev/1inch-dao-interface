@@ -1,6 +1,7 @@
 import {
   BalanceTokenRecordId,
   ChainId,
+  IToken,
   TokenPriceRecordId,
   TokenRecordId,
 } from '@1inch-community/models'
@@ -26,4 +27,8 @@ export function buildBalanceId(
 
 export function destructuringId<T extends string[]>(id: string): T {
   return id.split(separator) as T
+}
+
+export function buildTokenIdByToken(token: IToken): TokenRecordId {
+  return buildTokenId(token.chainId, token.address)
 }

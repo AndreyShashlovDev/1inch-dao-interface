@@ -20,7 +20,7 @@ import {
 } from '@1inch-community/models'
 import { from, switchMap } from 'rxjs'
 import { Address, isAddressEqual } from 'viem'
-import { getChainIdList, isChainId, parseChainId } from '../../chain'
+import { getChainIdList, isChainId, nativeTokenAddress, parseChainId } from '../../chain'
 import { buildBalanceId, buildTokenId, buildTokenPriceId, destructuringId } from '../token-id'
 import { TokenSchema } from './token.schema'
 
@@ -35,6 +35,35 @@ export class TokenController implements ITokenStorage {
   async init(context: IApplicationContext): Promise<void> {
     this.context.set(context)
     await this.schema.init(context)
+  }
+
+  @CacheActivePromise()
+  async getAllFavoriteTokens(): Promise<IToken[]> {
+    const { tokens, favoriteTokens } = this.schema
+    const favoriteTokenIdSet = new Set<TokenRecordId>()
+    await favoriteTokens.each((record) => favoriteTokenIdSet.add(record.id))
+    return await tokens
+      .orderBy('priority')
+      .and((record) => favoriteTokenIdSet.has(record.id))
+      .toArray()
+  }
+
+  async getAllFavoriteTokenIds(): Promise<TokenRecordId[]> {
+    const { tokens, favoriteTokens } = this.schema
+    const favoriteTokenIds: TokenRecordId[] = []
+    await favoriteTokens.each((record) => favoriteTokenIds.push(record.id))
+    const tokensList = await tokens.where('id').anyOf(favoriteTokenIds).toArray()
+    return tokensList.map((token) => token.id)
+  }
+
+  @CacheActivePromise()
+  async changeFavoriteToken(id: TokenRecordId, isFavorite: boolean): Promise<void> {
+    const { favoriteTokens } = this.schema
+    if (isFavorite) {
+      await favoriteTokens.add({ id })
+    } else {
+      await favoriteTokens.where('id').equals(id).delete()
+    }
   }
 
   @CacheActivePromise()
@@ -124,7 +153,6 @@ export class TokenController implements ITokenStorage {
     await crossChainTokensBinding
       .orderBy('priority')
       .reverse()
-      // .filter((record) => record.symbol)
       .each((record) => {
         const tokenRecordIds = record.tokenRecordIds.filter((id) => {
           const [chainIdStr] = destructuringId(id)
@@ -235,72 +263,6 @@ export class TokenController implements ITokenStorage {
       allTokensInfo: crossChainTokensBindingResult,
       userTokensInfo: crossChainTokensBindingWithBalanceResult,
     }
-  }
-
-  @CacheActivePromise()
-  async getCrossChainTokenBalance(symbol: string, walletAddress: Address): Promise<IBigFloat> {
-    await this.updateDatabase(walletAddress)
-    const { balances, tokens, crossChainTokensBinding } = this.schema
-    const crossChainTokensBindingRecord = await crossChainTokensBinding
-      .where('symbol')
-      .equals(symbol)
-      .first()
-    if (!crossChainTokensBindingRecord) return BigFloat.zero()
-    let totalBalance = BigFloat.zero()
-    const tokenMap = new Map<TokenRecordId, IToken>()
-    await tokens
-      .where('id')
-      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
-      .each((record) => tokenMap.set(record.id, record))
-    await balances
-      .where('tokenRecordId')
-      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
-      .each((record) => {
-        if (!isAddressEqual(record.walletAddress, walletAddress)) return
-        const token = tokenMap.get(record.tokenRecordId)
-        if (!token) return
-        const balance = BigFloat.fromBigInt(BigInt(record.amount), token.decimals)
-        totalBalance = totalBalance.add(balance)
-      })
-    return totalBalance
-  }
-
-  @CacheActivePromise()
-  async getCrossChainTokenFiatBalance(symbol: string, walletAddress: Address): Promise<IBigFloat> {
-    await this.updateDatabase(walletAddress)
-    const { balances, tokens, crossChainTokensBinding, tokenPrice } = this.schema
-    const crossChainTokensBindingRecord = await crossChainTokensBinding
-      .where('symbol')
-      .equals(symbol)
-      .first()
-    if (!crossChainTokensBindingRecord) return BigFloat.zero()
-    let totalBalance = BigFloat.zero()
-    const tokenMap = new Map<TokenRecordId, IToken>()
-    const tokenPriceMap = new Map<TokenRecordId, ITokenPriceRecord>()
-    await Promise.all([
-      tokens
-        .where('id')
-        .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
-        .each((record) => tokenMap.set(record.id, record)),
-      tokenPrice
-        .where('id')
-        .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
-        .each((record) => tokenPriceMap.set(record.id, record)),
-    ])
-    await balances
-      .where('tokenRecordId')
-      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
-      .each((record) => {
-        if (!isAddressEqual(record.walletAddress, walletAddress)) return
-        const token = tokenMap.get(record.tokenRecordId)
-        const tokenPriceRecord = tokenPriceMap.get(record.tokenRecordId)
-        if (!token || !tokenPriceRecord) return
-        const balance = BigFloat.fromBigInt(BigInt(record.amount), token.decimals)
-        const tokenPrice = BigFloat.fromString(tokenPriceRecord.price)
-        const fiatBalance = balance.mul(tokenPrice)
-        totalBalance = totalBalance.add(fiatBalance)
-      })
-    return totalBalance
   }
 
   @CacheActivePromise()
@@ -474,26 +436,37 @@ export class TokenController implements ITokenStorage {
     return result.values().toArray()
   }
 
-  isSupportedTokenPermit(): Promise<boolean> {
-    throw new Error('Method not implemented.')
-  }
-
   async getTokenAddressListOrderByChainId() {
-    return await this.schema.getTokenAddressListOrderByChainId()
+    const { tokens } = this.schema
+    const result: Record<ChainId, Address[]> = {} as Record<ChainId, Address[]>
+
+    await tokens.each((record) => {
+      if (!result[record.chainId]) {
+        result[record.chainId] = []
+      }
+      result[record.chainId].push(record.address)
+    })
+
+    return result
   }
 
   async getToken(chainId: ChainId, address: Address) {
-    return await this.schema.getToken(chainId, address)
+    await this.updateTokenDatabase()
+    const recordId = buildTokenId(chainId, address)
+    const records = await this.schema.tokens.where('id').equals(recordId).toArray()
+    return records[0] ?? null
   }
 
   @CacheActivePromise()
   async getTokenById(id: TokenRecordId): Promise<IToken | null> {
+    await this.updateTokenDatabase()
     const token = await this.schema.tokens.get(id)
     return token ?? null
   }
 
   @CacheActivePromise()
   async getTokenBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat> {
+    await this.updateDatabase(walletAddress)
     const { balances } = this.schema
     const token = await this.getTokenById(id)
     if (!token) return BigFloat.zero()
@@ -508,6 +481,7 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   async getTokenFiatBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat> {
+    await this.updateDatabase(walletAddress)
     const { tokenPrice } = this.schema
     const balance = await this.getTokenBalanceById(id, walletAddress)
     const tokenPriceRecord = await tokenPrice.where('tokenRecordId').equals(id).first()
@@ -516,15 +490,22 @@ export class TokenController implements ITokenStorage {
   }
 
   async getNativeToken(chainId: ChainId) {
-    return await this.schema.getNativeToken(chainId)
+    return this.getToken(chainId, nativeTokenAddress)
   }
 
   async getTokenBySymbol(chainId: ChainId, symbol: string) {
-    return this.schema.getTokenBySymbol(chainId, symbol)
+    return this.schema.tokens
+      .where('chainId')
+      .equals(chainId)
+      .filter((record) => record.symbol === symbol)
+      .toArray()
   }
 
   async getTokenList(chainId: ChainId, addresses: Address[]) {
-    return await this.schema.getTokenList(chainId, addresses)
+    const addressesSet = new Set(addresses)
+    return this.schema.tokens
+      .filter((record) => record.chainId === chainId && addressesSet.has(record.address))
+      .toArray()
   }
 
   async getTokenListSortedByPriority(chainId: ChainId, addresses: Address[]) {
@@ -532,33 +513,37 @@ export class TokenController implements ITokenStorage {
     return tokens.sort((token1, token2) => token2.priority - token1.priority)
   }
 
-  async getTokenMap(chainId: ChainId, addresses: Address[]) {
-    return await this.schema.getTokenMap(chainId, addresses)
-  }
-
-  async getTokenBalanceMap(chainId: ChainId, walletAddress: Address, addresses: Address[]) {
-    // await this.updateBalanceDatabase([chainId], walletAddress)
-    return await this.schema.getTokenBalanceMap(chainId, walletAddress, addresses)
-  }
-
   async getTokenBalance(chainId: ChainId, tokenAddress: Address, walletAddress: Address) {
-    // await this.updateBalanceDatabase([chainId], walletAddress, tokenAddress)
-    return await this.schema.getTokenBalance(chainId, tokenAddress, walletAddress)
+    await this.updateDatabase(walletAddress)
+    const recordId = buildBalanceId(chainId, walletAddress, tokenAddress)
+    const records = await this.schema.balances.where('id').equals(recordId).toArray()
+    return records[0] ?? null
   }
 
-  async getTokenUSDPrice(chainId: ChainId, tokenAddress: Address) {
-    const result = await this.getTokenUSDPrices(chainId, [tokenAddress])
-    return result[tokenAddress]
-  }
-
-  async isFavoriteToken(chainId: ChainId, tokenAddress: Address) {
-    const token = await this.getToken(chainId, tokenAddress)
-    return token?.isFavorite ?? false
+  async getTokenUSDPrice(_: ChainId, __: Address) {
+    return 'TODO Write me'
   }
 
   async getTokenLogoURL(chainId: ChainId, tokenAddress: Address) {
+    await this.updateTokenDatabase()
     const token = await this.getToken(chainId, tokenAddress)
     return token?.logoURL ?? null
+  }
+
+  async getTokenLogoURLsBySymbol(symbol: string): Promise<string[]> {
+    await this.updateTokenDatabase()
+    const { crossChainTokensBinding, tokens } = this.schema
+    const crossChainTokensBindingRecord = await crossChainTokensBinding
+      .where('symbol')
+      .equals(symbol)
+      .first()
+    if (!crossChainTokensBindingRecord) return []
+    const tokenList: ITokenRecord[] = []
+    await tokens
+      .where('id')
+      .anyOf(crossChainTokensBindingRecord.tokenRecordIds)
+      .each((record) => tokenList.push(record))
+    return tokenList.sort((r1, r2) => r2.priority - r1.priority).map((record) => record.logoURL)
   }
 
   async getPriorityToken(chainId: ChainId, addresses: Address[]) {
@@ -582,44 +567,7 @@ export class TokenController implements ITokenStorage {
     })[0]
   }
 
-  async setFavoriteState(chainId: ChainId, tokenAddress: Address, state: boolean) {
-    await this.schema.setFavoriteState(chainId, tokenAddress, state)
-  }
-
-  async getAllFavoriteTokenAddresses(chainId: ChainId) {
-    return await this.schema.getAllFavoriteTokenAddresses(chainId)
-  }
-
-  async getTokenUSDPrices(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _: ChainId,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    __: Address[]
-  ): Promise<Record<Address, string>> {
-    return {}
-    // const result: Record<Address, string> = {}
-    // let priceRecord: Record<Address, string>
-    //
-    // if (this.tokenPriceCache.has(chainId)) {
-    //   priceRecord = this.tokenPriceCache.get(chainId)!
-    // } else {
-    //   const prices = await this.oneInchApiAdapter.getTokenPrice([chainId]).catch(() => null)
-    //   if (prices === null) {
-    //     return {}
-    //   }
-    //   const pricesByChain = prices.find((record) => parseChainId(record.id) === chainId)
-    //   if (!pricesByChain || !pricesByChain.result) {
-    //     return {}
-    //   }
-    //   priceRecord = pricesByChain.result
-    //   this.tokenPriceCache.set(chainId, priceRecord)
-    // }
-    //
-    // for (const address of tokenAddressList) {
-    //   result[address] = priceRecord[address] ?? '0'
-    // }
-    // return result
-  }
+  // Update store methods
 
   @CacheActivePromise()
   private async updateDatabase(walletAddress?: Address): Promise<void> {
@@ -698,7 +646,6 @@ export class TokenController implements ITokenStorage {
         symbol: token.symbol,
         tags: token.tags,
         logoURL: token.logoURI,
-        isFavorite: false,
         chainId,
         priority,
       })
@@ -739,7 +686,7 @@ export class TokenController implements ITokenStorage {
       tokens.bulkPut(tableTokens),
       crossChainTokensBinding.bulkPut(crossChainTokensBindingTable),
     ])
-    this.schema.resetTokensTTL()
+    this.schema.updateTokensComplete()
   }
 
   async setBalances(balancesDto: ProxyResultBalance) {
@@ -770,7 +717,7 @@ export class TokenController implements ITokenStorage {
     }
     await balances.bulkPut(balancesRecords)
     for (const walletAddress of walletAddressSet) {
-      this.schema.resetBalancesTTL(walletAddress)
+      this.schema.updateBalancesComplete(walletAddress)
     }
   }
 
@@ -795,7 +742,7 @@ export class TokenController implements ITokenStorage {
       }
     }
     await tokenPrice.bulkPut(tokenPriceRecords)
-    this.schema.resetTokenPriceTTL()
+    this.schema.updateTokenPriceComplete()
   }
 
   liveQuery<T>(querier: () => T | Promise<T>) {
