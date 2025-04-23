@@ -18,16 +18,13 @@ export interface ITokenStorage extends InitializingEntity {
     symbol: string,
     walletAddress: Address
   ): Promise<IBigFloat>
-  getCrossChainTokenBalance(symbol: string, walletAddress: Address): Promise<IBigFloat>
-  getCrossChainTokenByPriority(symbol: string): Promise<IToken | null>
   getCrossChainTokenName(symbol: string): Promise<string>
   getCrossChainTokenIdListWithBalance(
     chainIds: ChainId[],
     symbol: string,
     walletAddress: Address
   ): Promise<TokenRecordId[]>
-  getCrossChainTokenFiatBalance(symbol: string, walletAddress: Address): Promise<IBigFloat>
-  getCrossChainTotalFiatBalance(walletAddress: Address): Promise<IBigFloat>
+  getCrossChainTotalFiatBalance(walletAddress: Address, chainIds?: ChainId[]): Promise<IBigFloat>
   getTokenIdList(
     chainIds: ChainId[],
     searchFilter?: string,
@@ -40,27 +37,22 @@ export interface ITokenStorage extends InitializingEntity {
   getTokenBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat>
   getTokenFiatBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat>
   getTokenLogoURL(chainId: ChainId, address: Address): Promise<string | null>
+  getTokenLogoURLsBySymbol(symbol: string): Promise<string[]>
   getNativeToken(chainId: ChainId): Promise<IToken | null>
   getTokenBySymbol(chainId: ChainId, symbol: string): Promise<IToken[]>
   getTokenList(chainId: ChainId, addresses: Address[]): Promise<IToken[]>
   getTokenListSortedByPriority(chainId: ChainId, addresses: Address[]): Promise<IToken[]>
-  getTokenMap(chainId: ChainId, addresses: Address[]): Promise<Record<Address, IToken>>
-  getTokenBalanceMap(
-    chainId: ChainId,
-    walletAddress: Address,
-    addresses: Address[]
-  ): Promise<Record<Address, bigint>>
   getTokenBalance(
     chainId: ChainId,
     tokenAddress: Address,
     walletAddress: Address
   ): Promise<IBalancesTokenRecord | null>
   getTokenUSDPrice(chainId: ChainId, tokenAddress: Address): Promise<string>
-  getTokenUSDPrices(chainId: ChainId, tokenAddressList: Address[]): Promise<Record<Address, string>>
   getPriorityToken(chainId: ChainId, addresses: Address[]): Promise<IToken>
-  setFavoriteState(chainId: ChainId, tokenAddress: Address, state: boolean): Promise<void>
-  getAllFavoriteTokenAddresses(chainId: ChainId): Promise<Address[]>
-  isSupportedTokenPermit(chainId: ChainId, tokenAddress: Address): Promise<boolean>
-  isFavoriteToken(chainId: ChainId, tokenAddress: Address): Promise<boolean>
   liveQuery<T>(querier: () => T | Promise<T>): Observable<T>
+
+  // favorite tokens
+  getAllFavoriteTokens(): Promise<IToken[]>
+  getAllFavoriteTokenIds(): Promise<TokenRecordId[]>
+  changeFavoriteToken(id: TokenRecordId, isFavorite: boolean): Promise<void>
 }
