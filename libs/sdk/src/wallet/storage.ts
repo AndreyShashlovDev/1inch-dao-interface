@@ -23,7 +23,7 @@ export function setActiveWallet(storage: IPersistSyncStorage, id: string | null)
 }
 
 export function getActiveWallet(storage: IPersistSyncStorage): string | null {
-  return storage.get('activeWallet', String)
+  return storage.get('activeWallet', (value) => (value === 'null' ? null : value))
 }
 
 export function addConnectedWallet(storage: IPersistSyncStorage, id: string) {

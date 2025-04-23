@@ -222,12 +222,13 @@ export class WalletViewElement extends LitElement {
   }
 
   private async onClick() {
-    if (this.isWalletConnected) {
-      if (this.addressList && this.addressList.length === 1) {
+    if (this.isWalletConnected && this.addressList?.length) {
+      if (this.addressList.length === 1) {
         await this.setActiveAddress(this.addressList[0])
-        return
+      } else {
+        this.showAddresses = !this.showAddresses
       }
-      this.showAddresses = !this.showAddresses
+
       return
     }
     await this.onConnect()
