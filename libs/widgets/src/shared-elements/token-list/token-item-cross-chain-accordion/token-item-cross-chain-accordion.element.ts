@@ -33,6 +33,7 @@ export class TokenItemCrossChainAccordionElement extends LitElement {
   @property({ type: Boolean, attribute: false }) expanded = false
   @property({ type: Boolean, attribute: false }) mobileView = false
   @property({ type: Number, attribute: false }) index = 0
+  @property({ type: Array, attribute: true }) favoriteTokenIds?: TokenRecordId[]
 
   @state() private showMoreChain = false
 
@@ -156,6 +157,7 @@ export class TokenItemCrossChainAccordionElement extends LitElement {
         }}"
       >
         <token-item-cross-chain-accordion-chain-list
+          .favoriteTokenIds="${this.favoriteTokenIds}"
           .tokenIdListWithoutBalance="${tokenIdListWithoutBalance}"
           .tokenIdListWithBalance="${tokenIdListWithBalance}"
           .expanded="${this.expanded}"

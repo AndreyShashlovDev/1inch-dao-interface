@@ -4,7 +4,7 @@ import { IToken, TokenRecordId } from '@1inch-community/models'
 import { chainViewConfig } from '@1inch-community/sdk/chain'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { customElement, property } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
 import { fromEvent, tap } from 'rxjs'
 import { Address } from 'viem'
@@ -28,8 +28,7 @@ export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
   @property({ type: String, attribute: false }) walletAddress?: Address
   @property({ type: Boolean, attribute: false }) showFavoriteTokenToggle = false
   @property({ type: Boolean, attribute: false }) mobileView = false
-
-  @state() private isFavorite = false
+  @property({ type: Boolean, attribute: false }) isFavorite = false
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 

@@ -25,12 +25,13 @@ export class TokenItemCrossChainAccordionChainListElement extends LitElement {
   @property({ type: String, attribute: false }) walletAddress?: Address
   @property({ type: Boolean, attribute: false }) showFavoriteTokenToggle = false
   @property({ type: Boolean, attribute: false }) mobileView = false
+  @property({ type: Array, attribute: true }) favoriteTokenIds?: TokenRecordId[]
 
   render() {
     const zeroBalance =
       this.tokenIdListWithBalance === null || this.tokenIdListWithBalance?.length === 0
     const showMoreButton = this.expanded && !zeroBalance
-    const list = []
+    const list: TokenRecordId[] = []
     if (this.expanded && !zeroBalance) {
       list.push(...this.tokenIdListWithBalance!)
     }
@@ -45,6 +46,7 @@ export class TokenItemCrossChainAccordionChainListElement extends LitElement {
       (id) => html`
         <inch-token-item-cross-chain-accordion-chain-view
           .tokenId="${id}"
+          .isFavorite="${this.favoriteTokenIds?.includes(id)}"
           .walletAddress="${this.walletAddress}"
           .showFavoriteTokenToggle="${this.showFavoriteTokenToggle}"
           .mobileView="${this.mobileView}"

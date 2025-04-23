@@ -36,6 +36,7 @@ export class TokenListElement extends LitElement {
 
   static override styles = tokenListStyle
 
+  @property({ type: Array, attribute: true }) favoriteTokenIds?: TokenRecordId[]
   @property({ type: Boolean, attribute: true }) showFavoriteTokenToggle = false
   @property({ type: Boolean, attribute: true }) showOnlyWithBalance = false
   @property({ type: Boolean, attribute: false }) mobileView = false
@@ -201,7 +202,7 @@ export class TokenListElement extends LitElement {
     const walletAddress = this.walletAddress$.value
     const chainIds = this.chainIds$.value
     return html`<inch-token-item-cross-chain-accordion
-      @changeExpand="${() => this.changeExpandHandler(index)}"
+      .favoriteTokenIds="${this.favoriteTokenIds}"
       .showFavoriteTokenToggle="${this.showFavoriteTokenToggle}"
       .crossChainTokensBindingRecord="${record}"
       .walletAddress="${walletAddress}"
@@ -209,6 +210,7 @@ export class TokenListElement extends LitElement {
       .expanded="${this.expandedAccordionItemIndex === index}"
       .index="${index}"
       .mobileView="${this.mobileView}"
+      @changeExpand="${() => this.changeExpandHandler(index)}"
     ></inch-token-item-cross-chain-accordion>`
   }
 
@@ -219,6 +221,7 @@ export class TokenListElement extends LitElement {
       .tokenId="${id}"
       .walletAddress="${walletAddress}"
       .mobileView="${this.mobileView}"
+      .isFavorite="${this.favoriteTokenIds?.includes(id)}"
     ></inch-token-item-cross-chain-flat>`
   }
 

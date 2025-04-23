@@ -5,7 +5,7 @@ import { getChainById } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/marquee'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { customElement, property } from 'lit/decorators.js'
 import { Address } from 'viem'
 import '../../balance-view'
 import '../../token-icon'
@@ -25,8 +25,7 @@ export class TokenItemCrossChainFlatElement extends LitElement {
   @property({ type: Boolean, attribute: false }) showFavoriteTokenToggle = false
   @property({ type: Boolean, attribute: false }) mobileView = false
   @property({ type: Number, attribute: false }) index = 0
-
-  @state() private isFavorite = false
+  @property({ type: Boolean, attribute: false }) isFavorite = false
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
