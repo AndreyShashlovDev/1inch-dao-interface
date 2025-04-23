@@ -36,7 +36,8 @@ export class SelectTokenContext implements ISelectTokenContext {
         JsonParser
       ) ?? getChainIdList()
     const tokenListFlatView =
-      this.applicationContext.storage.get<boolean>('inch-select-token_flat-list', Boolean) ?? false
+      this.applicationContext.storage.get<boolean>('inch-select-token_flat-list', JsonParser) ??
+      false
     this.chainFilter$.next(chainFilter)
     this.tokenListFlatView$.next(tokenListFlatView)
   }

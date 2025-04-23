@@ -48,6 +48,7 @@ export class WalletAccountView extends LitElement {
     return html`
       <inch-token-list
         type="flat"
+        showOnlyWithBalance
         .mobileView="${this.mobileView}"
         .chainIds="${observe(this.chainListView$)}"
         .walletAddress="${observe(this.activeAddress$)}"

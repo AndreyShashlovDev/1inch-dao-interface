@@ -3,6 +3,9 @@ import { lazyAppContext } from '@1inch-community/core/lazy'
 import { BigFloat } from '@1inch-community/core/math'
 import {
   ChainId,
+  getCrossChainTotalFiatBalanceQueryFilters,
+  getSymbolDataQueryFilters,
+  getTokenIdListQueryFilters,
   IApplicationContext,
   IBalancesTokenRecord,
   IBigFloat,
@@ -134,18 +137,24 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getSymbolData(chainIds: ChainId[], walletAddress?: Address): Promise<ITokenListViewData> {
-    await this.updateDatabase(walletAddress)
-    if (walletAddress) {
-      return this.getSymbolDataByWalletAddress(chainIds, walletAddress)
+  async getSymbolData(filter: getSymbolDataQueryFilters): Promise<ITokenListViewData> {
+    await this.updateDatabase(filter.walletAddress)
+    if (filter.walletAddress) {
+      return this.getSymbolDataByWalletAddress(filter)
     }
-    return this.getSymbolDataWithoutWalletAddress(chainIds)
+    return this.getSymbolDataWithoutWalletAddress(filter)
   }
 
   @CacheActivePromise()
   private async getSymbolDataWithoutWalletAddress(
-    chainIds: ChainId[]
+    filter: getSymbolDataQueryFilters
   ): Promise<ITokenListViewData> {
+    const { chainIds, tokensOnlyWithBalance } = filter
+    if (tokensOnlyWithBalance) {
+      throw new Error(
+        'getSymbolDataWithoutWalletAddress not supported tokensOnlyWithBalance filter'
+      )
+    }
     await this.updateDatabase()
     const { crossChainTokensBinding } = this.schema
     const chainIdSet = new Set<ChainId>(chainIds)
@@ -172,9 +181,12 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   private async getSymbolDataByWalletAddress(
-    chainIds: ChainId[],
-    walletAddress: Address
+    filter: getSymbolDataQueryFilters
   ): Promise<ITokenListViewData> {
+    const { chainIds, walletAddress, tokensOnlyWithBalance } = filter
+    if (walletAddress === null) {
+      throw new Error('getSymbolDataByWalletAddress not supported for walletAddress = null')
+    }
     await this.updateDatabase(walletAddress)
     const chainIdSet = new Set<ChainId>(chainIds)
     const { balances, tokens, crossChainTokensBinding, tokenPrice } = this.schema
@@ -253,11 +265,12 @@ export class TokenController implements ITokenStorage {
           const [chainIdStr] = destructuringId(id)
           return chainIdSet.has(parseChainId(chainIdStr))
         })
-        if (!tokenRecordIds.length) return
-        crossChainTokensBindingResult.push({
-          ...record,
-          tokenRecordIds,
-        })
+        if (tokenRecordIds.length && !tokensOnlyWithBalance) {
+          crossChainTokensBindingResult.push({
+            ...record,
+            tokenRecordIds,
+          })
+        }
       })
     return {
       allTokensInfo: crossChainTokensBindingResult,
@@ -266,9 +279,11 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getCrossChainTotalFiatBalance(walletAddress: Address) {
+  async getCrossChainTotalFiatBalance(filter: getCrossChainTotalFiatBalanceQueryFilters) {
+    const { chainIds, walletAddress } = filter
     await this.updateDatabase(walletAddress)
     const { balances, tokens, tokenPrice } = this.schema
+    const chainIdSet = new Set<ChainId>(chainIds ?? getChainIdList())
     const balanceMap = new Map<TokenRecordId, IBalancesTokenRecord>()
     const tokenPriceMap = new Map<TokenRecordId, ITokenPriceRecord>()
     const tokenMap = new Map<TokenRecordId, IToken>()
@@ -285,7 +300,10 @@ export class TokenController implements ITokenStorage {
       tokens
         .where('id')
         .anyOf(tokenIdList)
-        .each((record) => tokenMap.set(record.id, record)),
+        .each((record) => {
+          if (!chainIdSet.has(record.chainId)) return
+          tokenMap.set(record.id, record)
+        }),
     ])
     let totalBalance = BigFloat.zero()
     for (const id of tokenIdList) {
@@ -359,16 +377,17 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTokenIdList(
-    chainIds: ChainId[],
-    searchFilter?: string,
-    walletAddress?: Address
-  ): Promise<TokenRecordId[]> {
+  async getTokenIdList(filter: getTokenIdListQueryFilters): Promise<TokenRecordId[]> {
+    await this.updateTokenDatabase()
+    const { chainIds, tokenNameSymbolAddressMatches, walletAddress, tokensOnlyWithBalance } = filter
+    if (walletAddress === null && tokensOnlyWithBalance) {
+      throw new Error('tokensOnlyWithBalance is not supported for walletAddress = null')
+    }
     const { tokens, balances, tokenPrice } = this.schema
     const chainIdSet = new Set(chainIds)
     const result = new Set<TokenRecordId>()
     const tokenRecordMap = new Map<TokenRecordId, IToken>()
-    const searchFilterLower = searchFilter?.toLowerCase()
+    const searchFilterLower = tokenNameSymbolAddressMatches?.toLowerCase()
     const searchFilterHandler = (value: string) => {
       if (!searchFilterLower) return true
       return value.toLowerCase().startsWith(searchFilterLower)
@@ -429,9 +448,11 @@ export class TokenController implements ITokenStorage {
         })
     }
 
-    tokenRecordMap.forEach((_, id) => {
-      result.add(id)
-    })
+    if (!tokensOnlyWithBalance) {
+      tokenRecordMap.forEach((_, id) => {
+        result.add(id)
+      })
+    }
 
     return result.values().toArray()
   }
@@ -570,7 +591,7 @@ export class TokenController implements ITokenStorage {
   // Update store methods
 
   @CacheActivePromise()
-  private async updateDatabase(walletAddress?: Address): Promise<void> {
+  private async updateDatabase(walletAddress?: Address | null): Promise<void> {
     await this.updateTokenDatabase()
     await Promise.all([this.updateBalanceDatabase(walletAddress), this.updateTokenPrice()])
   }
@@ -583,7 +604,7 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  private async updateBalanceDatabase(walletAddress?: Address) {
+  private async updateBalanceDatabase(walletAddress?: Address | null) {
     if (!walletAddress || !this.schema.balancesIsExpired(walletAddress)) return
 
     const update = async () => {

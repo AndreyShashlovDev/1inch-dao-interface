@@ -4,10 +4,31 @@ import type { InitializingEntity } from '../base'
 import type { IBigFloat } from '../big-float'
 import type { ChainId } from '../chain'
 import type { IBalancesTokenRecord, TokenRecordId } from '../database'
+import type { QueryFilters } from './query-type'
 import type { IToken } from './token'
 import type { ITokenListViewData } from './token-list-view-data'
 
+export type getTokenIdListQueryFilters = QueryFilters<
+  'chainIds' | 'tokensOnlyWithBalance',
+  'tokenNameSymbolAddressMatches' | 'walletAddress'
+>
+
+export type getSymbolDataQueryFilters = QueryFilters<
+  'chainIds' | 'tokensOnlyWithBalance',
+  'walletAddress'
+>
+
+export type getCrossChainTotalFiatBalanceQueryFilters = QueryFilters<'walletAddress', 'chainIds'>
+
 export interface ITokenStorage extends InitializingEntity {
+  getTokenIdList(filter: getTokenIdListQueryFilters): Promise<TokenRecordId[]>
+  getSymbolData(filter: getSymbolDataQueryFilters): Promise<ITokenListViewData>
+  getCrossChainTotalFiatBalance(
+    filter: getCrossChainTotalFiatBalanceQueryFilters
+  ): Promise<IBigFloat>
+
+  //
+
   getTotalTokenBalanceBySymbol(
     chainIds: ChainId[],
     symbol: string,
@@ -24,14 +45,7 @@ export interface ITokenStorage extends InitializingEntity {
     symbol: string,
     walletAddress: Address
   ): Promise<TokenRecordId[]>
-  getCrossChainTotalFiatBalance(walletAddress: Address, chainIds?: ChainId[]): Promise<IBigFloat>
-  getTokenIdList(
-    chainIds: ChainId[],
-    searchFilter?: string,
-    walletAddress?: Address
-  ): Promise<TokenRecordId[]>
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
-  getSymbolData(chainIds: ChainId[], walletAddress?: Address): Promise<ITokenListViewData>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
   getTokenById(id: TokenRecordId): Promise<IToken | null>
   getTokenBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat>

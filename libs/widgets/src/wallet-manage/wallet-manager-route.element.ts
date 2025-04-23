@@ -28,7 +28,7 @@ export class WalletManagerRoute extends LitElement {
     'account',
     {
       wallets: {},
-      account: {},
+      account: { lazyRender: true },
     },
     shiftAnimation()
   )

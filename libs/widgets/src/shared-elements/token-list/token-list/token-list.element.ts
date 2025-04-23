@@ -36,10 +36,10 @@ export class TokenListElement extends LitElement {
 
   static override styles = tokenListStyle
 
-  @property({ type: Array, attribute: true }) favoriteTokenIds?: TokenRecordId[]
   @property({ type: Boolean, attribute: true }) showFavoriteTokenToggle = false
   @property({ type: Boolean, attribute: true }) showOnlyWithBalance = false
   @property({ type: Boolean, attribute: false }) mobileView = false
+  @property({ type: Array, attribute: false }) favoriteTokenIds?: TokenRecordId[]
   @property({ type: Function, attribute: false }) header?: () => TemplateResult<1>
 
   @property({ type: String, attribute: true })
@@ -95,16 +95,21 @@ export class TokenListElement extends LitElement {
       switchMap(([type, searchFilter, chainIds, walletAddress]) => {
         if (type === 'flat' || searchFilter.length > 0) {
           return this.applicationContext.value.tokenStorage.liveQuery(() =>
-            this.applicationContext.value.tokenStorage.getTokenIdList(
+            this.applicationContext.value.tokenStorage.getTokenIdList({
               chainIds,
-              searchFilter || undefined,
-              walletAddress
-            )
+              tokensOnlyWithBalance: this.showOnlyWithBalance,
+              walletAddress: walletAddress || null,
+              tokenNameSymbolAddressMatches: searchFilter || null,
+            })
           )
         }
         if (type === 'accordion') {
           return this.applicationContext.value.tokenStorage.liveQuery(() =>
-            this.applicationContext.value.tokenStorage.getSymbolData(chainIds, walletAddress)
+            this.applicationContext.value.tokenStorage.getSymbolData({
+              chainIds,
+              tokensOnlyWithBalance: this.showOnlyWithBalance,
+              walletAddress: walletAddress || null,
+            })
           )
         }
         throw new Error(`TokenListElementError: Unknown type: ${type}`)

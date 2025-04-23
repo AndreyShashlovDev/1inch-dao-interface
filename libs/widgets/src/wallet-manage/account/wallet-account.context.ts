@@ -24,7 +24,9 @@ export class WalletAccountContext implements IWalletAccountContext {
   readonly walletBalance$: Observable<IBigFloat> = this.connectedWalletAddress$.pipe(
     distinctUntilChanged(),
     filter((address) => address !== null),
-    switchMap((address) => this.tokenStorage.getCrossChainTotalFiatBalance(address))
+    switchMap((address) =>
+      this.tokenStorage.getCrossChainTotalFiatBalance({ walletAddress: address, chainIds: null })
+    )
   )
 
   readonly chainFilter$ = new BehaviorSubject<ChainId[]>([])
