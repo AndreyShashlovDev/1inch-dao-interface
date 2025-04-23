@@ -17,6 +17,8 @@ export class SceneWrapperElement extends LitElement {
       box-sizing: border-box;
       position: relative;
       display: block;
+      overflow: hidden;
+      flex-grow: 1;
     }
   `
 

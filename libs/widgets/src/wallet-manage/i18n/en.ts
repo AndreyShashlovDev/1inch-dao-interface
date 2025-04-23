@@ -8,5 +8,13 @@ export default {
 
   'widgets.wallet-manager-route.wallets.manager': 'Wallet management',
   'widgets.wallet-manager-route.wallets.connect': 'Connect wallet',
+  'widgets.wallet-manager-route.wallets.disconnect': 'Disconnect wallet',
   'widgets.wallet-manager-route.account': 'Account',
+
+  'widgets.wallet-manager.button.disconnect': 'Disconnect all wallets',
+
+  'widgets.wallet-disconnect.button.disconnect': 'Disconnect',
+  'widgets.wallet-disconnect.button.cancel': 'Cancel',
+  'widgets.wallet-disconnect.msg.single-wallet': 'Do you really want to disconnect wallet?',
+  'widgets.wallet-disconnect.msg.all-wallets': 'Do you really want to disconnect all wallet?',
 }

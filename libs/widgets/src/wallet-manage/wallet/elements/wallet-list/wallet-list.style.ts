@@ -1,6 +1,11 @@
 import { css } from 'lit'
 
 export const walletListStyle = css`
+  :host {
+    display: block;
+    overflow: hidden;
+  }
+
   .container {
     display: flex;
     flex-direction: column;

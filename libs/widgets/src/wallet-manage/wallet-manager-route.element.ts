@@ -12,10 +12,11 @@ import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { combineLatest, tap } from 'rxjs'
 import './account'
+import './disconnect'
 import './wallet'
 import { WalletManagerRouteStyle } from './wallet-manager-route.style'
 
-type Scenes = 'account' | 'wallets'
+type Scenes = 'account' | 'wallets' | 'disconnect'
 
 @customElement(WalletManagerRoute.tagName)
 export class WalletManagerRoute extends LitElement {
@@ -32,8 +33,9 @@ export class WalletManagerRoute extends LitElement {
   private readonly scene = new SceneController(
     'account',
     {
-      wallets: {},
       account: {},
+      wallets: {},
+      disconnect: {},
     },
     shiftAnimation()
   )
@@ -70,12 +72,21 @@ export class WalletManagerRoute extends LitElement {
     return html` <inch-wallet-manage></inch-wallet-manage> `
   }
 
-  private getHeaderView() {
-    if (this.currentSceneName === 'wallets') {
-      return this.walletsHeaderView()
-    }
+  private getDisconnectView() {
+    return html` <inch-wallet-disconnect-view></inch-wallet-disconnect-view> `
+  }
 
-    return this.accountHeaderView()
+  private getHeaderView() {
+    switch (this.currentSceneName) {
+      case 'account':
+        return this.accountHeaderView()
+      case 'wallets':
+        return this.walletsHeaderView()
+      case 'disconnect':
+        return this.disconnectHeaderView()
+      default:
+        throw new Error('unknown screen!')
+    }
   }
 
   private accountHeaderView() {
@@ -109,6 +120,16 @@ export class WalletManagerRoute extends LitElement {
     </inch-card-header>`
   }
 
+  private disconnectHeaderView() {
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate('widgets.wallet-manager-route.wallets.disconnect')}"
+      backButton="${true}"
+      @backCard="${() => this.onBackPress()}"
+    >
+    </inch-card-header>`
+  }
+
   private navigateTo(scene: Scenes, immediate: boolean = false) {
     this.currentSceneName = scene
     this.scene.nextTo(scene, immediate)
@@ -128,8 +149,9 @@ export class WalletManagerRoute extends LitElement {
         )}
         ${this.getHeaderView()}
         ${this.scene.render({
-          wallets: () => this.getWalletsView(),
           account: () => this.getAccountView(),
+          wallets: () => this.getWalletsView(),
+          disconnect: () => this.getDisconnectView(),
         })}
       </inch-card>
     `

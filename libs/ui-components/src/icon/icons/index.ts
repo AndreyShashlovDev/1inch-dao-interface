@@ -260,6 +260,11 @@ export const icons: Record<string, IconsRecord> = {
     height: '32px',
     loader: () => import('./arrow-top-to-right-rounded_32').then((m) => m.arrowTopToRightRounded32),
   },
+  disconnectImageBig: {
+    width: '160px',
+    height: '160px',
+    loader: () => import('./disconnect-image_big').then((m) => m.disconnectImage_big),
+  },
 
   // chain icons
   eth24: {
