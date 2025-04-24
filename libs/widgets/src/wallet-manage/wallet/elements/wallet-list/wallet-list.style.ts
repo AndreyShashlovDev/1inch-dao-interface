@@ -2,8 +2,8 @@ import { css } from 'lit'
 
 export const walletListStyle = css`
   :host {
+    height: 100%;
     display: block;
-    overflow: hidden;
   }
 
   .container {
@@ -23,6 +23,7 @@ export const walletListStyle = css`
     text-align: center;
     vertical-align: middle;
     color: var(--color-content-content-secondary);
+    padding-bottom: 16px;
   }
 
   .agreements-link {

@@ -19,6 +19,11 @@ export const walletManageStyle = css`
     overflow: hidden;
   }
 
+  .wallet-manager-container-list {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .wallet-manager-actions {
     display: flex;
     justify-content: center;

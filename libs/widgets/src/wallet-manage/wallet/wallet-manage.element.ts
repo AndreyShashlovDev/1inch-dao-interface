@@ -36,8 +36,9 @@ export class WalletManageElement extends LitElement {
   protected override render() {
     return html`
       <div class="wallet-manager-container">
-        <inch-wallet-list></inch-wallet-list>
-
+        <div class="wallet-manager-container-list">
+          <inch-wallet-list></inch-wallet-list>
+        </div>
         ${when(
           this.connected,
           () => html`

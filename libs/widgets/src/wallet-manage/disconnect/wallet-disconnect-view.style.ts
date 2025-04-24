@@ -1,4 +1,3 @@
-import { mobileMediaCSS } from '@1inch-community/core/lit-utils'
 import { css } from 'lit'
 
 export const walletDisconnectViewStyle = css`
@@ -57,7 +56,7 @@ export const walletDisconnectViewStyle = css`
     gap: 16px;
   }
 
-  ${mobileMediaCSS(css`
+  @media (hover: none) {
     .wallet-disconnect-content {
       display: flex;
       justify-content: center;
@@ -72,5 +71,5 @@ export const walletDisconnectViewStyle = css`
       overflow: hidden;
       gap: 12px;
     }
-  `)}
+  }
 `
