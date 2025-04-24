@@ -10,7 +10,7 @@ import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
-import { combineLatest, distinctUntilChanged, tap } from 'rxjs'
+import { combineLatest, tap } from 'rxjs'
 import './account'
 import './disconnect'
 import { DisconnectEventModel } from './disconnect/disconnect-event-model'
@@ -43,9 +43,9 @@ export class WalletManagerRoute extends LitElement {
     shiftAnimation()
   )
 
-  @state() currentSceneName: Scenes = this.scene.activeScene
+  @state() private currentSceneName: Scenes = this.scene.activeScene
 
-  private isWalletConnected: boolean = false
+  @state() private isWalletConnected: boolean = false
 
   protected firstUpdated() {
     const wallet = this.applicationContext.value.wallet
@@ -53,11 +53,11 @@ export class WalletManagerRoute extends LitElement {
     subscribe(
       this,
       combineLatest([wallet.data.isConnected$, wallet.data.activeAddress$]).pipe(
-        distinctUntilChanged(
-          (previous, current) => previous[0] === current[0] && previous[1] === current[1]
-        ),
         tap(([isConnected, address]) => {
-          this.isWalletConnected = isConnected
+          if (this.isWalletConnected !== isConnected) {
+            this.isWalletConnected = isConnected
+          }
+
           if (!isConnected && address === null && this.currentSceneName !== 'wallets') {
             this.scene.resetScene()
             this.navigateTo('wallets', true)
@@ -66,7 +66,8 @@ export class WalletManagerRoute extends LitElement {
             this.onBackPress()
           }
         })
-      )
+      ),
+      { requestUpdate: false }
     )
   }
 

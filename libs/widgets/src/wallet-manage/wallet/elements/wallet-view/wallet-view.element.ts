@@ -129,7 +129,14 @@ export class WalletViewElement extends LitElement {
           </div>
         </div>
         <div class="data-container right-data">
-          <inch-button @click="${() => this.onDisconnectClick(info)}" type="tertiary" size="l">
+          <inch-button
+            @click="${(event: MouseEvent) => {
+              event.stopPropagation()
+              this.onDisconnectClick(info)
+            }}"
+            type="tertiary"
+            size="l"
+          >
             <inch-icon
               width="24"
               height="24"
@@ -214,7 +221,10 @@ export class WalletViewElement extends LitElement {
                       `
                     )}
                     <inch-button
-                      @click="${() => this.onDisconnectClick(info, address)}"
+                      @click="${(event: MouseEvent) => {
+                        event.stopPropagation()
+                        this.onDisconnectClick(info, address)
+                      }}"
                       type="tertiary"
                       size="l"
                     >
