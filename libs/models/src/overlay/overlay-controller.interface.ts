@@ -33,17 +33,17 @@ export enum OverlayViewPopupPosition {
   center = 'center',
 }
 
-type OverlayViewConfigAuto = {
+export type OverlayViewConfigAuto = {
   mode: OverlayViewMode.auto
   targetFactory?: () => HTMLElement | null
 }
 
-type OverlayViewConfigDesktop = {
+export type OverlayViewConfigDesktop = {
   mode: OverlayViewMode.desktop
   targetFactory?: () => HTMLElement | null
 }
 
-type OverlayViewConfigMobile = {
+export type OverlayViewConfigMobile = {
   mode: OverlayViewMode.mobile
 }
 
@@ -54,7 +54,7 @@ export type OverlayViewConfigPopup = {
   customOverlayContainerStyle?: Partial<CSSStyleDeclaration>
 }
 
-type OverlayViewConfigPopupAuto = {
+export type OverlayViewConfigPopupAuto = {
   mode: OverlayViewMode.popupAuto
   targetFactory: () => HTMLElement | null
   position?: { x: OverlayViewPopupPosition[]; y: OverlayViewPopupPosition[] }
