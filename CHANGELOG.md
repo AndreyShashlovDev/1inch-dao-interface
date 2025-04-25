@@ -1,3 +1,10 @@
+# [1.0.0-rc.8](https://github.com/1inch-community/interface/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2025-04-25)
+
+
+### Bug Fixes
+
+* **transport:** simplify getRPC import in web-fallback ([3d9e901](https://github.com/1inch-community/interface/commit/3d9e9016c4affd52a2ef7008093b3eb985d85730))
+
 # [1.0.0-rc.7](https://github.com/1inch-community/interface/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2025-04-25)
 
 
