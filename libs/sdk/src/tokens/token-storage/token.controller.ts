@@ -5,7 +5,11 @@ import {
   ChainId,
   getCrossChainTotalFiatBalanceQueryFilters,
   getSymbolDataQueryFilters,
+  getTokenBalanceByIdQueryFilters,
+  getTokenFiatBalanceByIdQueryFilters,
   getTokenIdListQueryFilters,
+  getTotalTokenBalanceBySymbolQueryFilters,
+  getTotalTokenFiatBalanceBySymbolQueryFilters,
   IApplicationContext,
   IBalancesTokenRecord,
   IBigFloat,
@@ -70,8 +74,9 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTotalTokenBalanceBySymbol(chainIds: ChainId[], symbol: string, walletAddress: Address) {
-    await this.updateDatabase()
+  async getTotalTokenBalanceBySymbol(filter: getTotalTokenBalanceBySymbolQueryFilters) {
+    const { chainIds, symbol, walletAddress } = filter
+    await this.updateDatabase(walletAddress)
     const { balances, tokens } = this.schema
     const chainIdSet = new Set(chainIds)
     const tokenMap = new Map<TokenRecordId, IToken>()
@@ -98,12 +103,9 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTotalTokenFiatBalanceBySymbol(
-    chainIds: ChainId[],
-    symbol: string,
-    walletAddress: Address
-  ) {
-    await this.updateDatabase()
+  async getTotalTokenFiatBalanceBySymbol(filter: getTotalTokenFiatBalanceBySymbolQueryFilters) {
+    const { chainIds, symbol, walletAddress } = filter
+    await this.updateDatabase(walletAddress)
     const { balances, tokens, tokenPrice } = this.schema
     const chainIdSet = new Set(chainIds)
     const tokenMap = new Map<TokenRecordId, IToken>()
@@ -124,7 +126,6 @@ export class TokenController implements ITokenStorage {
     await balances
       .where('tokenRecordId')
       .anyOf(tokenIdList)
-      .and((record) => isAddressEqual(record.walletAddress, walletAddress))
       .each((record) => {
         const token = tokenMap.get(record.tokenRecordId)
         if (!token) return
@@ -486,14 +487,15 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTokenBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat> {
+  async getTokenBalanceById(filter: getTokenBalanceByIdQueryFilters): Promise<IBigFloat> {
+    const { tokenRecordId, walletAddress } = filter
     await this.updateDatabase(walletAddress)
     const { balances } = this.schema
-    const token = await this.getTokenById(id)
+    const token = await this.getTokenById(tokenRecordId)
     if (!token) return BigFloat.zero()
     const balanceRecord = await balances
       .where('tokenRecordId')
-      .equals(id)
+      .equals(tokenRecordId)
       .and((record) => isAddressEqual(record.walletAddress, walletAddress))
       .first()
     if (!balanceRecord) return BigFloat.zero()
@@ -501,11 +503,12 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTokenFiatBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat> {
+  async getTokenFiatBalanceById(filter: getTokenFiatBalanceByIdQueryFilters): Promise<IBigFloat> {
+    const { walletAddress, tokenRecordId } = filter
     await this.updateDatabase(walletAddress)
     const { tokenPrice } = this.schema
-    const balance = await this.getTokenBalanceById(id, walletAddress)
-    const tokenPriceRecord = await tokenPrice.where('tokenRecordId').equals(id).first()
+    const balance = await this.getTokenBalanceById(filter)
+    const tokenPriceRecord = await tokenPrice.where('tokenRecordId').equals(tokenRecordId).first()
     if (!tokenPriceRecord) return BigFloat.zero()
     return balance.mul(BigFloat.fromString(tokenPriceRecord.price))
   }
@@ -660,7 +663,7 @@ export class TokenController implements ITokenStorage {
       const priority = calcTokenPriority(token)
       tableTokens.push({
         id,
-        address: token.address,
+        address: token.address.toLowerCase() as Address,
         decimals: token.decimals,
         eip2612: token.eip2612 ?? null,
         name: token.name,
@@ -686,7 +689,7 @@ export class TokenController implements ITokenStorage {
       record.priority += priority
       record.supportedChainIds.add(chainId)
       record.tokenNames.add(token.name)
-      record.tokenAddresses.add(token.address)
+      record.tokenAddresses.add(token.address.toLowerCase() as Address)
       record.tokenRecordIds.add(id)
     }
 
@@ -724,13 +727,13 @@ export class TokenController implements ITokenStorage {
       const chainId = parseChainId(chainIdStr)
       const balanceRecord = balance.result!
       for (const address in balanceRecord) {
-        const tokenAddress = address as Address
+        const tokenAddress = address.toLowerCase() as Address
         balancesRecords.push({
           id: buildBalanceId(chainId, walletAddress, tokenAddress),
           tokenRecordId: buildTokenId(chainId, tokenAddress),
           chainId,
           tokenAddress: tokenAddress,
-          walletAddress,
+          walletAddress: walletAddress.toLowerCase() as Address,
           amount: balanceRecord[tokenAddress],
         })
       }

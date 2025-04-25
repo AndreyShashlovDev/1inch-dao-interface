@@ -26,8 +26,8 @@ interface TokenSchemaDatabase {
 type UpdateEmitters = Record<keyof TokenSchemaDatabase, Subject<void>>
 
 export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
-  static databaseVersion = 6
-  static databaseName = 'one-inch-token'
+  static databaseVersion = 1
+  static databaseName = 'one-inch-token-v2'
 
   private database?: TokenSchemaDatabase
 

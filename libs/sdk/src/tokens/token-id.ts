@@ -10,11 +10,11 @@ import { Address } from 'viem'
 const separator = ':'
 
 export function buildTokenId(chainId: ChainId, tokenAddress: Address): TokenRecordId {
-  return `${chainId}${separator}${tokenAddress}`
+  return `${chainId}${separator}${tokenAddress}`.toLowerCase() as TokenRecordId
 }
 
 export function buildTokenPriceId(chainId: ChainId, tokenAddress: Address): TokenPriceRecordId {
-  return `${chainId}${separator}${tokenAddress}`
+  return `${chainId}${separator}${tokenAddress}`.toLowerCase() as TokenPriceRecordId
 }
 
 export function buildBalanceId(
