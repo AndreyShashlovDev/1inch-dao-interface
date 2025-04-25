@@ -23,7 +23,11 @@ export async function createClientAndSyncChain(
   return client
 }
 
-export function createClient(chainId: ChainId, provider: EthereumProvider, address?: Address) {
+export function createClient(
+  chainId: ChainId,
+  provider: EthereumProvider,
+  address?: Address
+): WalletClient {
   return createWalletClient({
     chain: getChainById(chainId),
     transport: custom(provider),
