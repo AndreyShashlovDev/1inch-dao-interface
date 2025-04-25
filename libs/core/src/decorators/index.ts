@@ -1,2 +1,3 @@
 export * from './cache-active-promise'
+export * from './debounce-time'
 export * from './throttle'
