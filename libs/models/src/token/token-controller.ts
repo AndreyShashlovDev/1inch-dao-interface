@@ -18,6 +18,18 @@ export type getSymbolDataQueryFilters = QueryFilters<
   'walletAddress'
 >
 
+export type getTotalTokenBalanceBySymbolQueryFilters = QueryFilters<
+  'chainIds' | 'symbol' | 'walletAddress'
+>
+
+export type getTotalTokenFiatBalanceBySymbolQueryFilters = QueryFilters<
+  'chainIds' | 'symbol' | 'walletAddress'
+>
+
+export type getTokenBalanceByIdQueryFilters = QueryFilters<'tokenRecordId' | 'walletAddress'>
+
+export type getTokenFiatBalanceByIdQueryFilters = QueryFilters<'tokenRecordId' | 'walletAddress'>
+
 export type getCrossChainTotalFiatBalanceQueryFilters = QueryFilters<'walletAddress', 'chainIds'>
 
 export interface ITokenStorage extends InitializingEntity {
@@ -26,19 +38,14 @@ export interface ITokenStorage extends InitializingEntity {
   getCrossChainTotalFiatBalance(
     filter: getCrossChainTotalFiatBalanceQueryFilters
   ): Promise<IBigFloat>
-
+  getTotalTokenBalanceBySymbol(filter: getTotalTokenBalanceBySymbolQueryFilters): Promise<IBigFloat>
+  getTotalTokenFiatBalanceBySymbol(
+    filter: getTotalTokenFiatBalanceBySymbolQueryFilters
+  ): Promise<IBigFloat>
+  getTokenBalanceById(filter: getTokenBalanceByIdQueryFilters): Promise<IBigFloat>
+  getTokenFiatBalanceById(filter: getTokenFiatBalanceByIdQueryFilters): Promise<IBigFloat>
   //
 
-  getTotalTokenBalanceBySymbol(
-    chainIds: ChainId[],
-    symbol: string,
-    walletAddress: Address
-  ): Promise<IBigFloat>
-  getTotalTokenFiatBalanceBySymbol(
-    chainIds: ChainId[],
-    symbol: string,
-    walletAddress: Address
-  ): Promise<IBigFloat>
   getCrossChainTokenName(symbol: string): Promise<string>
   getCrossChainTokenIdListWithBalance(
     chainIds: ChainId[],
@@ -48,8 +55,6 @@ export interface ITokenStorage extends InitializingEntity {
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
   getTokenById(id: TokenRecordId): Promise<IToken | null>
-  getTokenBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat>
-  getTokenFiatBalanceById(id: TokenRecordId, walletAddress: Address): Promise<IBigFloat>
   getTokenLogoURL(chainId: ChainId, address: Address): Promise<string | null>
   getTokenLogoURLsBySymbol(symbol: string): Promise<string[]>
   getNativeToken(chainId: ChainId): Promise<IToken | null>

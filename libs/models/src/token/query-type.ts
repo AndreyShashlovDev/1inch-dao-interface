@@ -1,9 +1,11 @@
 import type { Address } from 'viem'
 import type { ChainId } from '../chain'
+import type { TokenRecordId } from '../database'
 
 export type BaseQueryFilters = {
   symbol: string
   chainIds: ChainId[]
+  tokenRecordId: TokenRecordId
   tokenNameSymbolAddressMatches: string
   tokensOnlyWithBalance: boolean
   tokenAddress: Address
