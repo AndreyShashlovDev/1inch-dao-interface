@@ -544,7 +544,7 @@ export class TokenController implements ITokenStorage {
     return records[0] ?? null
   }
 
-  async getTokenUSDPrice(_: ChainId, __: Address) {
+  async getTokenUSDPrice() {
     return 'TODO Write me'
   }
 

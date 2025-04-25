@@ -129,7 +129,6 @@ export class SwapFormMobileElement extends LitElement {
   }
 
   private async onOpenConnectWalletView() {
-    debugger
     const id = await this.applicationContext.value.overlay.open(html`
       <inch-wallet-manager-route
         showShadow
