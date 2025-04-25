@@ -1,11 +1,14 @@
 import { appendStyle } from '@1inch-community/core/lit-utils'
-import { IOverlayController, OverlayViewConfig, OverlayViewMode } from '@1inch-community/models'
+import {
+  IOverlayController,
+  OverlayViewConfigDesktop,
+  OverlayViewMode,
+} from '@1inch-community/models'
 import { html, render, TemplateResult } from 'lit'
 import { fromEvent, Subscription } from 'rxjs'
 import { ScrollViewProviderElement } from '../scroll'
 import { getContainer } from './overlay-container'
 import { getOverlayId } from './overlay-id-generator'
-import { viewConfigDefault } from './overlay-view-config-default'
 import { zIndexMap } from './z-index-map'
 
 export class OverlayDesktopController implements IOverlayController {
@@ -31,7 +34,7 @@ export class OverlayDesktopController implements IOverlayController {
 
   async open(
     content: TemplateResult | HTMLElement,
-    viewConfig: OverlayViewConfig = viewConfigDefault
+    viewConfig: OverlayViewConfigDesktop
   ): Promise<number> {
     const id = getOverlayId()
     const target = viewConfig.targetFactory?.() ?? null

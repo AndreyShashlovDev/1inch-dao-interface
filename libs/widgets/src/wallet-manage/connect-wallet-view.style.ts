@@ -11,6 +11,12 @@ export const connectWalletViewStyle = css`
     background: var(--color-background-bg-primary);
     height: 40px;
     box-sizing: border-box;
+    color: var(--color-content-content-primary);
+
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: right;
   }
 
   .connect-wallet-view-icon {

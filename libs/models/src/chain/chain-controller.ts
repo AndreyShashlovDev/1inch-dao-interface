@@ -15,6 +15,7 @@ export interface IOnChain extends InitializingEntity {
   readonly crossChainEmitter: Observable<void>
   getClient(chainId: ChainId): Promise<PublicClient>
   getBlockEmitter(chainId: ChainId): Observable<Block>
+  getChainTickEmitter(chainId: ChainId): Observable<void>
   getAllowance(chainId: ChainId, token: Address, owner: Address, spender: Address): Promise<bigint>
   waitTransaction(chainId: ChainId, hash: Hash, blockTag?: BlockTag): Promise<Transaction>
   simulateApprove(

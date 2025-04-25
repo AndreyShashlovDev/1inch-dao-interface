@@ -1,42 +1,24 @@
-import { asyncFrame } from '@1inch-community/core/async'
-import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
+import { lazyAppContextConsumer, lazyConsumer } from '@1inch-community/core/lazy'
 import {
   animationMap,
-  AnimationMapController,
-  AnimationMapDirection,
+  appendClass,
   appendStyle,
   dispatchEvent,
   observe,
   subscribe,
 } from '@1inch-community/core/lit-utils'
-import { ISelectTokenContext, IToken } from '@1inch-community/models'
+import { IToken } from '@1inch-community/models'
+import { buildTokenIdByToken } from '@1inch-community/sdk/tokens'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
-import { consume } from '@lit/context'
-import { html, LitElement, TemplateResult } from 'lit'
+import { html, LitElement } from 'lit'
 import { customElement } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
-import { when } from 'lit/directives/when.js'
-import {
-  BehaviorSubject,
-  combineLatest,
-  debounceTime,
-  defer,
-  fromEvent,
-  map,
-  shareReplay,
-  startWith,
-  switchMap,
-  tap,
-} from 'rxjs'
+import { BehaviorSubject, defer, fromEvent, map, shareReplay, tap } from 'rxjs'
 import '../../../shared-elements/token-list'
 import { selectTokenContext } from '../../context'
+import { FavoriteTokensAnimationMapController } from './favorite-tokens-animation-map.controller'
 import { favoriteTokensStyles } from './favorite-tokens.styles'
-
-const animationOptions = {
-  duration: 200,
-  easing: 'cubic-bezier(.2, .8, .2, 1)',
-}
 
 @customElement(FavoriteTokensElement.tagName)
 export class FavoriteTokensElement extends LitElement {
@@ -44,9 +26,7 @@ export class FavoriteTokensElement extends LitElement {
 
   static override styles = [favoriteTokensStyles]
 
-  @consume({ context: selectTokenContext })
-  context?: ISelectTokenContext
-
+  private readonly context = lazyConsumer(this, { context: selectTokenContext })
   private readonly applicationContext = lazyAppContextConsumer(this)
 
   readonly editAllMode$ = new BehaviorSubject(false)
@@ -54,41 +34,26 @@ export class FavoriteTokensElement extends LitElement {
   readonly scrollContainerRef = createRef<HTMLElement>()
 
   private readonly favoriteTokensAnimationMapController = new FavoriteTokensAnimationMapController(
-    this
+    (token: IToken, event: UIEvent) => this.onRemoveFavoriteToken(token, event),
+    (token: IToken) => this.onSelectToken(token),
+    () => this.onEditAllToggle()
   )
 
-  private readonly favoriteTokensView$ = combineLatest([
-    defer(() => this.getFavoriteTokens()),
-    defer(() => this.getChainId()),
-  ]).pipe(
-    debounceTime(0),
-    switchMap(([tokens, chainId]) => {
-      if (!chainId) return []
-      return this.applicationContext.value.tokenStorage.getTokenListSortedByPriority(
-        chainId,
-        tokens
-      )
-    }),
-    startWith([]),
-    tap((tokens: IToken[]) => {
-      if (tokens.length && this.classList.contains('empty')) {
-        this.classList.remove('empty')
-      }
-      if (!tokens.length && !this.classList.contains('empty')) {
-        this.classList.add('empty')
-      }
-    }),
-    tap(() => {
-      if (!this.classList.contains('transition-host')) {
-        setTimeout(() => {
-          this.classList.add('transition-host')
-        }, 300)
-      }
-    }),
-    map((tokens: (IToken | null)[]) => {
-      if (tokens.length) {
-        tokens.push(null)
-      }
+  private readonly favoriteTokenList$ = defer(() =>
+    this.applicationContext.value.tokenStorage.liveQuery(() =>
+      this.applicationContext.value.tokenStorage.getAllFavoriteTokens()
+    )
+  )
+
+  private readonly favoriteTokensView$ = this.favoriteTokenList$.pipe(
+    map((tokens, index) => {
+      appendClass(this, {
+        empty: tokens.length === 0,
+        'transition-host': index > 0,
+      })
+      appendStyle(this, {
+        height: `${tokens.length === 0 ? 16 : 60}px`,
+      })
       return html`
         <div ${ref(this.scrollContainerRef)} class="favorite-container-scroll">
           <div class="favorite-container">
@@ -106,9 +71,9 @@ export class FavoriteTokensElement extends LitElement {
       [
         this.editAllMode$.pipe(
           tap((state) => {
-            return state
-              ? this.classList.add('remove-favorite-token-show')
-              : this.classList.remove('remove-favorite-token-show')
+            appendClass(this, {
+              'remove-favorite-token-show': state,
+            })
           })
         ),
         fromEvent<WheelEvent>(this, 'wheel').pipe(
@@ -127,188 +92,20 @@ export class FavoriteTokensElement extends LitElement {
     return html`${observe(this.favoriteTokensView$)}`
   }
 
-  private getFavoriteTokens() {
-    if (!this.context) throw new Error('')
-    return this.context.favoriteTokens$
+  private onSelectToken(token: IToken) {
+    this.context.value.onSelectToken(token)
+    dispatchEvent(this, 'backCard', null)
   }
 
-  private getChainId() {
-    if (!this.context) throw new Error('')
-    return this.context.chainId$
+  private onEditAllToggle() {
+    this.editAllMode$.next(!this.editAllMode$.value)
   }
 
   async onRemoveFavoriteToken(token: IToken, event: UIEvent) {
     event.stopPropagation()
     event.preventDefault()
-    await this.context?.setFavoriteTokenState(token.chainId, token.address, false)
-  }
-}
-
-class FavoriteTokensAnimationMapController
-  implements AnimationMapController<IToken | null, void, void, HTMLElement | number | null>
-{
-  direction: AnimationMapDirection = 'horizontal'
-
-  private renderElements: Map<number, HTMLElement> = new Map()
-  private deleteElementsWidth: Map<number, number> = new Map()
-  private moveElementsWidth: Map<string, number> = new Map()
-
-  private readonly gap = 8
-
-  constructor(private readonly element: FavoriteTokensElement) {}
-
-  onKeyExtractor(token: IToken | null): string {
-    return token !== null ? 't' + token.address : 'edit'
-  }
-
-  onTemplateBuilder(token: IToken | null): TemplateResult {
-    return when(
-      token,
-      (token) => html`
-        <div class="favorite-token-item-container">
-          <div
-            class="remove-favorite-token"
-            @click="${(event: UIEvent) => this.element.onRemoveFavoriteToken(token, event)}"
-          >
-            <inch-icon icon="cross8"></inch-icon>
-          </div>
-          <inch-button
-            size="m"
-            type="secondary"
-            class="favorite-token-item"
-            @click="${() => {
-              this.element.context?.onSelectToken(token)
-              dispatchEvent(this.element, 'backCard', null)
-            }}"
-          >
-            <inch-token-icon
-              symbol="${token.symbol}"
-              address="${token.address}"
-              chainId="${token.chainId}"
-            ></inch-token-icon>
-            <span>${token.symbol}</span>
-          </inch-button>
-        </div>
-      `,
-      () => html`
-        <inch-button
-          size="l"
-          type="secondary"
-          class="favorite-token-item edit-favorite-token-list"
-          @click="${() => this.element.editAllMode$.next(!this.element.editAllMode$.value)}"
-        >
-          <inch-icon icon="edit24"></inch-icon>
-        </inch-button>
-      `
-    )
-  }
-
-  async onBeforeRemoveAnimateItem(element: HTMLElement): Promise<void> {
-    await element.animate(
-      [{ transform: '' }, { transform: 'translateX(-50%) scale(.3)', opacity: 0 }],
-      animationOptions
-    ).finished
-  }
-
-  async onBeforeRenderAnimateItem(element: HTMLElement): Promise<void> {
-    appendStyle(element, {
-      transform: 'translateX(-100%)',
-      opacity: '0',
-    })
-  }
-
-  async onAfterRenderAnimateItem?(element: HTMLElement): Promise<void> {
-    await element.animate(
-      [
-        { transform: 'translateX(-100%) scale(.3)', opacity: 0 },
-        { transform: 'translateX(0) scale(1)', opacity: 1 },
-      ],
-      animationOptions
-    ).finished
-    appendStyle(element, {
-      transform: '',
-      opacity: '',
-    })
-  }
-
-  async onBeforeMoveAnimationItem(
-    element: HTMLElement,
-    oldPosition: number,
-    newPosition: number
-  ): Promise<HTMLElement | number | null> {
-    if (this.renderElements.has(oldPosition)) {
-      return this.renderElements.get(oldPosition)!
-    }
-    const offset = this.getOffsetMoveByMoveElements(oldPosition, newPosition)
-
-    if (oldPosition < newPosition) {
-      appendStyle(element, {
-        transform: `translateX(${offset}px)`,
-      })
-      return offset
-    }
-
-    await element.animate(
-      [{ transform: `translateX(0)` }, { transform: `translateX(${offset}px)` }],
-      animationOptions
-    ).finished
-    return null
-  }
-
-  async onAfterMoveAnimationItem(
-    element: HTMLElement,
-    renderElementOfOffset: HTMLElement | number | null
-  ): Promise<void> {
-    if (renderElementOfOffset === null) return
-    let offset
-    if (typeof renderElementOfOffset === 'number') {
-      offset = renderElementOfOffset
-    } else {
-      await asyncFrame()
-      offset = renderElementOfOffset.clientWidth * -1 - this.gap
-    }
-    await element.animate(
-      [{ transform: `translateX(${offset}px)` }, { transform: `translateX(0)` }],
-      animationOptions
-    ).finished
-    appendStyle(element, {
-      transform: '',
-    })
-  }
-
-  async onBeforeAnimation(
-    container: HTMLElement,
-    renderElements: Map<number, HTMLElement>,
-    deleteElements: Map<number, HTMLElement>,
-    moveElements: Map<[number, number], HTMLElement>
-  ) {
-    this.deleteElementsWidth.clear()
-    this.renderElements.clear()
-    this.moveElementsWidth.clear()
-    deleteElements.forEach((element, index) => {
-      this.deleteElementsWidth.set(index, element.clientWidth)
-    })
-    moveElements.forEach((element, index) => {
-      this.moveElementsWidth.set(index.join(':'), element.clientWidth)
-    })
-    renderElements.forEach((element, index) => {
-      this.renderElements.set(index, element)
-    })
-  }
-
-  private getOffsetMoveByMoveElements(oldPosition: number, newPosition: number) {
-    let offset = 0
-    if (this.deleteElementsWidth.has(newPosition)) {
-      offset = this.deleteElementsWidth.get(newPosition)!
-    } else if (oldPosition > newPosition) {
-      this.deleteElementsWidth.forEach((width, index) => {
-        if (index > oldPosition) return
-        offset = width
-      })
-    } else {
-      offset = this.moveElementsWidth.get([oldPosition - 1, newPosition - 1].join(':')) ?? 0
-    }
-    return (offset + this.gap) * -1
+    const id = buildTokenIdByToken(token)
+    await this.applicationContext.value.tokenStorage.changeFavoriteToken(id, false)
   }
 }
 

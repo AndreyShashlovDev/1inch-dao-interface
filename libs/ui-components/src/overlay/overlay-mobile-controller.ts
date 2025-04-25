@@ -80,6 +80,10 @@ export class OverlayMobileController implements IOverlayController {
     const overlayContainer = this.createOverlayContainer(id, openTarget)
     const rootNode = this.getRootNodeOrPreviousOverlay(previousOverlayId)
     const previousOverlayBackground = this.getPreviousOverlayBackground(previousOverlayId)
+    if (rootNode instanceof ScrollViewProviderElement) {
+      rootNode.onChangeStubView(true)
+      rootNode.onLockedConsumer(true)
+    }
     await asyncFrame(10)
     const fullOverlayView = this.calculateIsFullOverlayView(overlayContainer)
     await this.transition(
@@ -98,9 +102,11 @@ export class OverlayMobileController implements IOverlayController {
       rootNode,
       previousOverlayBackground
     )
+    overlayContainer.takeUpdate()
     this.activeOverlayMap.set(id, [overlayContainer, overlayBackground])
     this.overlayIdStack.unshift(id)
     this.subscribe(id, overlayContainer, overlayBackground, rootNode, previousOverlayBackground)
+    overlayContainer.onChangeStubView(false)
     return id
   }
 
@@ -129,6 +135,10 @@ export class OverlayMobileController implements IOverlayController {
       rootNode,
       previousOverlayBackground
     )
+    if (rootNode instanceof ScrollViewProviderElement) {
+      rootNode.onLockedConsumer(false)
+      rootNode.onChangeStubView(false)
+    }
     this.unsubscribeOnResize(id)
     this.activeOverlayMap.delete(id)
     this.overlayIdStack.shift()
@@ -149,6 +159,7 @@ export class OverlayMobileController implements IOverlayController {
     const overlayIndex = this.activeOverlayMap.size + 1
     const offsetStep = 5
     const innerHeight = isSafari() && isStandalone() ? window.innerHeight - 10 : window.innerHeight
+    overlayContainer.onChangeStubView(true)
     overlayContainer.maxHeight = ((100 - overlayIndex * offsetStep) * innerHeight) / 100
     overlayContainer.id = 'overlay-container'
     overlayContainer.setAttribute('overlay-id', id.toString())
@@ -168,7 +179,6 @@ export class OverlayMobileController implements IOverlayController {
       zIndex: `${zIndex + id * 10 + 1}`,
       boxSizing: 'border-box',
       borderRadius: overlayBorderRadius(this.overlayBorderRadius),
-      // transition: 'all 10ms',
       ...startPosition,
     })
     if (isSafari() && isStandalone()) {
@@ -403,13 +413,13 @@ export class OverlayMobileController implements IOverlayController {
     }
   }
 
-  private getRootNodeOrPreviousOverlay(id: number | null): HTMLElement {
+  private getRootNodeOrPreviousOverlay(id: number | null): HTMLElement | ScrollViewProviderElement {
     if (id === null) {
       return document.querySelector(this.rootNodeName) as HTMLElement
     }
     const frontNode = this.container.querySelector(
       `#overlay-container[overlay-id="${id}"]`
-    ) as HTMLElement | null
+    ) as ScrollViewProviderElement | null
     if (!frontNode) {
       return document.querySelector(this.rootNodeName) as HTMLElement
     }

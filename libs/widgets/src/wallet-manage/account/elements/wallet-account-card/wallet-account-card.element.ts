@@ -1,7 +1,6 @@
 import { throttle } from '@1inch-community/core/decorators'
-import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer, lazyConsumer } from '@1inch-community/core/lazy'
-import { dispatchEvent, subscribe, translate } from '@1inch-community/core/lit-utils'
+import { dispatchEvent, observe, subscribe, translate } from '@1inch-community/core/lit-utils'
 import { getRandomBrightColor } from '@1inch-community/core/theme'
 import { ChainId, EIP6963ProviderInfo, OverlayViewMode } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
@@ -10,9 +9,9 @@ import { scrollContext } from '@1inch-community/ui-components/scroll'
 import { html, LitElement } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 import { when } from 'lit/directives/when.js'
-import { combineLatest, filter, tap } from 'rxjs'
+import { combineLatest, defer, filter, tap } from 'rxjs'
 import { Address } from 'viem'
-import '../../../elements/wallet-view-address-balance'
+import '../../../../shared-elements/balance-view'
 import { walletAccountContext } from '../../context'
 import '../../i18n'
 import '../wallet-account-card-account-more'
@@ -78,6 +77,8 @@ export class WalletAccountCardElement extends LitElement {
   ]
 
   private readonly scrollConsumer = lazyConsumer(this, { context: scrollContext })
+
+  private readonly chainListView$ = defer(() => this.context.value.chainFilter$)
 
   protected override firstUpdated() {
     if (!this.context) {
@@ -212,7 +213,10 @@ export class WalletAccountCardElement extends LitElement {
                   <div class="card-wallet-icon">
                     <img class="wallet-icon" alt="${name}" src="${icon}" />
                   </div>
-                  <div class="card-wallet-address">${formatHex(address!)}</div>
+                  <inch-address-view
+                    class="card-wallet-address"
+                    address="${address}"
+                  ></inch-address-view>
 
                   <inch-button
                     @click="${() => this.onChangeWalletClick()}"
@@ -227,10 +231,11 @@ export class WalletAccountCardElement extends LitElement {
           </div>
 
           <div class="card-wallet-full-balance ${this.isCollapsed ? 'collapsed' : ''}">
-            <inch-wallet-view-address-balance
+            <inch-wallet-total-fiat-balance
               class="card-wallet-balance"
+              .chainIds="${observe(this.chainListView$)}"
               .address="${this.walletAddress}"
-            ></inch-wallet-view-address-balance>
+            ></inch-wallet-total-fiat-balance>
           </div>
 
           <inch-button

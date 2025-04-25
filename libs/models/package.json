@@ -17,7 +17,8 @@
     "url": "https://github.com/1inch-community/interface.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
   },
   "type": "module",
   "main": "./dist/index.js",

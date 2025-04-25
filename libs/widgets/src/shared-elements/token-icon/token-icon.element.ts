@@ -1,13 +1,13 @@
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
-import { ChainId, IToken } from '@1inch-community/models'
-import { chainViewConfig, getWrapperNativeToken, isNativeToken } from '@1inch-community/sdk/chain'
+import { ChainId } from '@1inch-community/models'
+import { chainViewConfig } from '@1inch-community/sdk/chain'
 import '@1inch-community/ui-components/icon'
+import '@1inch-community/ui-components/loaders'
 import { Task } from '@lit/task'
 import { html, LitElement, TemplateResult } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
+import { styleMap } from 'lit/directives/style-map.js'
 import type { Address } from 'viem'
-import { repositories } from './repositories'
-import { RepositoryPayload } from './repositories/repository.model'
 import { tokenIconStyle } from './token-icon.style'
 
 @customElement(TokenIconElement.tagName)
@@ -25,28 +25,21 @@ export class TokenIconElement extends LitElement {
   private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly task = new Task(this, {
-    task: ([symbol, address, chainId], { signal }) => {
-      return this.iconLoader(signal, chainId, symbol, address)
+    task: async ([symbol, address, chainId]) => {
+      const img = await this.iconLoader(chainId, symbol, address)
+      img.width = this.size
+      img.height = this.size
+      img.ondragstart = () => false
+      return img
     },
-    args: () =>
-      [this.symbol, this.address, this.chainId] as [
-        string | undefined,
-        Address | undefined,
-        number | undefined,
-      ],
+    args: () => [this.symbol, this.address, this.chainId] as const,
   })
 
   protected override render() {
     return this.task.render({
-      error: () => symbolView(this.size, this.symbol),
-      pending: () => symbolView(this.size, this.symbol, true),
-      initial: () => symbolView(this.size, this.symbol, true),
-      complete: (value) => {
-        value.width = this.size
-        value.height = this.size
-        value.ondragstart = () => false
-        return appendChainIcon(html`${value}`, this.hideChainIcon, this.size, this.chainId)
-      },
+      error: () => this.renderLoaderOrIcon(),
+      pending: () => this.renderLoaderOrIcon(),
+      complete: () => this.renderLoaderOrIcon(),
     })
   }
 
@@ -55,63 +48,78 @@ export class TokenIconElement extends LitElement {
     this.style.height = `${this.size}px`
   }
 
+  private renderLoaderOrIcon() {
+    let template: TemplateResult
+    if (!this.task.value) {
+      template = this.loaderTemplate(this.task.status === 1)
+    } else {
+      template = html`${this.task.value}`
+    }
+
+    return appendChainIcon(template, this.hideChainIcon, this.size, this.chainId)
+  }
+
   private async iconLoader(
-    signal: AbortSignal,
     chainId?: ChainId,
     symbol?: string,
     address?: Address
   ): Promise<HTMLImageElement> {
-    let result = await this.loadFromDatabase({ chainId, symbol, address, signal })
-    if (result === null) {
-      result = await loadFromRepository({ chainId, symbol, address, signal })
-    }
-    if (result === null) {
-      result = await this.loadIconFromMultiChain({ chainId, symbol, address, signal })
-    }
+    const result = await this.loadFromDatabase(chainId, symbol, address)
     if (result === null) {
       throw new Error('token icon not fount')
     }
     return result
   }
 
-  private async loadFromDatabase(data: RepositoryPayload): Promise<HTMLImageElement | null> {
-    if (!data.chainId || !data.address) {
-      return null
-    }
-    const logoURL = await this.applicationContext.value.tokenStorage.getTokenLogoURL(
-      data.chainId,
-      data.address
-    )
-    if (!logoURL) {
-      return null
-    }
-    return await new Promise((resolve) => {
-      const img = new Image()
-      img.onerror = () => resolve(null)
-      img.onload = () => resolve(img)
-      img.src = logoURL
-    })
-  }
+  private async loadFromDatabase(
+    chainId?: ChainId,
+    symbol?: string,
+    address?: Address
+  ): Promise<HTMLImageElement | null> {
+    const logoURL: string[] = []
 
-  private async loadIconFromMultiChain(data: RepositoryPayload): Promise<HTMLImageElement | null> {
-    if (data.chainId === ChainId.eth || !data.symbol) return null
-    const tokens: IToken[] = await this.applicationContext.value.tokenStorage.getTokenBySymbol(
-      ChainId.eth,
-      data.symbol
-    )
-    if (data.chainId && data.address && isNativeToken(data.address)) {
-      const wrapToken = getWrapperNativeToken(data.chainId)
-      tokens.push(wrapToken)
+    if (chainId && address) {
+      const url = await this.applicationContext.value.tokenStorage.getTokenLogoURL(chainId, address)
+      if (url) {
+        logoURL.push(url)
+      }
     }
-    for (const token of tokens) {
-      const result = await loadFromRepository({
-        ...data,
-        chainId: token.chainId,
-        address: token.address,
+
+    if (logoURL.length === 0 && symbol) {
+      const urls = await this.applicationContext.value.tokenStorage.getTokenLogoURLsBySymbol(symbol)
+      if (urls) {
+        logoURL.push(...new Set(urls))
+      }
+    }
+    if (logoURL.length === 0) {
+      return null
+    }
+
+    const loader = (url: string) =>
+      new Promise<HTMLImageElement | null>((resolve) => {
+        const img = new Image()
+        img.onerror = () => resolve(null)
+        img.onload = () => resolve(img)
+        img.src = url
       })
-      if (result) return result
+
+    for (const url of logoURL) {
+      const img = await loader(url)
+      if (img) return img
     }
     return null
+  }
+
+  private loaderTemplate(showLoader?: boolean) {
+    const { size, symbol } = this
+    const style = {
+      fontSize: `${size < 40 ? 13 : 16}px`,
+    }
+    return html`
+      <inch-loader-spinner size="${size}" .showLoader="${showLoader}">
+        <span style="${styleMap(style)}">${symbol?.slice(0, size < 40 ? 1 : 2) ?? ''}</span>
+      </inch-loader-spinner>
+    `
   }
 }
 
@@ -123,8 +131,17 @@ function appendChainIcon(
 ) {
   if (!chainId || hideChainIcon) return view
   const chainSize = size / 2.5
+  const offset = 2
+  const maskImageSize = chainSize / 2 + offset
+  const maskImageX = size - chainSize + maskImageSize - offset
+  const maskImageY = size - chainSize + maskImageSize + offset
+  const style = {
+    '--mask-image-size': `${maskImageSize}px`,
+    '--mask-image-x': `${maskImageX}px`,
+    '--mask-image-y': `${maskImageY}px`,
+  }
   return html`
-    <div class="wrap-chain">
+    <div class="wrap-chain" style="${styleMap(style)}">
       ${view}
       <inch-icon
         class="chain-view"
@@ -136,34 +153,8 @@ function appendChainIcon(
   `
 }
 
-function symbolView(size: number, symbol?: string, showLoader?: boolean) {
-  return html`
-    <div
-      style="width: ${size}px; height: ${size}px; font-size: ${size < 40 ? 13 : 16}px"
-      class="stub"
-    >
-      <span>${symbol?.slice(0, size < 40 ? 1 : 2) ?? ''}</span>
-      ${showLoader ? html`<span class="stub-loader"></span>` : ''}
-    </div>
-  `
-}
-
-async function loadFromRepository(
-  data: RepositoryPayload,
-  index = 0
-): Promise<HTMLImageElement | null> {
-  const repositoryLoader = repositories[index]
-  if (!repositoryLoader) return null
-  try {
-    const repository = await repositoryLoader()
-    return await repository(data)
-  } catch {
-    return await loadFromRepository(data, index + 1)
-  }
-}
-
 declare global {
   interface HTMLElementTagNameMap {
-    'inch-token-icon': TokenIconElement
+    [TokenIconElement.tagName]: TokenIconElement
   }
 }

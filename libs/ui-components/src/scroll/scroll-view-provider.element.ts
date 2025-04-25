@@ -1,8 +1,13 @@
 import { lazyConsumer, lazyProvider } from '@1inch-community/core/lazy'
-import { appendStyle } from '@1inch-community/core/lit-utils'
+import {
+  appendStyle,
+  observeMutations,
+  resizeObserver,
+  subscribe,
+} from '@1inch-community/core/lit-utils'
 import { css, html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, merge, Subject, tap } from 'rxjs'
 import { ScrollContext, scrollContext } from './scroll-context'
 
 @customElement(ScrollViewProviderElement.tagName)
@@ -18,6 +23,9 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
   `
 
   readonly scrollTopFromConsumer$ = new BehaviorSubject<number>(0)
+  readonly showStubView$ = new BehaviorSubject<boolean>(false)
+  readonly lockedConsumer$ = new BehaviorSubject<boolean>(false)
+  readonly update$ = new Subject<void>()
 
   get scrollTopFromConsumer() {
     return this.scrollTopFromConsumer$.value ?? 0
@@ -34,12 +42,38 @@ export class ScrollViewProviderElement extends LitElement implements ScrollConte
     this.scrollTopFromConsumer$.next(state)
   }
 
+  onChangeStubView(state: boolean): void {
+    this.showStubView$.next(state)
+  }
+
+  takeUpdate(): void {
+    this.update$.next()
+  }
+
+  onLockedConsumer(state: boolean): void {
+    this.lockedConsumer$.next(state)
+  }
+
   protected override firstUpdated() {
     if (this.contextParent.isInit) {
       this.context.set(this.contextParent.value)
-    } else {
-      this.context.set(this)
+      return
     }
+    this.context.set(this)
+    subscribe(
+      this,
+      [
+        merge(
+          resizeObserver(this),
+          observeMutations(this, { attributes: true, attributeFilter: ['style', 'class'] })
+        ).pipe(
+          tap(() => {
+            this.takeUpdate()
+          })
+        ),
+      ],
+      { requestUpdate: false }
+    )
   }
 
   protected override updated() {

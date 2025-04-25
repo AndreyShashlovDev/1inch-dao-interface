@@ -3,7 +3,6 @@ import { lazyAppContext } from '@1inch-community/core/lazy'
 import { TtlMapStorage, TTLStorage } from '@1inch-community/core/storage'
 import {
   BalanceTokenRecordId,
-  ChainId,
   IApplicationContext,
   IBalancesTokenRecord,
   ICrossChainTokensBindingRecord,
@@ -13,24 +12,34 @@ import {
   TokenRecordId,
 } from '@1inch-community/models'
 import type { Table } from 'dexie'
+import { Subject } from 'rxjs'
 import { type Address } from 'viem'
-import { nativeTokenAddress } from '../../chain'
-import { buildBalanceId, buildTokenId } from '../token-id'
 
 interface TokenSchemaDatabase {
   readonly tokens: Table<ITokenRecord, TokenRecordId>
   readonly balances: Table<IBalancesTokenRecord, BalanceTokenRecordId>
   readonly tokenPrice: Table<ITokenPriceRecord, TokenRecordId>
   readonly crossChainTokensBinding: Table<ICrossChainTokensBindingRecord, string>
+  readonly favoriteTokens: Table<{ id: TokenRecordId }, string>
 }
 
+type UpdateEmitters = Record<keyof TokenSchemaDatabase, Subject<void>>
+
 export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
-  static databaseVersion = 5
-  static databaseName = 'one-inch-token'
+  static databaseVersion = 1
+  static databaseName = 'one-inch-token-v2'
 
   private database?: TokenSchemaDatabase
 
   private readonly context = lazyAppContext('TokenSchema')
+
+  private readonly updateEmitters: UpdateEmitters = {
+    tokens: new Subject(),
+    balances: new Subject(),
+    tokenPrice: new Subject(),
+    crossChainTokensBinding: new Subject(),
+    favoriteTokens: new Subject(),
+  }
 
   private readonly tokensTTL = new TTLStorage(
     buildTTLStorageName('tokens'),
@@ -61,6 +70,11 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
     return this.database.crossChainTokensBinding
   }
 
+  get favoriteTokens() {
+    if (!this.database) throw new Error('token database not init')
+    return this.database.favoriteTokens
+  }
+
   async init(context: IApplicationContext) {
     this.context.set(context)
     const [Dexie] = await Promise.all([
@@ -81,7 +95,6 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
         '*tags',
         'eip2612',
         'logoURL',
-        'isFavorite',
         'priority'
       ),
       balances: buildDatabaseSchema<IBalancesTokenRecord>(
@@ -106,6 +119,7 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
         'supportedChainIds',
         'priority'
       ),
+      favoriteTokens: buildDatabaseSchema<{ id: TokenRecordId }>('&id'),
     })
     this.database = db as unknown as TokenSchemaDatabase
   }
@@ -132,125 +146,28 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
     return count === 0
   }
 
-  resetTokensTTL() {
+  updateTokensComplete() {
     this.tokensTTL.reset()
+    this.updateEmitters.tokens.next()
+    this.updateEmitters.crossChainTokensBinding.next()
   }
 
-  resetBalancesTTL(walletAddress: Address) {
+  updateBalancesComplete(walletAddress: Address) {
     this.balancesTTL.reset(walletAddress)
+    this.updateEmitters.balances.next()
   }
 
-  resetTokenPriceTTL() {
+  updateTokenPriceComplete() {
     this.tokenPriceTTL.reset()
+    this.updateEmitters.tokenPrice.next()
   }
 
-  // depr
-
-  async getToken(chainId: ChainId, address: Address): Promise<ITokenRecord | null> {
-    const recordId = buildTokenId(chainId, address)
-    const records = await this.tokens.where('id').equals(recordId).toArray()
-    return records[0] ?? null
+  updateFavoriteTokensComplete() {
+    this.updateEmitters.favoriteTokens.next()
   }
 
-  async getNativeToken(chainId: ChainId) {
-    return this.getToken(chainId, nativeTokenAddress)
-  }
-
-  getTokenBySymbol(chainId: ChainId, symbol: string) {
-    return this.tokens
-      .where('chainId')
-      .equals(chainId)
-      .filter((record) => record.symbol === symbol)
-      .toArray()
-  }
-
-  async getTokenMap(
-    chainId: ChainId,
-    addresses: Address[]
-  ): Promise<Record<Address, ITokenRecord>> {
-    const addressesSet = new Set(addresses)
-    const result: Record<Address, ITokenRecord> = {}
-    await this.tokens.each((record) => {
-      if (record.chainId === chainId && addressesSet.has(record.address)) {
-        result[record.address] = record
-      }
-    })
-
-    return result
-  }
-
-  getTokenList(chainId: ChainId, addresses: Address[]): Promise<ITokenRecord[]> {
-    const addressesSet = new Set(addresses)
-    return this.tokens
-      .filter((record) => record.chainId === chainId && addressesSet.has(record.address))
-      .toArray()
-  }
-
-  async getTokenBalanceMap(
-    chainId: ChainId,
-    walletAddress: Address,
-    addresses: Address[]
-  ): Promise<Record<Address, bigint>> {
-    const addressesSet = new Set(addresses)
-    const result: Record<Address, bigint> = {}
-
-    await this.balances.each((record) => {
-      if (
-        record.chainId === chainId &&
-        record.walletAddress === walletAddress &&
-        addressesSet.has(record.tokenAddress)
-      ) {
-        result[record.tokenAddress] = BigInt(record.amount)
-      }
-    })
-
-    return result
-  }
-
-  async getTokenBalance(
-    chainId: ChainId,
-    tokenAddress: Address,
-    walletAddress: Address
-  ): Promise<IBalancesTokenRecord | null> {
-    const recordId = buildBalanceId(chainId, walletAddress, tokenAddress)
-    const records = await this.balances.where('id').equals(recordId).toArray()
-    return records[0] ?? null
-  }
-
-  async getAllFavoriteTokenAddresses(chainId: ChainId) {
-    const result: Address[] = []
-    await this.tokens
-      .where('chainId')
-      .equals(chainId)
-      .each((record) => {
-        if (!record.isFavorite) return
-        result.push(record.address)
-      })
-
-    return result
-  }
-
-  async setFavoriteState(chainId: ChainId, tokenAddress: Address, state: boolean) {
-    const recordId = buildTokenId(chainId, tokenAddress)
-    await this.tokens.update(recordId, { isFavorite: state })
-  }
-
-  async setEip2612Support(chainId: ChainId, address: Address, state: boolean) {
-    const recordId = buildTokenId(chainId, address)
-    await this.tokens.update(recordId, { eip2612: state })
-  }
-
-  async getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>> {
-    const result: Record<ChainId, Address[]> = {} as Record<ChainId, Address[]>
-
-    await this.tokens.each((record) => {
-      if (!result[record.chainId]) {
-        result[record.chainId] = []
-      }
-      result[record.chainId].push(record.address)
-    })
-
-    return result
+  getUpdateEmitter(name: keyof TokenSchemaDatabase) {
+    return this.updateEmitters[name]
   }
 }
 

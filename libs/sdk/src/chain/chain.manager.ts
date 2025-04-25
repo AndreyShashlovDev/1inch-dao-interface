@@ -11,6 +11,7 @@ import {
   map,
   merge,
   Observable,
+  of,
   shareReplay,
   startWith,
   switchMap,
@@ -51,10 +52,11 @@ export class OnChainManager implements IOnChain {
   private readonly context = lazyAppContext('OnChainManager')
   private readonly clientMap = new Map<ChainId, ClientRecord>()
   private readonly blockEmitterMap = new Map<ChainId, Observable<Block>>()
+  private readonly chainTickEmitterMap = new Map<ChainId, Observable<void>>()
   private readonly allowanceCache = new BlockTimeCache<string, bigint>()
 
   get crossChainEmitter() {
-    return this.getBlockEmitter(ChainId.eth).pipe(map(() => void 0))
+    return this.getChainTickEmitter(ChainId.eth)
   }
 
   async init(context: IApplicationContext): Promise<void> {
@@ -66,6 +68,13 @@ export class OnChainManager implements IOnChain {
       return this.blockEmitterMap.get(chainId)!
     }
     return this.buildBlockEmitter(chainId)
+  }
+
+  getChainTickEmitter(chainId: ChainId): Observable<void> {
+    if (this.chainTickEmitterMap.has(chainId)) {
+      return this.chainTickEmitterMap.get(chainId)!
+    }
+    return this.chainTickEmitterEmitter(chainId)
   }
 
   @CacheActivePromise()
@@ -181,24 +190,36 @@ export class OnChainManager implements IOnChain {
     return client
   }
 
-  private buildBlockEmitter(chainId: ChainId): Observable<Block> {
-    const updateTime$: Observable<number | null> = combineLatest([
-      isWindowVisibleAndFocused$().pipe(map((state) => (state ? averageBlockTime[chainId] : null))),
-      sleepOnMousemove$().pipe(map((state) => (state ? 30 * 1000 : null))),
-    ]).pipe(map(([time1, time2]) => time1 ?? time2))
-
+  private buildBlockEmitter(chainId: ChainId) {
+    const updateTime$ = buildUpdateTime(chainId)
     const client$ = from(this.getClient(chainId))
-
     const block$ = combineLatest([client$, updateTime$]).pipe(
-      switchMap(([client, time]) => {
-        return blockListener(client, time)
-      }),
-      distinctUntilChanged((b1: Block, b2: Block) => b1.number !== b2.number),
+      switchMap(([client, time]) => blockListener(client, time)),
+      distinctUntilChanged((b1: Block, b2: Block) => b1.number === b2.number),
       shareReplay({ bufferSize: 1, refCount: true })
     )
     this.blockEmitterMap.set(chainId, block$)
     return block$
   }
+
+  private chainTickEmitterEmitter(chainId: ChainId): Observable<void> {
+    const tick$ = buildUpdateTime(chainId).pipe(
+      switchMap((time) => {
+        if (time === null) return of(void 0)
+        return timer(0, time).pipe(map(() => void 0))
+      }),
+      shareReplay({ bufferSize: 1, refCount: true })
+    )
+    this.chainTickEmitterMap.set(chainId, tick$)
+    return tick$
+  }
+}
+
+function buildUpdateTime(chainId: ChainId): Observable<number | null> {
+  return combineLatest([
+    isWindowVisibleAndFocused$().pipe(map((state) => (state ? averageBlockTime[chainId] : null))),
+    sleepOnMousemove$().pipe(map((state) => (state ? 30 * 1000 : null))),
+  ]).pipe(map(([time1, time2]) => time1 ?? time2))
 }
 
 function isWindowVisibleAndFocused$(): Observable<boolean> {
