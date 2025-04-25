@@ -10,7 +10,18 @@ import {
   IWalletAdapter,
   IWalletInternal,
 } from '@1inch-community/models'
-import { debounceTime, defaultIfEmpty, fromEvent, Subject, take, takeUntil, tap, timer } from 'rxjs'
+import {
+  debounceTime,
+  defaultIfEmpty,
+  first,
+  fromEvent,
+  Observable,
+  Subject,
+  take,
+  takeUntil,
+  tap,
+  timer,
+} from 'rxjs'
 import type {
   Address,
   SignTypedDataParameters,
@@ -43,6 +54,7 @@ export class WalletController implements IWallet, IWalletInternal {
   readonly activeAdapters = new Map<string, IWalletAdapter>()
   readonly update$ = new Subject<void>()
 
+  private readonly connectionUriLink$ = new Subject<string | null>()
   private currentActiveAdapterId: string | null = null
   private readonly adapters = new Map<string, IWalletAdapter>()
 
@@ -95,19 +107,19 @@ export class WalletController implements IWallet, IWalletInternal {
     })
   }
 
-  async connect(info: EIP6963ProviderInfo) {
+  async connect(info: EIP6963ProviderInfo, opts?: unknown) {
     const chainId = await this.data.getChainId()
     const id = adapterId(info)
     if (!this.adapters.has(id)) {
       throw new Error(`Invalid wallet info ${info.name} not exist`)
     }
-    const connectState = await this.connectSafe(chainId, id)
+    const connectState = await this.connectSafe(chainId, id, opts)
     this.afterConnectWallet(connectState, id)
     this.update$.next()
     return connectState
   }
 
-  async addConnection(info: EIP6963ProviderInfo): Promise<boolean> {
+  async addConnection(info: EIP6963ProviderInfo, opts?: unknown): Promise<boolean> {
     const chainId = await this.data.getChainId()
     const id = adapterId(info)
     if (!this.adapters.has(id)) {
@@ -122,7 +134,7 @@ export class WalletController implements IWallet, IWalletInternal {
     }
     let connectState: boolean
     try {
-      connectState = await adapter.connect(chainId)
+      connectState = await this.adapterConnect(adapter, chainId, opts)
     } catch {
       connectState = false
     }
@@ -221,6 +233,17 @@ export class WalletController implements IWallet, IWalletInternal {
     return await this.currentActiveAdapter.signTypedData(typeData)
   }
 
+  public connectionUriLink(): Observable<string | null> {
+    return this.connectionUriLink$.asObservable()
+  }
+
+  public async isSupportConnectionUriLink(info: EIP6963ProviderInfo): Promise<boolean> {
+    const id = adapterId(info)
+    const support = await this.adapters.get(id)?.isSupportConnectionUriLink()
+
+    return support ?? false
+  }
+
   private async setActiveAddressInner(id: string, address: Address) {
     let state = true
     if (this.currentActiveAdapterId !== id) {
@@ -237,7 +260,12 @@ export class WalletController implements IWallet, IWalletInternal {
     this.update$.next()
   }
 
-  private async connectSafe(chainId: ChainId, walletId: string, retry = false): Promise<boolean> {
+  private async connectSafe(
+    chainId: ChainId,
+    walletId: string,
+    opts?: unknown,
+    retry = false
+  ): Promise<boolean> {
     const adapter: IWalletAdapter | undefined = this.adapters.get(walletId)
     if (!adapter) {
       throw new Error(`Invalid wallet id`)
@@ -245,7 +273,7 @@ export class WalletController implements IWallet, IWalletInternal {
     let connectState: boolean
     if (!this.activeAdapters.has(walletId) || retry) {
       try {
-        connectState = await adapter.connect(chainId)
+        connectState = await this.adapterConnect(adapter, chainId, opts)
       } catch {
         connectState = false
       }
@@ -253,10 +281,26 @@ export class WalletController implements IWallet, IWalletInternal {
     } else {
       connectState = await adapter.isConnected()
       if (!retry && !connectState) {
-        connectState = await this.connectSafe(chainId, walletId, true)
+        connectState = await this.connectSafe(chainId, walletId, opts, true)
       }
     }
     return connectState
+  }
+
+  private async adapterConnect(
+    adapter: IWalletAdapter,
+    chainId: ChainId,
+    opts?: unknown
+  ): Promise<boolean> {
+    adapter
+      .connectionUriLink()
+      .pipe(
+        first(),
+        tap((uri) => this.connectionUriLink$.next(uri))
+      )
+      .subscribe()
+
+    return await adapter.connect(chainId, opts)
   }
 
   private async restoreConnectSafe(

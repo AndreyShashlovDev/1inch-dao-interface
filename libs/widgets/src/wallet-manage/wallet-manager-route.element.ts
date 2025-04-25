@@ -4,6 +4,7 @@ import {
   subscribe,
   translate,
 } from '@1inch-community/core/lit-utils'
+import { EIP6963ProviderInfo } from '@1inch-community/models'
 import '@1inch-community/ui-components/card'
 import { SceneController, shiftAnimation } from '@1inch-community/ui-components/scene'
 import { html, LitElement } from 'lit'
@@ -14,10 +15,11 @@ import { combineLatest, tap } from 'rxjs'
 import './account'
 import './disconnect'
 import { DisconnectEventModel } from './disconnect/disconnect-event-model'
+import './qrcode'
 import './wallet'
 import { WalletManagerRouteStyle } from './wallet-manager-route.style'
 
-type Scenes = 'account' | 'wallets' | 'disconnect'
+type Scenes = 'account' | 'wallets' | 'qrcode' | 'disconnect'
 
 @customElement(WalletManagerRoute.tagName)
 export class WalletManagerRoute extends LitElement {
@@ -32,12 +34,16 @@ export class WalletManagerRoute extends LitElement {
   private readonly mobileMedia = getMobileMatchMediaAndSubscribe(this)
 
   private disconnectData: DisconnectEventModel | null = null
+  private connectionLinkData: EIP6963ProviderInfo | null = null
 
   private readonly scene = new SceneController(
     'account',
     {
       account: {},
       wallets: {},
+      qrcode: {
+        lazyRender: true,
+      },
       disconnect: {},
     },
     shiftAnimation()
@@ -84,8 +90,17 @@ export class WalletManagerRoute extends LitElement {
     return html`
       <inch-wallet-manage
         @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
+        @onUseConnectionLink="${(event: CustomEvent) =>
+          this.onUseConnectionLink(event.detail.value)}"
       ></inch-wallet-manage>
     `
+  }
+
+  private getQrcodeView() {
+    const data = { ...this.connectionLinkData }
+    this.connectionLinkData = null
+
+    return html` <inch-wallet-qrcode-view .data="${data}"></inch-wallet-qrcode-view>`
   }
 
   private getDisconnectView() {
@@ -106,6 +121,8 @@ export class WalletManagerRoute extends LitElement {
         return this.accountHeaderView()
       case 'wallets':
         return this.walletsHeaderView()
+      case 'qrcode':
+        return this.qrcodeHeaderView()
       case 'disconnect':
         return this.disconnectHeaderView()
       default:
@@ -143,6 +160,16 @@ export class WalletManagerRoute extends LitElement {
     </inch-card-header>`
   }
 
+  private qrcodeHeaderView() {
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate('widgets.wallet-manager-route.wallets.qrcode.wallet-connect')}"
+      backButton="${true}"
+      @backCard="${() => this.onBackPress()}"
+    >
+    </inch-card-header>`
+  }
+
   private disconnectHeaderView() {
     return html` <inch-card-header
       headerTextPosition="center"
@@ -153,9 +180,14 @@ export class WalletManagerRoute extends LitElement {
     </inch-card-header>`
   }
 
-  private onDisconnectClick(event: DisconnectEventModel) {
-    this.disconnectData = event
+  private onDisconnectClick(data: DisconnectEventModel) {
+    this.disconnectData = data
     this.navigateTo('disconnect')
+  }
+
+  private onUseConnectionLink(data: EIP6963ProviderInfo) {
+    this.connectionLinkData = data
+    this.navigateTo('qrcode')
   }
 
   private navigateTo(scene: Scenes, immediate: boolean = false) {
@@ -179,6 +211,7 @@ export class WalletManagerRoute extends LitElement {
         ${this.scene.render({
           account: () => this.getAccountView(),
           wallets: () => this.getWalletsView(),
+          qrcode: () => this.getQrcodeView(),
           disconnect: () => this.getDisconnectView(),
         })}
       </inch-card>

@@ -8,6 +8,7 @@ export default {
 
   'widgets.wallet-manager-route.wallets.manager': 'Wallet management',
   'widgets.wallet-manager-route.wallets.connect': 'Connect wallet',
+  'widgets.wallet-manager-route.wallets.qrcode.wallet-connect': 'Wallet Connect',
   'widgets.wallet-manager-route.wallets.disconnect': 'Disconnect wallet',
   'widgets.wallet-manager-route.account': 'Account',
 
@@ -18,4 +19,8 @@ export default {
   'widgets.wallet-disconnect.msg.single-wallet': 'Do you really want to disconnect wallet?',
   'widgets.wallet-disconnect.msg.all-wallets': 'Do you really want to disconnect all wallets?',
   'widgets.wallet-disconnect.msg.some-wallet': 'Do you really want to disconnect ',
+
+  'widgets.wallet-qrcode.title': 'Scan with your wallet',
+  'widgets.wallet-qrcode.button.copy': 'Copy to Clipboard',
+  'widgets.wallet-qrcode.button.alternative-connection': 'Open in Wallet Connect',
 }

@@ -1,4 +1,5 @@
 import { ChainId, EIP6963ProviderDetail, IWalletAdapter } from '@1inch-community/models'
+import { Observable, of } from 'rxjs'
 import type {
   Address,
   Hex,
@@ -104,6 +105,14 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
       method: 'eth_signTypedData_v3',
       params: [address, data],
     })) as Hex
+  }
+
+  public connectionUriLink(): Observable<string | null> {
+    return of(null)
+  }
+
+  public async isSupportConnectionUriLink(): Promise<boolean> {
+    return false
   }
 }
 

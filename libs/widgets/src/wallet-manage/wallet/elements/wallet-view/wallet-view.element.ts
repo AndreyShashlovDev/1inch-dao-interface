@@ -268,8 +268,17 @@ export class WalletViewElement extends LitElement {
     }
     event?.preventDefault()
     event?.stopPropagation()
+    const supportConnectionLink =
+      await this.applicationContext.value.wallet.isSupportConnectionUriLink(this.info)
+
+    if (supportConnectionLink) {
+      dispatchEvent(this, 'onUseConnectionLink', this.info)
+      return
+    }
+
     this.showLoader = true
     const isWalletConnect = this.info.uuid === 'walletConnect'
+
     if (this.isWalletConnected && isWalletConnect) {
       this.showAddresses = await this.getController().addConnection(this.info)
     } else {

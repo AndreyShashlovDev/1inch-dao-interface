@@ -14,10 +14,10 @@ export class SceneWrapperElement extends LitElement {
       will-change: transform;
       transform: translate3d(0, 0, 0);
       height: fit-content;
+      max-height: 100%;
       box-sizing: border-box;
       position: relative;
       display: block;
-      overflow: hidden;
       flex-grow: 1;
     }
   `

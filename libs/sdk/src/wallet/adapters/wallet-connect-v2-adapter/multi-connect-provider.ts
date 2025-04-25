@@ -1,8 +1,9 @@
 import { genRandomHex } from '@1inch-community/core/random'
 import { storage } from '@1inch-community/core/storage'
 import { ChainId, EIP1193Provider, EventMap, RequestArguments } from '@1inch-community/models'
+import { EthereumProviderOptions } from '@walletconnect/ethereum-provider'
 import { EventEmitter } from 'eventemitter3'
-import { fromEvent, merge, Subscription, tap } from 'rxjs'
+import { fromEvent, merge, Subject, Subscription, tap } from 'rxjs'
 import { Address, isAddressEqual } from 'viem'
 import type { EthereumProvider } from './ethereum-provider'
 
@@ -18,18 +19,7 @@ type MultiConnectProviderStorage = {
 const internalEvents = ['accountsChanged']
 
 export class MultiConnectProvider implements EIP1193Provider {
-  static async connect() {
-    const provider = new MultiConnectProvider()
-    await provider.connect()
-    return provider
-  }
-
-  static async restoreConnect() {
-    const provider = new MultiConnectProvider()
-    await provider.restoreConnect()
-    return provider
-  }
-
+  readonly connectionUriLink$ = new Subject<string>()
   private readonly storage = new Map<Address, MultiConnectProviderStorage>()
   private activeAddress: Address | null = null
   private readonly eventEmitter = new EventEmitter()
@@ -45,12 +35,19 @@ export class MultiConnectProvider implements EIP1193Provider {
     return null
   }
 
-  async connect() {
+  async connect(opts?: unknown) {
     const persistStorePrefix = genRandomHex(10)
     try {
-      const provider = await makeProvider(persistStorePrefix)
+      const provider = await makeProvider(persistStorePrefix, opts as EthereumProviderOptions)
       const subscription = this.listenEvents(provider)
-      const { topic, uri } = await provider.signer.client.core.pairing.create()
+      const { topic } = await provider.signer.client.core.pairing.create()
+      let originalUri: string = ''
+
+      provider.signer.once('display_uri', (uri: string) => {
+        originalUri = uri
+        this.connectionUriLink$.next(uri)
+      })
+
       await provider.connect({
         pairingTopic: topic,
       })
@@ -61,7 +58,7 @@ export class MultiConnectProvider implements EIP1193Provider {
       const storage: MultiConnectProviderStorage = {
         provider: provider,
         topic: topic,
-        uri: uri,
+        uri: originalUri,
         address: address,
         persistStorePrefix,
         subscription,
@@ -78,7 +75,7 @@ export class MultiConnectProvider implements EIP1193Provider {
 
   async restoreConnect() {
     const persistData = this.getPersistData()
-    for (const data of persistData)
+    for (const data of persistData) {
       try {
         const provider = await makeProvider(data.persistStorePrefix)
         const subscription = this.listenEvents(provider)
@@ -102,6 +99,7 @@ export class MultiConnectProvider implements EIP1193Provider {
         await dropStorage(data.persistStorePrefix)
         throw error
       }
+    }
     this.eventEmitter.emit('accountsChanged', this.getAddresses())
   }
 
@@ -265,10 +263,15 @@ export class MultiConnectProvider implements EIP1193Provider {
   }
 }
 
-async function makeProvider(persistStorePrefix: string): Promise<EthereumProvider> {
+async function makeProvider(
+  persistStorePrefix: string,
+  opts?: EthereumProviderOptions
+): Promise<EthereumProvider> {
   const options = await import('./wallet-connect-init-options').then((m) => m.options())
   const { EthereumProvider } = await import('./ethereum-provider')
-  return await EthereumProvider.initProvider(options, persistStorePrefix)
+  const updatedOptions = opts && typeof opts === 'object' ? { ...options, ...opts } : options
+
+  return await EthereumProvider.initProvider(updatedOptions, persistStorePrefix)
 }
 
 async function dropStorageByName(name: string) {

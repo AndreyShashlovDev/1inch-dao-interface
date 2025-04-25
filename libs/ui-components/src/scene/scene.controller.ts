@@ -89,7 +89,11 @@ export class SceneController<T extends string, U extends T> {
       return
     }
     const sceneName = (this.sceneStack[this.sceneStack.length - 2] ?? this.rootSceneName) as T
-    this.sceneStack.pop()
+
+    if (this.sceneStack.length > 1) {
+      this.sceneStack.pop()
+    }
+
     await this.transition(sceneName, true)
     this.takeUpdate$.next()
   }
