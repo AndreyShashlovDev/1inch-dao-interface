@@ -84,7 +84,8 @@ export class WebFallbackTransportController implements InitializingEntity {
   }
 
   private async initRPC() {
-    const { http, ws } = await import('../transport-map').then((m) => m.getRPC(this.chain.id))
+    const { getRPC } = await import('../transport-map')
+    const { http, ws } = getRPC(this.chain.id)
     const httpTransportHolderList = buildTransportHolderList(this.chain, http)
     const wsTransportHolderList = buildTransportHolderList(this.chain, ws)
     httpTransportHolderList.forEach((item) => this.httpTransportSet.add(item))
