@@ -8,7 +8,16 @@ import { html, LitElement, TemplateResult } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { map as LitMap } from 'lit/directives/map.js'
 import { createRef, ref } from 'lit/directives/ref.js'
-import { BehaviorSubject, combineLatest, debounceTime, map, Observable, switchMap, tap } from 'rxjs'
+import {
+  BehaviorSubject,
+  combineLatest,
+  debounceTime,
+  map,
+  Observable,
+  shareReplay,
+  switchMap,
+  tap,
+} from 'rxjs'
 import { Address } from 'viem'
 import { changeSearchState } from '../events'
 import '../token-item-cross-chain-accordion'
@@ -21,14 +30,6 @@ type TokenListByViewTypeAndSearchFilterAndChainIdsType = Observable<
 >
 
 export type TokenListType = 'flat' | 'accordion'
-
-const debug$ = new BehaviorSubject<boolean>(false)
-
-const listDebugToggle = () => {
-  debug$.next(!debug$.value)
-}
-
-Reflect.set(window, 'listDebugToggle', listDebugToggle)
 
 @customElement(TokenListElement.tagName)
 export class TokenListElement extends LitElement {
@@ -116,30 +117,26 @@ export class TokenListElement extends LitElement {
       })
     )
 
-  private readonly dataIndexListOfFlatTokenIdList$ = combineLatest([
-    this.tokenListByViewTypeAndSearchFilterAndChainIds$,
-    debug$,
-  ]).pipe(
-    map(([data, debug$]) => {
-      if (debug$) {
-        return this.emptyList
-      }
-      if (Array.isArray(data)) {
-        this.tokenListViewDataSnapshot = null
-        return data
-      }
-      const length = data.userTokensInfo.length + data.allTokensInfo.length
-      this.tokenListViewDataSnapshot = data
-      return new Array(length).fill(0) as 0[]
-    }),
-    tap((data) => {
-      if (this.searchInProgress) {
-        this.searchInProgress = false
-        changeSearchState(this, this.searchInProgress)
-      }
-      this.isEmpty = data.length === 0
-    })
-  )
+  private readonly dataIndexListOfFlatTokenIdList$ =
+    this.tokenListByViewTypeAndSearchFilterAndChainIds$.pipe(
+      map((data) => {
+        if (Array.isArray(data)) {
+          this.tokenListViewDataSnapshot = null
+          return data
+        }
+        const length = data.userTokensInfo.length + data.allTokensInfo.length
+        this.tokenListViewDataSnapshot = data
+        return new Array(length).fill(0) as 0[]
+      }),
+      tap((data) => {
+        if (this.searchInProgress) {
+          this.searchInProgress = false
+          changeSearchState(this, this.searchInProgress)
+        }
+        this.isEmpty = data.length === 0
+      }),
+      shareReplay({ bufferSize: 1, refCount: true })
+    )
 
   protected render() {
     appendClass(this, {

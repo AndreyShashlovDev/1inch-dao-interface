@@ -8,6 +8,7 @@ import { customElement, property } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import { tap } from 'rxjs'
 import type { Address } from 'viem'
+import { tooltip } from '../../tooltip'
 
 @customElement(TokenFiatBalanceElement.tagName)
 export class TokenFiatBalanceElement extends LitElement {
@@ -18,6 +19,7 @@ export class TokenFiatBalanceElement extends LitElement {
   @property({ type: String, attribute: false }) chainIds?: ChainId[]
   @property({ type: String, attribute: false }) walletAddress?: Address
   @property({ type: Boolean, attribute: true }) endTextAlign = false
+  @property({ type: Boolean, attribute: true }) animateTransition = true
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
@@ -25,17 +27,17 @@ export class TokenFiatBalanceElement extends LitElement {
     this,
     async ([tokenId, symbol, chainIds, walletAddress]) => {
       if (tokenId && walletAddress) {
-        return await this.applicationContext.value.tokenStorage.getTokenFiatBalanceById(
-          tokenId,
-          walletAddress
-        )
+        return await this.applicationContext.value.tokenStorage.getTokenFiatBalanceById({
+          tokenRecordId: tokenId,
+          walletAddress,
+        })
       }
       if (symbol && chainIds && walletAddress) {
-        return await this.applicationContext.value.tokenStorage.getTotalTokenFiatBalanceBySymbol(
+        return await this.applicationContext.value.tokenStorage.getTotalTokenFiatBalanceBySymbol({
           chainIds,
           symbol,
-          walletAddress
-        )
+          walletAddress,
+        })
       }
       throw new Error('')
     },
@@ -68,7 +70,22 @@ export class TokenFiatBalanceElement extends LitElement {
   }
 
   private renderBalance(balance: IBigFloat) {
-    return html`$${balance.toFixedSmart(2)}`
+    if (this.animateTransition) {
+      const style = {
+        justifyContent: this.endTextAlign ? 'end' : '',
+      }
+      return html`
+        <inch-number-animation
+          ${tooltip(`$${balance.toFixedSmart(9)}`)}
+          style="${styleMap(style)}"
+          .value="${balance.toFixedSmart(2)}"
+          prefixSymbol="$"
+        ></inch-number-animation>
+      `
+    }
+    return html`<span ${tooltip({ text: `$${balance.toFixedSmart(9)}` })}
+      >$${balance.toFixedSmart(2)}</span
+    >`
   }
   private renderLoader() {
     const style = {

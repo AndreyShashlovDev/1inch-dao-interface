@@ -1,5 +1,4 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
-import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { getShadowDomElement, observe } from '@1inch-community/core/lit-utils'
 import { IWallet, OverlayViewMode } from '@1inch-community/models'
@@ -10,6 +9,7 @@ import { customElement, property } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { defer, map } from 'rxjs'
+import '../shared-elements/address-view'
 import '../shared-elements/balance-view'
 import { connectWalletViewStyle } from './connect-wallet-view.style'
 import './wallet-manager-route.element'
@@ -31,11 +31,6 @@ export class ConnectWalletViewElement extends LitElement {
   private readonly info$ = defer(() => this.getWalletController().data.info$)
   private readonly icon$ = this.info$.pipe(map((item) => item.icon))
   private readonly name$ = this.info$.pipe(map((item) => item.name))
-  private readonly activeAddressView$ = this.activeAddress$.pipe(
-    map((address) => {
-      return address && formatHex(address)
-    })
-  )
 
   private readonly view$ = defer(() => this.getWalletController().data.isConnected$).pipe(
     map((isConnected) => {
@@ -69,7 +64,10 @@ export class ConnectWalletViewElement extends LitElement {
               .address="${observe(this.activeAddress$)}"
             ></inch-wallet-total-fiat-balance>
             <inch-button @click="${() => this.onManagerRouteView()}" type="secondary" size="m">
-              ${observe(this.activeAddressView$)}
+              <inch-address-view
+                hideTooltip
+                address="${observe(this.activeAddress$)}"
+              ></inch-address-view>
             </inch-button>
           `
         )}

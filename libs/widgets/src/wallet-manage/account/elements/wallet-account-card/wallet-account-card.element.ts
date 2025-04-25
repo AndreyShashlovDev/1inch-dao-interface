@@ -1,5 +1,4 @@
 import { throttle } from '@1inch-community/core/decorators'
-import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer, lazyConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, observe, subscribe, translate } from '@1inch-community/core/lit-utils'
 import { getRandomBrightColor } from '@1inch-community/core/theme'
@@ -214,7 +213,10 @@ export class WalletAccountCardElement extends LitElement {
                   <div class="card-wallet-icon">
                     <img class="wallet-icon" alt="${name}" src="${icon}" />
                   </div>
-                  <div class="card-wallet-address">${formatHex(address!)}</div>
+                  <inch-address-view
+                    class="card-wallet-address"
+                    address="${address}"
+                  ></inch-address-view>
 
                   <inch-button
                     @click="${() => this.onChangeWalletClick()}"

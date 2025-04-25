@@ -2,12 +2,14 @@ import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { subscribe } from '@1inch-community/core/lit-utils'
 import { ChainId, IBigFloat, TokenRecordId } from '@1inch-community/models'
 import '@1inch-community/ui-components/loaders'
+import '@1inch-community/ui-components/number-animation'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import { tap } from 'rxjs'
 import type { Address } from 'viem'
+import { tooltip } from '../../tooltip'
 
 @customElement(TokenBalanceElement.tagName)
 export class TokenBalanceElement extends LitElement {
@@ -18,6 +20,7 @@ export class TokenBalanceElement extends LitElement {
   @property({ type: String, attribute: false }) chainIds?: ChainId[]
   @property({ type: String, attribute: false }) walletAddress?: Address
   @property({ type: Boolean, attribute: true }) endTextAlign = false
+  @property({ type: Boolean, attribute: true }) animateTransition = true
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
@@ -25,17 +28,17 @@ export class TokenBalanceElement extends LitElement {
     this,
     async ([tokenId, symbol, chainIds, walletAddress]) => {
       if (tokenId && walletAddress) {
-        return await this.applicationContext.value.tokenStorage.getTokenBalanceById(
-          tokenId,
-          walletAddress
-        )
+        return await this.applicationContext.value.tokenStorage.getTokenBalanceById({
+          tokenRecordId: tokenId,
+          walletAddress,
+        })
       }
       if (symbol && chainIds && walletAddress) {
-        return await this.applicationContext.value.tokenStorage.getTotalTokenBalanceBySymbol(
+        return await this.applicationContext.value.tokenStorage.getTotalTokenBalanceBySymbol({
           chainIds,
           symbol,
-          walletAddress
-        )
+          walletAddress,
+        })
       }
       throw new Error('')
     },
@@ -68,7 +71,22 @@ export class TokenBalanceElement extends LitElement {
   }
 
   private renderBalance(balance: IBigFloat) {
-    return html`${balance.toFixedSmart(2)} ${this.symbol}`
+    if (this.animateTransition) {
+      const style = {
+        justifyContent: this.endTextAlign ? 'end' : '',
+      }
+      return html`
+        <inch-number-animation
+          ${tooltip(`$${balance.toFixedSmart(9)}`)}
+          style="${styleMap(style)}"
+          .value="${balance.toFixedSmart(2)}"
+          postfixSymbol="${this.symbol}"
+        ></inch-number-animation>
+      `
+    }
+    return html` <span ${tooltip(`${balance.toFixedSmart(9)} ${this.symbol}`)}>
+      ${balance.toFixedSmart(2)} ${this.symbol}
+    </span>`
   }
 
   private renderLoader() {
