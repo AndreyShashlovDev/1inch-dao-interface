@@ -62,6 +62,10 @@
       "types": "./dist/marquee/index.d.ts",
       "import": "./dist/marquee/index.js"
     },
+    "./number-animation": {
+      "types": "./dist/number-animation/index.d.ts",
+      "import": "./dist/number-animation/index.js"
+    },
     "./overlay": {
       "types": "./dist/overlay/index.d.ts",
       "import": "./dist/overlay/index.js"

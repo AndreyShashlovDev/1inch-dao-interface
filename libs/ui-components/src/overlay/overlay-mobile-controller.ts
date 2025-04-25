@@ -80,6 +80,10 @@ export class OverlayMobileController implements IOverlayController {
     const overlayContainer = this.createOverlayContainer(id, openTarget)
     const rootNode = this.getRootNodeOrPreviousOverlay(previousOverlayId)
     const previousOverlayBackground = this.getPreviousOverlayBackground(previousOverlayId)
+    if (rootNode instanceof ScrollViewProviderElement) {
+      rootNode.onChangeStubView(true)
+      rootNode.onLockedConsumer(true)
+    }
     await asyncFrame(10)
     const fullOverlayView = this.calculateIsFullOverlayView(overlayContainer)
     await this.transition(
@@ -98,6 +102,7 @@ export class OverlayMobileController implements IOverlayController {
       rootNode,
       previousOverlayBackground
     )
+    overlayContainer.takeUpdate()
     this.activeOverlayMap.set(id, [overlayContainer, overlayBackground])
     this.overlayIdStack.unshift(id)
     this.subscribe(id, overlayContainer, overlayBackground, rootNode, previousOverlayBackground)
@@ -130,6 +135,10 @@ export class OverlayMobileController implements IOverlayController {
       rootNode,
       previousOverlayBackground
     )
+    if (rootNode instanceof ScrollViewProviderElement) {
+      rootNode.onLockedConsumer(false)
+      rootNode.onChangeStubView(false)
+    }
     this.unsubscribeOnResize(id)
     this.activeOverlayMap.delete(id)
     this.overlayIdStack.shift()
@@ -404,13 +413,13 @@ export class OverlayMobileController implements IOverlayController {
     }
   }
 
-  private getRootNodeOrPreviousOverlay(id: number | null): HTMLElement {
+  private getRootNodeOrPreviousOverlay(id: number | null): HTMLElement | ScrollViewProviderElement {
     if (id === null) {
       return document.querySelector(this.rootNodeName) as HTMLElement
     }
     const frontNode = this.container.querySelector(
       `#overlay-container[overlay-id="${id}"]`
-    ) as HTMLElement | null
+    ) as ScrollViewProviderElement | null
     if (!frontNode) {
       return document.querySelector(this.rootNodeName) as HTMLElement
     }
