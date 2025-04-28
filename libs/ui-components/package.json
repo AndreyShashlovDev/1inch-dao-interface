@@ -1,6 +1,6 @@
 {
   "name": "@1inch-community/ui-components",
-  "version": "1.0.0-rc.6",
+  "version": "1.0.0-rc.9",
   "license": "MIT",
   "homepage": "https://github.com/1inch-community/interface",
   "author": {
@@ -17,7 +17,8 @@
     "url": "https://github.com/1inch-community/interface.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
   },
   "type": "module",
   "files": [
@@ -57,6 +58,18 @@
     "./icon": {
       "types": "./dist/icon/index.d.ts",
       "import": "./dist/icon/index.js"
+    },
+    "./loaders": {
+      "types": "./dist/loaders/index.d.ts",
+      "import": "./dist/loaders/index.js"
+    },
+    "./marquee": {
+      "types": "./dist/marquee/index.d.ts",
+      "import": "./dist/marquee/index.js"
+    },
+    "./number-animation": {
+      "types": "./dist/number-animation/index.d.ts",
+      "import": "./dist/number-animation/index.js"
     },
     "./overlay": {
       "types": "./dist/overlay/index.d.ts",

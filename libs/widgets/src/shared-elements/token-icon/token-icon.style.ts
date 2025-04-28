@@ -2,8 +2,11 @@ import { css } from 'lit'
 
 export const tokenIconStyle = css`
   :host {
+    display: block;
+    position: relative;
     user-select: none;
     outline: none;
+    background-color: transparent;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -38,14 +41,26 @@ export const tokenIconStyle = css`
 
   .wrap-chain {
     position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .wrap-chain img {
+    inset: 0;
+    background-color: inherit;
+    mask-image: radial-gradient(
+      circle var(--mask-image-size) at var(--mask-image-x) var(--mask-image-y),
+      transparent 99%,
+      black 100%
+    );
   }
 
   .chain-view {
     position: absolute;
-    bottom: 0;
+    bottom: -4px;
     right: 0;
-    border: 2px solid var(--color-background-bg-primary);
     border-radius: 50%;
+    z-index: 1;
   }
 
   @keyframes spin {

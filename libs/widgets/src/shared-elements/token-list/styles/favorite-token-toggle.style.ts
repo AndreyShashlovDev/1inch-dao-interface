@@ -1,7 +1,7 @@
 import { css } from 'lit'
 
 export const favoriteTokenToggleStyle = css`
-  .right {
+  .favorite-icon-overflow {
     transition: transform 0.2s;
   }
 
@@ -18,11 +18,11 @@ export const favoriteTokenToggleStyle = css`
       transform: translateX(-200%);
     }
 
-    :host(.show-favorite-token-toggle:not(.favorite-token)) .right {
+    :host(.show-favorite-token-toggle:not(.favorite-token)) .favorite-icon-overflow {
       transform: translateX(16px);
     }
 
-    :host(.show-favorite-token-toggle:not(.favorite-token)) .right:dir(rtl) {
+    :host(.show-favorite-token-toggle:not(.favorite-token)) .favorite-icon-overflow:dir(rtl) {
       transform: translateX(-16px);
     }
 
@@ -30,8 +30,8 @@ export const favoriteTokenToggleStyle = css`
       transform: translateX(0);
     }
 
-    :host(:not(.favorite-token):hover) .right,
-    :host(:not(.favorite-token):hover) .right:dir(rtl) {
+    :host(:not(.favorite-token):hover) .favorite-icon-overflow,
+    :host(:not(.favorite-token):hover) .favorite-icon-overflow:dir(rtl) {
       transform: translateX(0);
     }
 

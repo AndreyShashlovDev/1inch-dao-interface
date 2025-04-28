@@ -4,13 +4,7 @@ export const favoriteTokensStyles = css`
   :host {
     display: flex;
     width: 100%;
-    height: 60px;
-  }
-
-  :host(.empty) {
     height: 16px;
-    padding-bottom: 0;
-    margin-bottom: 0;
   }
 
   :host(.transition-host) {
@@ -18,6 +12,11 @@ export const favoriteTokensStyles = css`
       height 0.2s,
       padding-bottom 0.2s,
       margin-bottom 0.2s;
+  }
+
+  :host(.empty) {
+    padding-bottom: 0;
+    margin-bottom: 0;
   }
 
   :host(.remove-favorite-token-show) .remove-favorite-token {

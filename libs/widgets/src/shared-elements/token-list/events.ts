@@ -9,6 +9,10 @@ export function changeExpand(ctx: HTMLElement) {
   dispatchEvent(ctx, 'changeExpand', null)
 }
 
+export function changeExpandMore(ctx: HTMLElement) {
+  dispatchEvent(ctx, 'changeExpandMore', null)
+}
+
 export function favoriteToken(ctx: HTMLElement, value: [boolean, TokenRecordId]) {
   dispatchEvent(ctx, 'favoriteToken', value)
 }

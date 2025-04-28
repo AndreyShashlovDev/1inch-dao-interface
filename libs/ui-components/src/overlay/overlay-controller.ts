@@ -77,7 +77,7 @@ export class OverlayController implements IOverlayController {
     const internalViewConfig = { ...viewConfigDefault, ...viewConfig }
     const [overlay, mode] = this.resolveControllerByMode(internalViewConfig.mode!)
 
-    return await overlay.open(openTarget, { ...viewConfig, mode })
+    return await overlay.open(openTarget, { ...viewConfig, mode: mode })
   }
 
   @CacheActivePromise()
@@ -93,7 +93,7 @@ export class OverlayController implements IOverlayController {
     }
   }
 
-  private resolveControllerByMode(mode: OverlayViewMode) {
+  private resolveControllerByMode(mode: OverlayViewMode): [IOverlayController, OverlayViewMode] {
     let resolvedMode = mode
     if (mode === OverlayViewMode.auto) {
       resolvedMode = this.mobileMedia.matches ? OverlayViewMode.mobile : OverlayViewMode.desktop

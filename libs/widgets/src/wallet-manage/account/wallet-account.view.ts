@@ -3,7 +3,7 @@ import { observe } from '@1inch-community/core/lit-utils'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
 import { html, LitElement } from 'lit'
-import { customElement } from 'lit/decorators.js'
+import { customElement, property } from 'lit/decorators.js'
 import { defer } from 'rxjs'
 import '../../shared-elements/token-list'
 import { walletAccountContext } from './context'
@@ -16,6 +16,8 @@ export class WalletAccountView extends LitElement {
   static readonly tagName = 'inch-wallet-account-view' as const
 
   static override styles = walletAccountViewStyle
+
+  @property({ type: Boolean, attribute: true }) mobileView?: boolean
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
@@ -44,14 +46,14 @@ export class WalletAccountView extends LitElement {
     this.initContext()
 
     return html`
-      <inch-card overlayView>
-        <inch-token-list
-          type="flat"
-          .chainIds="${observe(this.chainListView$)}"
-          .walletAddress="${observe(this.activeAddress$)}"
-          .header="${() => html` <inch-wallet-account-header></inch-wallet-account-header>`}"
-        ></inch-token-list>
-      </inch-card>
+      <inch-token-list
+        type="flat"
+        showOnlyWithBalance
+        .mobileView="${this.mobileView}"
+        .chainIds="${observe(this.chainListView$)}"
+        .walletAddress="${observe(this.activeAddress$)}"
+        .header="${() => html` <inch-wallet-account-header></inch-wallet-account-header>`}"
+      ></inch-token-list>
     `
   }
 }

@@ -1,9 +1,9 @@
 import { lazyConsumer } from '@1inch-community/core/lazy'
 import {
+  appendClass,
   appendStyle,
   getMobileMatchMediaAndSubscribe,
   getMobileMatchMediaEmitter,
-  mobileMediaCSS,
   resizeObserver,
   scrollEnd,
   subscribe,
@@ -13,11 +13,15 @@ import '@lit-labs/virtualizer'
 import { type LitVirtualizer } from '@lit-labs/virtualizer'
 import { virtualizerRef } from '@lit-labs/virtualizer/virtualize.js'
 import { css, html, LitElement, TemplateResult } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { customElement, property, state } from 'lit/decorators.js'
 import { createRef, ref } from 'lit/directives/ref.js'
-import { when } from 'lit/directives/when.js'
+import { styleMap } from 'lit/directives/style-map.js'
 import { fromEvent, merge, tap } from 'rxjs'
+import '../button'
+import '../icon'
 import { scrollContext } from './scroll-context'
+
+type ScrollViewVirtualizerConsumerFn<R> = (item: unknown, index: number) => R
 
 @customElement(ScrollViewVirtualizerConsumerElement.tagName)
 export class ScrollViewVirtualizerConsumerElement extends LitElement {
@@ -44,41 +48,54 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
         background-color: var(--color-background-bg-primary);
       }
 
-      ${mobileMediaCSS(css`
-        .scroll-header {
-          background-color: transparent;
-          -webkit-backdrop-filter: blur(20px);
-          backdrop-filter: blur(20px);
-          padding: 8px 8px 0 8px;
-          top: -8px;
-          left: -8px;
-          width: 100vw;
-          transition: background-color 0.2s;
-        }
+      .scroll-to-top-button {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        z-index: 10;
+        transform: rotate(180deg) translateX(-200%);
+        transition: transform 0.2s;
+      }
 
-        .scroll-header-background-color-blur {
-          background: var(--primary-12);
-          background: linear-gradient(
-            to bottom,
-            var(--color-background-bg-primary),
-            var(--primary-12)
-          );
-        }
-      `)}
+      .stub-view {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 9;
+        width: 100%;
+      }
+
+      :host(.show-scroll-to-top-button) .scroll-to-top-button {
+        transform: rotate(180deg) translateX(0%);
+      }
     `,
   ]
 
-  @property({ type: Array }) items: unknown[] = []
-  @property({ type: Object }) keyFunction?: (item: unknown, index: number) => unknown
-  @property({ type: Object }) renderItem?: (item: unknown, index: number) => TemplateResult<1>
-  @property({ type: Object }) header?: () => TemplateResult<1>
+  @property({ type: Array, attribute: false })
+  items: unknown[] = []
 
-  private context = lazyConsumer(this, { context: scrollContext, subscribe: true })
+  @property({ type: Object, attribute: false })
+  keyFunction?: ScrollViewVirtualizerConsumerFn<string>
 
+  @property({ type: Object, attribute: false })
+  renderItem?: ScrollViewVirtualizerConsumerFn<TemplateResult<1>>
+
+  @property({ type: Object, attribute: false })
+  header?: () => TemplateResult<1>
+
+  @property({ type: Object, attribute: false })
+  stubView?: () => TemplateResult<1>
+
+  @state()
+  private showStubView = false
+
+  private readonly context = lazyConsumer(this, { context: scrollContext, subscribe: true })
+  private isLocke = false
   private globalOffsetY: number | null = null
 
   private readonly virtualizerRef = createRef<LitVirtualizer & VirtualizerHostElement>()
   private readonly headerRef = createRef<HTMLElement>()
+  private readonly stubViewRef = createRef<HTMLElement>()
 
   private readonly headerStub = document.createElement('div')
 
@@ -120,18 +137,31 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
     const style = document.createElement('style')
     style.textContent = scrollbarStyle.cssText
     this.virtualizerRef.value.shadowRoot?.appendChild(style)
-    this.updateView()
-    this.updateHeaderSize()
     subscribe(
       this,
       [
         merge(
           getMobileMatchMediaEmitter(),
-          resizeObserver(this.context.value),
+          this.context.value.update$,
           resizeObserver(this.virtualizerHost)
         ).pipe(
           tap(() => {
             this.updateView()
+            this.updateHeaderSize()
+          })
+        ),
+        this.context.value.showStubView$.pipe(
+          tap((state) => {
+            this.showStubView = state
+          })
+        ),
+        fromEvent<MouseEvent>(this.virtualizerRef.value, 'scroll', { passive: true }).pipe(
+          tap(() => {
+            const scrollTop = this.virtualizerRef.value?.scrollTop ?? 0
+            this.context.value.setScrollTopFromConsumer(scrollTop)
+            appendClass(this, {
+              'show-scroll-to-top-button': scrollTop > 300,
+            })
           })
         ),
       ],
@@ -140,30 +170,21 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
     if (this.headerRef.value) {
       subscribe(
         this,
-        [
-          resizeObserver(this.headerRef.value).pipe(tap(() => this.updateHeaderSize())),
-          fromEvent<MouseEvent>(this.virtualizerRef.value, 'scroll', { passive: true }).pipe(
-            tap(() => {
-              this.context.value.setScrollTopFromConsumer(this.virtualizerRef.value?.scrollTop ?? 0)
-              this.updateHeaderBackground()
-            })
-          ),
-        ],
+        [resizeObserver(this.headerRef.value).pipe(tap(() => this.updateHeaderSize()))],
         { requestUpdate: false }
       )
     }
   }
 
   protected override render() {
-    this.updateView()
-    this.updateHeaderSize()
     return html`
-      ${when(
-        this.header,
-        (headerFactory) => html`
-          <div ${ref(this.headerRef)} class="scroll-header">${headerFactory()}</div>
-        `
-      )}
+      ${this.renderHeader()} ${this.renderStubView()}
+      <inch-button
+        class="scroll-to-top-button"
+        @click="${() => this.virtualizerRef.value?.scrollToIndex(0)}"
+      >
+        <inch-icon icon="arrowDown16"></inch-icon>
+      </inch-button>
       <lit-virtualizer
         ${ref(this.virtualizerRef)}
         scroller
@@ -174,7 +195,46 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
     `
   }
 
+  protected updated() {
+    this.updateView()
+    this.updateHeaderSize()
+  }
+
+  private renderHeader() {
+    if (!this.header) return html``
+    return html`<div ${ref(this.headerRef)} class="scroll-header">${this.header()}</div>`
+  }
+
+  private renderStubView() {
+    if (!this.stubView || !this.showStubView) return html``
+    let top = '0'
+    if (this.headerRef.value) {
+      const height = this.headerRef.value.clientHeight
+      top = `${height}px`
+    }
+    return html`<div ${ref(this.stubViewRef)} style="${styleMap({ top })}" class="stub-view">
+      ${this.stubView()}
+    </div>`
+  }
+
+  private updateHeaderSize() {
+    if (this.isLocke) return
+    if (this.headerRef.value) {
+      const height = this.headerRef.value.clientHeight
+      appendStyle(this.headerStub, {
+        height: `${height}px`,
+        width: '100%',
+      })
+      if (this.stubViewRef.value) {
+        appendStyle(this.stubViewRef.value, {
+          top: `${height}px`,
+        })
+      }
+    }
+  }
+
   private updateView() {
+    if (this.isLocke) return
     if (this.mobileMedia.matches) {
       this.updateViewMobile()
     } else {
@@ -187,8 +247,8 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
       return
     }
     const contextRect = this.getViewPortBoundingClientRect()
-    const virtualizerRect = this.virtualizerHost.getBoundingClientRect()
-    this.globalOffsetY = virtualizerRect.top - contextRect.top + 8 * 2
+    const virtualizerRect = getRealBoundingClientRect(this.virtualizerHost)
+    this.globalOffsetY = virtualizerRect.y - contextRect.y + 8 * 2
     this.virtualizerHost.style.minHeight = `${(this.context.value.maxHeight ?? 0) - this.globalOffsetY}px`
   }
 
@@ -201,10 +261,11 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 
   private getViewPortBoundingClientRect() {
-    return this.context.value.getBoundingClientRect()
+    return getRealBoundingClientRect(this.context.value)
   }
 
   private getItems() {
+    if (this.showStubView) return []
     if (this.header) {
       return [null, ...this.items]
     }
@@ -229,39 +290,21 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
     }
   }
 
-  private renderItemInternal(item: unknown, index: number): TemplateResult {
+  private renderItemInternal(item: unknown, index: number): TemplateResult<1> {
     if (this.header && index === 0) {
       return html`${this.headerStub}`
     }
     return this.renderItem?.(item, index - 1) ?? html``
   }
+}
 
-  private updateHeaderSize() {
-    if (this.headerRef.value) {
-      const rect = this.headerRef.value.getBoundingClientRect()
-      appendStyle(this.headerStub, {
-        height: `${rect.height}px`,
-      })
-    }
-  }
+function getRealBoundingClientRect(el: HTMLElement) {
+  const width = el.offsetWidth
+  const height = el.offsetHeight
+  const x = el.offsetLeft
+  const y = el.offsetTop
 
-  private updateHeaderBackground() {
-    const top = this.virtualizerRef.value?.scrollTop ?? 0
-    if (
-      top > 10 &&
-      this.headerRef.value &&
-      !this.headerRef.value.classList.contains('scroll-header-background-color-blur')
-    ) {
-      this.headerRef.value.classList.add('scroll-header-background-color-blur')
-    }
-    if (
-      top < 10 &&
-      this.headerRef.value &&
-      this.headerRef.value.classList.contains('scroll-header-background-color-blur')
-    ) {
-      this.headerRef.value.classList.remove('scroll-header-background-color-blur')
-    }
-  }
+  return { width, height, x, y }
 }
 
 export interface VirtualizerHostElement extends HTMLElement {

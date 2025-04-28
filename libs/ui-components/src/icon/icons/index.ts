@@ -45,6 +45,11 @@ export const icons: Record<string, IconsRecord> = {
     height: '16px',
     loader: () => import('./connect_16.svg').then((m) => m.connect16Svg),
   },
+  info16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./info_16.svg').then((m) => m.info16Svg),
+  },
   cornerDownRight16: {
     width: '16px',
     height: '16px',
@@ -69,6 +74,16 @@ export const icons: Record<string, IconsRecord> = {
     width: '16px',
     height: '16px',
     loader: () => import('./link_16.svg').then((m) => m.link16Svg),
+  },
+  alignRight16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./align-right_16.svg').then((m) => m.alignRight16Svg),
+  },
+  alignJustify16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./align-justify_16.svg').then((m) => m.alignJustify16Svg),
   },
   plusCircle16: {
     width: '16px',

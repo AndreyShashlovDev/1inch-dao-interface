@@ -25,20 +25,49 @@ export enum OverlayViewMode {
   popupAuto = 'popupAuto',
 }
 
-export type OverlayViewConfig = {
-  /**
-   * Default value OverlayViewMode.auto
-   * */
-  mode?: OverlayViewMode
-  /**
-   *
-   * */
+export enum OverlayViewPopupPosition {
+  top = 'top',
+  bottom = 'bottom',
+  left = 'left',
+  right = 'right',
+  center = 'center',
+}
+
+export type OverlayViewConfigAuto = {
+  mode: OverlayViewMode.auto
   targetFactory?: () => HTMLElement | null
 }
 
-export interface IOverlayContext {
-  config: OverlayViewConfig
+export type OverlayViewConfigDesktop = {
+  mode: OverlayViewMode.desktop
+  targetFactory?: () => HTMLElement | null
 }
+
+export type OverlayViewConfigMobile = {
+  mode: OverlayViewMode.mobile
+}
+
+export type OverlayViewConfigPopup = {
+  mode: OverlayViewMode.popup
+  targetFactory: () => HTMLElement | null
+  position?: { x: OverlayViewPopupPosition[]; y: OverlayViewPopupPosition[] }
+  customOverlayContainerStyle?: Partial<CSSStyleDeclaration>
+}
+
+export type OverlayViewConfigPopupAuto = {
+  mode: OverlayViewMode.popupAuto
+  targetFactory: () => HTMLElement | null
+  position?: { x: OverlayViewPopupPosition[]; y: OverlayViewPopupPosition[] }
+  customOverlayContainerStyle?: Partial<CSSStyleDeclaration>
+}
+
+export type OverlayViewConfig =
+  | { mode: OverlayViewMode }
+  | OverlayViewConfigAuto
+  | OverlayViewConfigDesktop
+  | OverlayViewConfigMobile
+  | OverlayViewConfigPopup
+  | OverlayViewConfigPopupAuto
 
 export interface IOverlayController extends InitializingEntity {
   open(content: TemplateResult | HTMLElement, viewConfig?: OverlayViewConfig): Promise<number>

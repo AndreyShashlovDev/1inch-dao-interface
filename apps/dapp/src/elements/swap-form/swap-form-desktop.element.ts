@@ -1,4 +1,10 @@
-import { AccentColors, ISwapContext, SwapSnapshot, TokenType } from '@1inch-community/models'
+import {
+  AccentColors,
+  ISwapContext,
+  OverlayViewMode,
+  SwapSnapshot,
+  TokenType,
+} from '@1inch-community/models'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
 import { SceneController } from '@1inch-community/ui-components/scene'
 import { consume } from '@lit/context'
@@ -155,7 +161,7 @@ export class SwapFormDesktopElement extends LitElement {
     }
     this.connectWalletViewId = await this.applicationContext.value.overlay.open(
       html` <inch-wallet-manager-route @closeCard="${close}"></inch-wallet-manager-route> `,
-      { targetFactory: () => this }
+      { targetFactory: () => this, mode: OverlayViewMode.auto }
     )
   }
 }

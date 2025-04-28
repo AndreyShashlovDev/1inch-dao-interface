@@ -1,3 +1,58 @@
+# [1.0.0-rc.9](https://github.com/1inch-community/interface/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2025-04-25)
+
+
+### Features
+
+* **wallet:** update createClient type and upgrade viem dependency ([5a83852](https://github.com/1inch-community/interface/commit/5a8385206a99f99341c1dc7e9a1b85e206698ede))
+
+# [1.0.0-rc.8](https://github.com/1inch-community/interface/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2025-04-25)
+
+
+### Bug Fixes
+
+* **transport:** simplify getRPC import in web-fallback ([3d9e901](https://github.com/1inch-community/interface/commit/3d9e9016c4affd52a2ef7008093b3eb985d85730))
+
+# [1.0.0-rc.7](https://github.com/1inch-community/interface/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2025-04-25)
+
+
+### Bug Fixes
+
+* **chain.manager:** correct block comparison logic in distinctUntilChanged ([b440691](https://github.com/1inch-community/interface/commit/b44069196a16afeccd54009bf82f0c096189205a))
+* **package.json:** add access field to publishConfig for packages ([3baa22e](https://github.com/1inch-community/interface/commit/3baa22e3f24985a9865f540af9d6d20542da55e8))
+* **swap-form, token-storage:** remove debugger and update method signature ([9a42d36](https://github.com/1inch-community/interface/commit/9a42d36764e15b8fb083b87ebb3ab887828b7831))
+
+
+### Code Refactoring
+
+* **models:** enhance overlay and token controller typings ([4bdef77](https://github.com/1inch-community/interface/commit/4bdef77024eff61f06c59cb7227b00c9c22a24ef))
+* **models:** remove and update favorite token management ([78332de](https://github.com/1inch-community/interface/commit/78332de1998f21eee8019743a91180268e6e0eee))
+* **token-list:** restructure and optimize token list components ([207384d](https://github.com/1inch-community/interface/commit/207384d9db710b5793401db388367efc60f80c27))
+* **tokens:** standardize token address casing and update filters ([88dfc3a](https://github.com/1inch-community/interface/commit/88dfc3a436d9ef4445ab73a3b4020d63e2a7382f))
+
+
+### Features
+
+* **balance-view:** add WalletTotalFiatBalanceElement ([e084e9a](https://github.com/1inch-community/interface/commit/e084e9aacb19ba9b15d43e37956df59d9069e530))
+* **core:** add observeMutations utility function ([7725c7b](https://github.com/1inch-community/interface/commit/7725c7b5a1328dcd116209a36d9adfdce9186304))
+* **decorators:** add debounceTime function ([f71648f](https://github.com/1inch-community/interface/commit/f71648f5bba2e428efd00afa857769ce4d27b439))
+* **loader-spinner:** improve styling and add dynamic loader toggle ([09dfeaa](https://github.com/1inch-community/interface/commit/09dfeaaf7aee55ee81ba79af12b6733348b35c85))
+* **shared-elements:** add tooltip and animation support ([903e841](https://github.com/1inch-community/interface/commit/903e8411e87c0f1220efa86adbb8b3fc3caf0483))
+* **swap-form:** add auto mode support for wallet overlay ([f59a9d6](https://github.com/1inch-community/interface/commit/f59a9d691a5515ad3f00e62baad78979879474c7))
+* **token-list:** add support for favorite tokens display ([e86183f](https://github.com/1inch-community/interface/commit/e86183fe27e81c06ac0d8e7e22abfe74adf81044))
+* **tokens:** add favorite tokens management ([773bbd1](https://github.com/1inch-community/interface/commit/773bbd12ea19074292e1ba62b446d6c6e518cc60))
+* **tokens:** add support for `tokensOnlyWithBalance` filter ([76233e9](https://github.com/1inch-community/interface/commit/76233e9f9a84c31637462bb86333f21da1ca32f7))
+* **ui-components:** enhance popup positioning and add number animation ([5679051](https://github.com/1inch-community/interface/commit/5679051d033f295dcbac2ea7692e35a20d6818aa))
+
+
+### BREAKING CHANGES
+
+* **shared-elements:** Updated method signatures requiring adjustments where balance or tooltip functionalities are used.
+* **tokens:** Resets token database schema and updates APIs to require filter objects, which may impact existing integrations.
+* **models:** Updated method signatures in `ITokenStorage` and refactored `OverlayViewConfig` typing, which may require updates to dependent code.
+* **tokens:** Updated method signatures requiring updated query filter objects.
+* **models:** Removes several favorite token-related methods and properties. This refactor impacts any code relying on previous favorite token management logic.
+* **token-list:** Token list components have been restructured, affecting existing integrations.
+
 # [1.0.0-rc.6](https://github.com/1inch-community/interface/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2025-04-23)
 
 

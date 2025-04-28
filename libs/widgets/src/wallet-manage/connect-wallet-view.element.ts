@@ -1,20 +1,17 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
-import { formatHex } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
-import {
-  getMobileMatchMediaAndSubscribe,
-  getShadowDomElement,
-  observe,
-} from '@1inch-community/core/lit-utils'
+import { getShadowDomElement, observe } from '@1inch-community/core/lit-utils'
 import { IWallet, OverlayViewMode } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
-import { customElement } from 'lit/decorators.js'
+import { customElement, property } from 'lit/decorators.js'
+import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { defer, map } from 'rxjs'
+import '../shared-elements/address-view'
+import '../shared-elements/balance-view'
 import { connectWalletViewStyle } from './connect-wallet-view.style'
-import './elements/wallet-view-address-balance'
 import './wallet-manager-route.element'
 
 @customElement(ConnectWalletViewElement.tagName)
@@ -25,7 +22,7 @@ export class ConnectWalletViewElement extends LitElement {
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
-  private readonly mobileMatchMedia = getMobileMatchMediaAndSubscribe(this)
+  @property({ type: Boolean, attribute: true }) mobileView?: boolean
 
   private overlayId: number | null = null
 
@@ -34,11 +31,6 @@ export class ConnectWalletViewElement extends LitElement {
   private readonly info$ = defer(() => this.getWalletController().data.info$)
   private readonly icon$ = this.info$.pipe(map((item) => item.icon))
   private readonly name$ = this.info$.pipe(map((item) => item.name))
-  private readonly activeAddressView$ = this.activeAddress$.pipe(
-    map((address) => {
-      return address && formatHex(address)
-    })
-  )
 
   private readonly view$ = defer(() => this.getWalletController().data.isConnected$).pipe(
     map((isConnected) => {
@@ -58,7 +50,7 @@ export class ConnectWalletViewElement extends LitElement {
     return html`
       <div
         class="connect-wallet-view-container"
-        @click="${() => this.mobileMatchMedia.matches && this.onManagerRouteView()}"
+        @click="${() => this.mobileView && this.onManagerRouteView()}"
       >
         <img
           class="connect-wallet-view-icon"
@@ -66,14 +58,16 @@ export class ConnectWalletViewElement extends LitElement {
           src="${observe(this.icon$)}"
         />
         ${when(
-          !this.mobileMatchMedia.matches,
+          !this.mobileView,
           () => html`
-            <inch-wallet-view-address-balance
-              address="${observe(this.activeAddress$)}"
-              chainId="${observe(this.chainId$)}"
-            ></inch-wallet-view-address-balance>
+            <inch-wallet-total-fiat-balance
+              .address="${observe(this.activeAddress$)}"
+            ></inch-wallet-total-fiat-balance>
             <inch-button @click="${() => this.onManagerRouteView()}" type="secondary" size="m">
-              ${observe(this.activeAddressView$)}
+              <inch-address-view
+                hideTooltip
+                address="${observe(this.activeAddress$)}"
+              ></inch-address-view>
             </inch-button>
           `
         )}
@@ -85,11 +79,11 @@ export class ConnectWalletViewElement extends LitElement {
     return html`
       <inch-button
         @click="${() => this.onManagerRouteView()}"
-        type="${this.mobileMatchMedia.matches ? 'primary-gray' : 'secondary'}"
-        size="${this.mobileMatchMedia.matches ? 'l' : 'xl'}"
+        type="${this.mobileView ? 'primary-gray' : 'secondary'}"
+        size="${this.mobileView ? 'l' : 'xl'}"
       >
         ${when(
-          this.mobileMatchMedia.matches,
+          this.mobileView,
           () => html` <inch-icon icon="wallet24"></inch-icon>`,
           () => html`<span>Connect wallet</span>`
         )}
@@ -110,6 +104,7 @@ export class ConnectWalletViewElement extends LitElement {
     this.overlayId = await this.applicationContext.value.overlay.open(
       html`
         <inch-wallet-manager-route
+          mobileView="${ifDefined(this.mobileView ? '' : undefined)}"
           @closeCard="${() => {
             if (!this.overlayId) {
               return

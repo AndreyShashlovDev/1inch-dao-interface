@@ -7,6 +7,7 @@ export const tokenItemCrossChainAccordionChainViewStyle = css`
     width: 100%;
     cursor: pointer;
     border-radius: 16px;
+    margin-top: 4px;
     padding: 12px 16px;
     box-sizing: border-box;
     color: var(--color-content-content-primary);

@@ -17,6 +17,7 @@ import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
 import { tap } from 'rxjs'
 import { Address } from 'viem'
+import '../../../../shared-elements/balance-view'
 import { DisconnectEventModel } from '../../../disconnect/disconnect-event-model'
 import '../../../elements/wallet-view-address-balance'
 import { walletViewStyle } from './wallet-view.style'
@@ -193,26 +194,27 @@ export class WalletViewElement extends LitElement {
             ${litMap(this.addressList!, (address) => {
               return html`
                 <div
-                  @click="${() => this.setActiveAddress(address)}"
-                  class="wallet-view-container address-container ${async(
-                    this.isActiveAddress(address).then((state) =>
-                      state ? 'address-container__active' : ''
-                    )
-                  )}"
+                    @click="${() => this.setActiveAddress(address)}"
+                    class="wallet-view-container address-container ${async(
+                      this.isActiveAddress(address).then((state) =>
+                        state ? 'address-container__active' : ''
+                      )
+                    )}"
                 >
                   <div class="data-container left-data">
                     <inch-icon class="sub-wallet-icon" icon="arrowTopToRightRounded32"></inch-icon>
-                    <div class="wallet-info-container">
+                    <span>${formatHex(address, { width: this.offsetWidth })}</span>
+                    </div>
                       <span class="wallet-title">${formatHex(address)}</span>
                       <span>
                         <inch-wallet-view-address-balance
-                          class="wallet-sub-title"
-                          chainId="${ifDefined(this.chainId)}"
-                          address="${address}"
+                            class="wallet-sub-title"
+                            chainId="${ifDefined(this.chainId)}"
+                            address="${address}"
                         ></inch-wallet-view-address-balance>
                       </span>
                     </div>
-                  </div>
+                </div>
                   <div class="data-container right-data">
                     ${when(
                       this.activeAddress === address,
@@ -221,18 +223,18 @@ export class WalletViewElement extends LitElement {
                       `
                     )}
                     <inch-button
-                      @click="${(event: MouseEvent) => {
-                        event.stopPropagation()
-                        this.onDisconnectClick(info, address)
-                      }}"
-                      type="tertiary"
-                      size="l"
+                        @click="${(event: MouseEvent) => {
+                          event.stopPropagation()
+                          this.onDisconnectClick(info, address)
+                        }}"
+                        type="tertiary"
+                        size="l"
                     >
                       <inch-icon
-                        width="24"
-                        height="24"
-                        class="disconnect-address-check-icon"
-                        icon="logout16"
+                          width="24"
+                          height="24"
+                          class="disconnect-address-check-icon"
+                          icon="logout16"
                       ></inch-icon>
                     </inch-button>
                   </div>
