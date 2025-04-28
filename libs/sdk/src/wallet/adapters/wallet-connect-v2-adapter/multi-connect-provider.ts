@@ -126,7 +126,7 @@ export class MultiConnectProvider implements EIP1193Provider {
   async disconnect(address?: Address | null) {
     if (!address) {
       await this.disconnectAll()
-    } else if (this.activeAddress === address) {
+    } else {
       this.storage.delete(address)
 
       await this.signer(address)
@@ -135,9 +135,11 @@ export class MultiConnectProvider implements EIP1193Provider {
           /* ignore */
         })
 
-      this.activeAddress = null
+      if (this.activeAddress === address) {
+        this.activeAddress = null
 
-      this.setActiveAddress(this.getAddresses()[0] ?? null)
+        this.setActiveAddress(this.getAddresses()[0] ?? null)
+      }
     }
 
     this.updatePersist()

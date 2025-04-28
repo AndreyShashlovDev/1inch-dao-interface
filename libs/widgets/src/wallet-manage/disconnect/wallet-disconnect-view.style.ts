@@ -44,6 +44,7 @@ export const walletDisconnectViewStyle = css`
     letter-spacing: 0;
     text-align: center;
     vertical-align: middle;
+    color: var(--color-content-content-secondary);
   }
 
   .wallet-disconnect-actions {
@@ -54,6 +55,10 @@ export const walletDisconnectViewStyle = css`
     justify-content: center;
     align-items: center;
     gap: 16px;
+  }
+
+  .wallet-disconnect-content-icon:dir(rtl) {
+    transform: scaleX(-1);
   }
 
   @media (hover: none) {

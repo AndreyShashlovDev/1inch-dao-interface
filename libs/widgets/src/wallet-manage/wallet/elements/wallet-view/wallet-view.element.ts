@@ -96,7 +96,8 @@ export class WalletViewElement extends LitElement {
   }
 
   private getAlreadyConnectedWalletView(info: EIP6963ProviderInfo) {
-    const isMultiWallet = info.uuid === 'walletConnect' || (this.addressList?.length ?? 0) > 1
+    const isWalletConnect = info.uuid === 'walletConnect'
+    const isMultiWallet = (this.addressList?.length ?? 0) > 1
     const title = !isMultiWallet && this.activeAddress ? formatHex(this.activeAddress) : info.name
     const subtitle = isMultiWallet
       ? html`${this.addressList?.length} ${translate('widgets.wallet-view.wallet-subtitle')}`
@@ -141,15 +142,15 @@ export class WalletViewElement extends LitElement {
             ></inch-icon>
           </inch-button>
 
-          ${this.getConnectButtonView(this.isWalletConnected, isMultiWallet)}
+          ${this.getConnectButtonView(this.isWalletConnected, isWalletConnect)}
         </div>
       </div>
-      ${when(this.showAddresses, () => this.getAddressesSubList(info))}
+      ${when(this.showAddresses, () => this.getAddressesSubList(info, isWalletConnect))}
     `
   }
 
-  private getConnectButtonView(isWalletConnect: boolean, isMultiWallet: boolean) {
-    if (!isMultiWallet) {
+  private getConnectButtonView(isConnected: boolean, isWalletConnect: boolean) {
+    if (!isConnected) {
       return html``
     }
 
@@ -180,7 +181,7 @@ export class WalletViewElement extends LitElement {
     `
   }
 
-  private getAddressesSubList(info: EIP6963ProviderInfo) {
+  private getAddressesSubList(info: EIP6963ProviderInfo, isWalletConnect: boolean) {
     return html`
       ${when(
         this.addressList,
@@ -217,22 +218,27 @@ export class WalletViewElement extends LitElement {
                         <inch-icon class="active-address-check-icon" icon="check24"></inch-icon>
                       `
                     )}
-                    <inch-button
-                      class="disconnect-address-btn"
-                      @click="${(event: MouseEvent) => {
-                        event.stopPropagation()
-                        this.onDisconnectClick(info, address)
-                      }}"
-                      type="tertiary"
-                      size="l"
-                    >
-                      <inch-icon
-                        class="disconnect-address-icon"
-                        width="24"
-                        height="24"
-                        icon="logout16"
-                      ></inch-icon>
-                    </inch-button>
+                    ${when(
+                      isWalletConnect,
+                      () => html`
+                        <inch-button
+                          class="disconnect-address-btn"
+                          @click="${(event: MouseEvent) => {
+                            event.stopPropagation()
+                            this.onDisconnectClick(info, address)
+                          }}"
+                          type="tertiary"
+                          size="l"
+                        >
+                          <inch-icon
+                            class="disconnect-address-icon"
+                            width="24"
+                            height="24"
+                            icon="logout16"
+                          ></inch-icon>
+                        </inch-button>
+                      `
+                    )}
                   </div>
                 </div>
               `

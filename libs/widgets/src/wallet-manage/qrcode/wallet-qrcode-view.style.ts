@@ -38,8 +38,8 @@ export const walletQrcodeViewStyle = css`
     width: 100%;
     aspect-ratio: 1/1;
     border-radius: 32px;
-    background: var(--color-background-bg-secondary);
     overflow: hidden;
+    background: var(--color-core-white);
   }
 
   .qrcode-code-svg-container {
@@ -107,7 +107,7 @@ export const walletQrcodeViewStyle = css`
       135deg,
       transparent 0%,
       transparent 40%,
-      rgba(0, 0, 0, 0.1) 50%,
+      color-mix(in srgb, var(--color-core-blue-info-hover) 10%, transparent) 50%,
       transparent 60%,
       transparent 100%
     );

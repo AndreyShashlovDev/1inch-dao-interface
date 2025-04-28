@@ -49,7 +49,7 @@ export class WalletDisconnectViewElement extends LitElement {
     return html`
       <div class="wallet-disconnect-container">
         <div class="wallet-disconnect-content">
-          <inch-icon icon="disconnectImageBig"></inch-icon>
+          <inch-icon class="wallet-disconnect-content-icon" icon="disconnectImageBig"></inch-icon>
           ${when(
             this.data?.address,
             (address) => html`
