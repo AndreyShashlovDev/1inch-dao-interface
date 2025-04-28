@@ -44,8 +44,6 @@ export class WalletManagerRoute extends LitElement {
     shiftAnimation()
   )
 
-  @state() private currentSceneName: Scenes = this.scene.activeScene
-
   @state() private isWalletConnected: boolean = false
 
   protected firstUpdated() {
@@ -59,11 +57,11 @@ export class WalletManagerRoute extends LitElement {
             this.isWalletConnected = isConnected
           }
 
-          if (!isConnected && address === null && this.currentSceneName !== 'wallets') {
+          if (!isConnected && address === null && this.scene.activeScene !== 'wallets') {
             this.scene.resetScene()
             this.navigateTo('wallets', true)
           }
-          if (isConnected && address && this.currentSceneName !== 'account') {
+          if (isConnected && address && this.scene.activeScene !== 'account') {
             this.onBackPress()
           }
         })
@@ -112,7 +110,7 @@ export class WalletManagerRoute extends LitElement {
   }
 
   private getHeaderView() {
-    switch (this.currentSceneName) {
+    switch (this.scene.activeScene) {
       case 'account':
         return this.accountHeaderView()
       case 'wallets':
@@ -122,7 +120,7 @@ export class WalletManagerRoute extends LitElement {
       case 'disconnect':
         return this.disconnectHeaderView()
       default:
-        throw new Error('unknown screen!', this.currentSceneName)
+        throw new Error('unknown screen!', this.scene.activeScene)
     }
   }
 
@@ -186,14 +184,14 @@ export class WalletManagerRoute extends LitElement {
     this.navigateTo('qrcode')
   }
 
-  private async navigateTo(scene: Scenes, immediate: boolean = false) {
-    this.currentSceneName = scene
-    await this.scene.nextTo(scene, immediate)
+  private navigateTo(scene: Scenes, immediate: boolean = false) {
+    this.scene.nextTo(scene, immediate)
+    this.requestUpdate()
   }
 
-  private async onBackPress() {
-    await this.scene.back()
-    this.currentSceneName = this.scene.activeScene
+  private onBackPress() {
+    this.scene.back()
+    this.requestUpdate()
   }
 
   protected render() {
