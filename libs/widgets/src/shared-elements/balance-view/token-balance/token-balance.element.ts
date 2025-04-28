@@ -77,7 +77,7 @@ export class TokenBalanceElement extends LitElement {
       }
       return html`
         <inch-number-animation
-          ${tooltip(`$${balance.toFixedSmart(9)}`)}
+          ${tooltip(`${balance.toFixedSmart(9)} ${this.symbol}`)}
           style="${styleMap(style)}"
           .value="${balance.toFixedSmart(2)}"
           postfixSymbol="${this.symbol}"
