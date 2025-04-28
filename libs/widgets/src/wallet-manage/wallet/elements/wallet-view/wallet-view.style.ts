@@ -78,16 +78,22 @@ export const walletViewStyle = css`
     color: var(--color-content-content-secondary);
   }
 
-  .disconnect-address-check-icon {
+  .disconnect-address-btn {
+    display: block;
+    opacity: 0;
+    width: 0;
+    transform: scale(0);
+    overflow: hidden;
+    transition: transform 0.2s ease-out;
+  }
+
+  .disconnect-address-icon {
     display: flex;
     justify-content: center;
     align-items: center;
     color: var(--color-core-red-critical);
-    width: 0;
-    height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: all 0.2s ease-out;
+    width: 24px;
+    height: 24px;
   }
 
   .data-container {
@@ -107,22 +113,12 @@ export const walletViewStyle = css`
     flex-direction: column;
   }
 
-  inch-wallet-view-address-balance {
-    transform: translate3d(24px, 0, 0);
-    transition: transform 0.2s;
-    will-change: transform;
-  }
-
   .add-connection {
     transition: transform 0.2s;
     transform: scale(0);
   }
 
-  .address-container__active inch-wallet-view-address-balance {
-    transform: translate3d(0, 0, 0);
-  }
-
-  .disconnect-address-check-icon:dir(rtl) {
+  .disconnect-address-icon:dir(rtl) {
     transform: scale(-1, 1);
   }
 
@@ -130,19 +126,24 @@ export const walletViewStyle = css`
     transform: scale(-1, 1);
   }
 
+  .right-data {
+    gap: 0;
+    transition: gap 0.2s ease-out;
+  }
+
   @media (hover: hover) {
     .wallet-view-container:hover .connect-icon {
       transform: scale(1);
     }
 
-    .wallet-view-container:hover .disconnect-address-check-icon {
-      opacity: 1;
-      width: 24px;
-      height: 24px;
+    .wallet-view-container:hover .right-data {
+      gap: 12px;
     }
 
-    .wallet-view-container:hover inch-wallet-view-address-balance {
-      transform: translate3d(0, 0, 0);
+    .wallet-view-container:hover .disconnect-address-btn {
+      opacity: 1;
+      width: auto;
+      transform: scale(1);
     }
 
     .wallet-view-container:hover .add-connection {
@@ -159,10 +160,14 @@ export const walletViewStyle = css`
       transform: scale(1);
     }
 
-    .disconnect-address-check-icon {
+    .right-data {
+      gap: 12px;
+    }
+
+    .disconnect-address-btn {
       opacity: 1;
-      width: 24px;
-      height: 24px;
+      width: auto;
+      transform: scale(1);
     }
   }
 

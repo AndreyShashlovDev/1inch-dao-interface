@@ -75,9 +75,9 @@ export class WalletManagerRoute extends LitElement {
   private getAccountView() {
     return html`
       <inch-wallet-account-view
-          .mobileView="${this.mobileView}"
-          @changeWalletClick="${() => this.navigateTo('wallets')}"
-          @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
+        .mobileView="${this.mobileView}"
+        @changeWalletClick="${() => this.navigateTo('wallets')}"
+        @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
       ></inch-wallet-account-view>
     `
   }
@@ -85,9 +85,9 @@ export class WalletManagerRoute extends LitElement {
   private getWalletsView() {
     return html`
       <inch-wallet-manage
-          @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
-          @onUseConnectionLink="${(event: CustomEvent) =>
-              this.onUseConnectionLink(event.detail.value)}"
+        @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
+        @onUseConnectionLink="${(event: CustomEvent) =>
+          this.onUseConnectionLink(event.detail.value)}"
       ></inch-wallet-manage>
     `
   }
@@ -96,8 +96,7 @@ export class WalletManagerRoute extends LitElement {
     const data = { ...this.connectionLinkData }
     this.connectionLinkData = null
 
-    return html`
-      <inch-wallet-qrcode-view .data="${data}"></inch-wallet-qrcode-view>`
+    return html` <inch-wallet-qrcode-view .data="${data}"></inch-wallet-qrcode-view>`
   }
 
   private getDisconnectView() {
@@ -106,8 +105,8 @@ export class WalletManagerRoute extends LitElement {
 
     return html`
       <inch-wallet-disconnect-view
-          .data="${data}"
-          @onBackClick="${() => this.onBackPress()}"
+        .data="${data}"
+        @onBackClick="${() => this.onBackPress()}"
       ></inch-wallet-disconnect-view>
     `
   }
@@ -128,16 +127,15 @@ export class WalletManagerRoute extends LitElement {
   }
 
   private accountHeaderView() {
-    return html`
-      <inch-card-header
-          headerTextPosition="center"
-          headerText="${translate('widgets.wallet-manager-route.account')}"
-      >
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate('widgets.wallet-manager-route.account')}"
+    >
       <inch-button
-          slot="right-container"
-          @click="${() => this.navigateTo('wallets')}"
-          type="secondary"
-          size="l"
+        slot="right-container"
+        @click="${() => this.navigateTo('wallets')}"
+        type="secondary"
+        size="l"
       >
         <inch-icon icon="plus24"></inch-icon>
       </inch-button>
@@ -149,35 +147,32 @@ export class WalletManagerRoute extends LitElement {
       ? 'widgets.wallet-manager-route.wallets.manager'
       : 'widgets.wallet-manager-route.wallets.connect'
 
-    return html`
-      <inch-card-header
-          headerTextPosition="center"
-          headerText="${translate(title)}"
-          backButton="${ifDefined(this.isWalletConnected || undefined)}"
-          @backCard="${() => this.onBackPress()}"
-      >
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate(title)}"
+      backButton="${ifDefined(this.isWalletConnected || undefined)}"
+      @backCard="${() => this.onBackPress()}"
+    >
     </inch-card-header>`
   }
 
   private qrcodeHeaderView() {
-    return html`
-      <inch-card-header
-          headerTextPosition="center"
-          headerText="${translate('widgets.wallet-manager-route.wallets.qrcode.wallet-connect')}"
-          backButton="${true}"
-          @backCard="${() => this.onBackPress()}"
-      >
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate('widgets.wallet-manager-route.wallets.qrcode.wallet-connect')}"
+      backButton="${true}"
+      @backCard="${() => this.onBackPress()}"
+    >
     </inch-card-header>`
   }
 
   private disconnectHeaderView() {
-    return html`
-      <inch-card-header
-          headerTextPosition="center"
-          headerText="${translate('widgets.wallet-manager-route.wallets.disconnect')}"
-          backButton="${true}"
-          @backCard="${() => this.onBackPress()}"
-      >
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate('widgets.wallet-manager-route.wallets.disconnect')}"
+      backButton="${true}"
+      @backCard="${() => this.onBackPress()}"
+    >
     </inch-card-header>`
   }
 

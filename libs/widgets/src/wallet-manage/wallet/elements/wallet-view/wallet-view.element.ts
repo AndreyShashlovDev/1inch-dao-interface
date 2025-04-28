@@ -7,19 +7,17 @@ import {
   subscribe,
   translate,
 } from '@1inch-community/core/lit-utils'
-import { ChainId, EIP6963ProviderInfo } from '@1inch-community/models'
+import { EIP6963ProviderInfo } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-import { ifDefined } from 'lit/directives/if-defined.js'
 import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
 import { tap } from 'rxjs'
 import { Address } from 'viem'
 import '../../../../shared-elements/balance-view'
 import { DisconnectEventModel } from '../../../disconnect/disconnect-event-model'
-import '../../../elements/wallet-view-address-balance'
 import { walletViewStyle } from './wallet-view.style'
 
 @customElement(WalletViewElement.tagName)
@@ -44,8 +42,6 @@ export class WalletViewElement extends LitElement {
 
   @state() private isActiveWallet = false
 
-  @state() private chainId?: ChainId
-
   protected override firstUpdated() {
     if (!this.info) {
       throw new Error('')
@@ -60,7 +56,6 @@ export class WalletViewElement extends LitElement {
         providerDataAdapter.addresses$.pipe(
           tap((state) => (this.addressList = !state.length ? null : state))
         ),
-        globalDataAdapter.chainId$.pipe(tap((state) => (this.chainId = state ?? undefined))),
         globalDataAdapter
           .isActiveWallet$(this.info)
           .pipe(tap((state) => (this.isActiveWallet = state))),
@@ -106,11 +101,10 @@ export class WalletViewElement extends LitElement {
     const subtitle = isMultiWallet
       ? html`${this.addressList?.length} ${translate('widgets.wallet-view.wallet-subtitle')}`
       : html`
-          <inch-wallet-view-address-balance
+          <inch-wallet-total-fiat-balance
             class="wallet-sub-title"
-            chainId="${ifDefined(this.chainId)}"
-            address="${this.activeAddress}"
-          ></inch-wallet-view-address-balance>
+            .address="${this.activeAddress}"
+          ></inch-wallet-total-fiat-balance>
         `
 
     const addressListLength = this.addressList?.length ?? 0
@@ -131,6 +125,7 @@ export class WalletViewElement extends LitElement {
         </div>
         <div class="data-container right-data">
           <inch-button
+            class="disconnect-address-btn"
             @click="${(event: MouseEvent) => {
               event.stopPropagation()
               this.onDisconnectClick(info)
@@ -141,7 +136,7 @@ export class WalletViewElement extends LitElement {
             <inch-icon
               width="24"
               height="24"
-              class="disconnect-address-check-icon"
+              class="disconnect-address-icon"
               icon="logout16"
             ></inch-icon>
           </inch-button>
@@ -194,27 +189,27 @@ export class WalletViewElement extends LitElement {
             ${litMap(this.addressList!, (address) => {
               return html`
                 <div
-                    @click="${() => this.setActiveAddress(address)}"
-                    class="wallet-view-container address-container ${async(
-                      this.isActiveAddress(address).then((state) =>
-                        state ? 'address-container__active' : ''
-                      )
-                    )}"
+                  @click="${() => this.setActiveAddress(address)}"
+                  class="wallet-view-container address-container ${async(
+                    this.isActiveAddress(address).then((state) =>
+                      state ? 'address-container__active' : ''
+                    )
+                  )}"
                 >
                   <div class="data-container left-data">
                     <inch-icon class="sub-wallet-icon" icon="arrowTopToRightRounded32"></inch-icon>
-                    <span>${formatHex(address, { width: this.offsetWidth })}</span>
-                    </div>
-                      <span class="wallet-title">${formatHex(address)}</span>
+                    <div class="wallet-info-container">
+                      <span class="wallet-title">
+                        ${formatHex(address, { width: this.offsetWidth })}
+                      </span>
                       <span>
-                        <inch-wallet-view-address-balance
-                            class="wallet-sub-title"
-                            chainId="${ifDefined(this.chainId)}"
-                            address="${address}"
-                        ></inch-wallet-view-address-balance>
+                        <inch-wallet-total-fiat-balance
+                          class="wallet-sub-title"
+                          .address="${address}"
+                        ></inch-wallet-total-fiat-balance>
                       </span>
                     </div>
-                </div>
+                  </div>
                   <div class="data-container right-data">
                     ${when(
                       this.activeAddress === address,
@@ -223,18 +218,19 @@ export class WalletViewElement extends LitElement {
                       `
                     )}
                     <inch-button
-                        @click="${(event: MouseEvent) => {
-                          event.stopPropagation()
-                          this.onDisconnectClick(info, address)
-                        }}"
-                        type="tertiary"
-                        size="l"
+                      class="disconnect-address-btn"
+                      @click="${(event: MouseEvent) => {
+                        event.stopPropagation()
+                        this.onDisconnectClick(info, address)
+                      }}"
+                      type="tertiary"
+                      size="l"
                     >
                       <inch-icon
-                          width="24"
-                          height="24"
-                          class="disconnect-address-check-icon"
-                          icon="logout16"
+                        class="disconnect-address-icon"
+                        width="24"
+                        height="24"
+                        icon="logout16"
                       ></inch-icon>
                     </inch-button>
                   </div>
