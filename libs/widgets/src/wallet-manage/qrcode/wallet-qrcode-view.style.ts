@@ -40,6 +40,7 @@ export const walletQrcodeViewStyle = css`
     border-radius: 32px;
     overflow: hidden;
     background: var(--color-core-white);
+    border: 1px solid var(--color-border-border-tertiary);
   }
 
   .qrcode-code-svg-container {

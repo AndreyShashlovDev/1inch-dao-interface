@@ -215,7 +215,9 @@ export class WalletViewElement extends LitElement {
                     ${when(
                       this.activeAddress === address,
                       () => html`
-                        <inch-icon class="active-address-check-icon" icon="check24"></inch-icon>
+                        <div class="check-icon-container">
+                          <inch-icon class="active-address-check-icon" icon="check24"></inch-icon>
+                        </div>
                       `
                     )}
                     ${when(
@@ -237,7 +239,8 @@ export class WalletViewElement extends LitElement {
                             icon="logout16"
                           ></inch-icon>
                         </inch-button>
-                      `
+                      `,
+                      () => html`<span class="disconnect-address-btn-stub"></span>`
                     )}
                   </div>
                 </div>
