@@ -4,6 +4,7 @@ import {
   appendStyle,
   async,
   dispatchEvent,
+  getMobileMatchMedia,
   subscribe,
   translate,
 } from '@1inch-community/core/lit-utils'
@@ -25,6 +26,8 @@ export class WalletViewElement extends LitElement {
   static tagName = 'inch-wallet-view' as const
 
   private readonly applicationContext = lazyAppContextConsumer(this)
+
+  private readonly mobileMedia = getMobileMatchMedia()
 
   static override styles = walletViewStyle
 
@@ -286,7 +289,7 @@ export class WalletViewElement extends LitElement {
     const supportConnectionLink =
       await this.applicationContext.value.wallet.isSupportConnectionUriLink(this.info)
 
-    if (supportConnectionLink) {
+    if (supportConnectionLink && !this.mobileMedia.matches) {
       dispatchEvent(this, 'onUseConnectionLink', this.info)
       return
     }
