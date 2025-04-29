@@ -23,7 +23,10 @@ interface TokenSchemaDatabase {
   readonly favoriteTokens: Table<{ id: TokenRecordId }, string>
 }
 
-type UpdateEmitters = Record<keyof TokenSchemaDatabase, Subject<void>>
+type UpdateEmitters = Record<
+  keyof Omit<TokenSchemaDatabase, 'crossChainTokensBinding'>,
+  Subject<unknown>
+>
 
 export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
   static databaseVersion = 1
@@ -33,14 +36,6 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
 
   private readonly context = lazyAppContext('TokenSchema')
 
-  private readonly updateEmitters: UpdateEmitters = {
-    tokens: new Subject(),
-    balances: new Subject(),
-    tokenPrice: new Subject(),
-    crossChainTokensBinding: new Subject(),
-    favoriteTokens: new Subject(),
-  }
-
   private readonly tokensTTL = new TTLStorage(
     buildTTLStorageName('tokens'),
     6.048e8 as const // week,
@@ -49,6 +44,13 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
   private readonly balancesTTL = new TtlMapStorage<Address>(buildTTLStorageName('balances'), 12000)
 
   private readonly tokenPriceTTL = new TTLStorage(buildTTLStorageName('tokenPrice'), 12000)
+
+  readonly updateEmitters: UpdateEmitters = {
+    tokens: new Subject(),
+    balances: new Subject(),
+    tokenPrice: new Subject(),
+    favoriteTokens: new Subject(),
+  }
 
   get tokens() {
     if (!this.database) throw new Error('token database not init')
@@ -137,7 +139,10 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
   }
 
   async balancesIsEmpty(walletAddress: Address) {
-    const count = await this.balances.where('walletAddress').equals(walletAddress).count()
+    const count = await this.balances
+      .where('walletAddress')
+      .equals(walletAddress.toLowerCase())
+      .count()
     return count === 0
   }
 
@@ -148,26 +153,21 @@ export class TokenSchema implements InitializingEntity, TokenSchemaDatabase {
 
   updateTokensComplete() {
     this.tokensTTL.reset()
-    this.updateEmitters.tokens.next()
-    this.updateEmitters.crossChainTokensBinding.next()
+    this.updateEmitters.tokens.next(void 0)
   }
 
   updateBalancesComplete(walletAddress: Address) {
     this.balancesTTL.reset(walletAddress)
-    this.updateEmitters.balances.next()
+    this.updateEmitters.balances.next(walletAddress)
   }
 
   updateTokenPriceComplete() {
     this.tokenPriceTTL.reset()
-    this.updateEmitters.tokenPrice.next()
+    this.updateEmitters.tokenPrice.next(void 0)
   }
 
   updateFavoriteTokensComplete() {
-    this.updateEmitters.favoriteTokens.next()
-  }
-
-  getUpdateEmitter(name: keyof TokenSchemaDatabase) {
-    return this.updateEmitters[name]
+    this.updateEmitters.favoriteTokens.next(void 0)
   }
 }
 

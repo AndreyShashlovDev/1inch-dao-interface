@@ -68,20 +68,20 @@ class TooltipDirective extends AsyncDirective {
     )
     return fromEvent(this.partInfo.element, 'mouseenter').pipe(
       debounceTime(this.options.openDelay ?? 500),
-      switchMap(async () => this.openTooltip()),
+      switchMap(async () => this.openTooltip(true)),
       switchMap(() => mouseleave$)
     )
   }
 
   private touch() {
     return fromEvent(this.partInfo.element, 'touchstart').pipe(
-      switchMap(async () => this.openTooltip()),
+      switchMap(async () => this.openTooltip(false)),
       switchMap(() => timer(3000).pipe(tap(() => this.closeTooltip())))
     )
   }
 
-  private async openTooltip() {
-    if (this.overlayId || !this.partInfo.element.matches(':hover')) return
+  private async openTooltip(checkHover: boolean) {
+    if (this.overlayId || (checkHover && !this.partInfo.element.matches(':hover'))) return
     const style = {
       maxWidth: this.options.maxWidth ? `${this.options.maxWidth}px` : undefined,
       maxHeight: this.options.maxHeight ? `${this.options.maxHeight}px` : undefined,
@@ -104,7 +104,7 @@ class TooltipDirective extends AsyncDirective {
         },
       }
     )
-    if (!this.partInfo.element.matches(':hover')) {
+    if (checkHover && !this.partInfo.element.matches(':hover')) {
       await this.closeTooltip()
     }
   }

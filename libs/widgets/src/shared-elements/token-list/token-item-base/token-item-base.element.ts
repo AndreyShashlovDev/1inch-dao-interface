@@ -52,6 +52,7 @@ export class TokenItemBaseElement extends LitElement {
     this.style.setProperty('--additional-height', `${this.additionalHeight}px`)
     const iconAfterStyle = this.iconAfterStyle ?? {}
     const chainIds = this.chainIds ?? [this.tokenChainId]
+    const animationDelayMillisecond = (this.index + 10) * 100
     return html`
       <div class="grid">
         ${this.renderTokenIcon()} ${this.renderTokenName()} ${this.renderTokenNetworkText()}
@@ -61,6 +62,7 @@ export class TokenItemBaseElement extends LitElement {
           .symbol="${this.symbol}"
           .chainIds="${chainIds}"
           .walletAddress="${this.walletAddress}"
+          .skeletonAnimationDelayMillisecond="${animationDelayMillisecond}"
         ></inch-token-balance>
         <inch-token-fiat-balance
           class="token-fiat-balance secondary-text token-balance-view"
@@ -68,6 +70,7 @@ export class TokenItemBaseElement extends LitElement {
           .symbol="${this.symbol}"
           .chainIds="${chainIds}"
           .walletAddress="${this.walletAddress}"
+          .skeletonAnimationDelayMillisecond="${animationDelayMillisecond}"
         ></inch-token-fiat-balance>
         ${when(
           this.showIconAfter,

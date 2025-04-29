@@ -58,7 +58,10 @@ export class NumberAnimationElement extends LitElement {
     return html`
       ${when(this.prefixSymbol, () => html`<span class="symbol">${this.prefixSymbol}</span>`)}
       ${map(list, (digit) => html`<inch-digit-animation digit="${digit}"></inch-digit-animation>`)}
-      ${when(this.postfixSymbol, () => html`<span class="symbol">${this.postfixSymbol}</span>`)}
+      ${when(
+        this.postfixSymbol,
+        () => html`<span class="symbol">&nbsp;${this.postfixSymbol}</span>`
+      )}
     `
   }
 

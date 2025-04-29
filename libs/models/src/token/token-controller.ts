@@ -33,6 +33,11 @@ export type getTokenFiatBalanceByIdQueryFilters = QueryFilters<'tokenRecordId' |
 export type getCrossChainTotalFiatBalanceQueryFilters = QueryFilters<'walletAddress', 'chainIds'>
 
 export interface ITokenStorage extends InitializingEntity {
+  tokensUpdate$: Observable<void>
+  balancesUpdate$: Observable<Address>
+  tokenPriceUpdate$: Observable<void>
+  favoriteTokensUpdate$: Observable<void>
+
   getTokenIdList(filter: getTokenIdListQueryFilters): Promise<TokenRecordId[]>
   getSymbolData(filter: getSymbolDataQueryFilters): Promise<ITokenListViewData>
   getCrossChainTotalFiatBalance(
