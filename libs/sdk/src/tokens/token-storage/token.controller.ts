@@ -325,7 +325,6 @@ export class TokenController implements ITokenStorage {
           tokenMap.set(record.id, record)
         }),
     ])
-    debugger
     let totalBalance = BigFloat.zero()
     for (const id of tokenIdList) {
       const token = tokenMap.get(id)
