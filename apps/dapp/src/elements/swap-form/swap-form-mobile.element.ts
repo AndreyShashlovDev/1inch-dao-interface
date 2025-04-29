@@ -14,7 +14,6 @@ import { getThemeChange } from '@1inch-community/core/theme'
 import '@1inch-community/ui-components/card'
 import '@1inch-community/widgets/swap-form'
 import { distinctUntilChanged, map, tap } from 'rxjs'
-import { unicornTouchUpdate } from './unicorn-updater'
 
 import('@1inch-community/widgets/wallet-manage')
 import('@1inch-community/widgets/select-token')
@@ -36,7 +35,6 @@ export class SwapFormMobileElement extends LitElement {
   private targetSelectToken: TokenType | null = null
 
   private readonly swapFormContainerRef = createRef<HTMLElement>()
-  private readonly unicornLoaderRef = createRef<HTMLElement>()
 
   protected firstUpdated() {
     setTimeout(() => this.classList.add('padding-top-transition'), 100)
@@ -47,11 +45,6 @@ export class SwapFormMobileElement extends LitElement {
           map(({ brandColor }) => brandColor),
           distinctUntilChanged(),
           tap((color) => (this.isRainbowTheme = color === AccentColors.rainbow))
-        ),
-        unicornTouchUpdate(
-          this.applicationContext.value,
-          this.swapFormContainerRef,
-          this.unicornLoaderRef
         ),
       ],
       { requestUpdate: false }
@@ -64,7 +57,6 @@ export class SwapFormMobileElement extends LitElement {
       'shadow-container-rainbow': this.isRainbowTheme,
     }
     return html`
-      <inch-icon ${ref(this.unicornLoaderRef)} class="unicorn-loader" icon="unicornRun"></inch-icon>
       <div ${ref(this.swapFormContainerRef)} class="${classMap(classes)}">
         <inch-card style="max-width: 100vw">
           <inch-swap-form
