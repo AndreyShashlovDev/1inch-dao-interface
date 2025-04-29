@@ -7,7 +7,7 @@ import {
   IWalletAdapter,
   IWalletInternal,
 } from '@1inch-community/models'
-import { Observable, Subject } from 'rxjs'
+import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { SignTypedDataParameters, WriteContractParameters, WriteContractReturnType } from 'viem'
 import { adapterId } from './adapter-id'
 import { UniversalBrowserExtensionAdapter } from './adapters/universal-browser-extension-adapter'
@@ -29,11 +29,14 @@ export class ConnectWalletEmbeddedController implements IWallet, IWalletInternal
     return this.currentActiveAdapter?.info ?? null
   }
 
+  public readonly supportedWallets$ = new BehaviorSubject<EIP6963ProviderInfo[]>([])
+
   constructor(private readonly config: EmbeddedBootstrapConfig) {}
 
   async init(): Promise<void> {
     if (!this.config.walletProvider) return
     const injectedProviderDetail = await getInjectedProviderDetail(this.config.walletProvider)
+    this.supportedWallets$.next([injectedProviderDetail.info])
     const id = adapterId(injectedProviderDetail.info)
     const adapter = new UniversalBrowserExtensionAdapter(injectedProviderDetail)
     this.activeAdapters.set(id, adapter)
