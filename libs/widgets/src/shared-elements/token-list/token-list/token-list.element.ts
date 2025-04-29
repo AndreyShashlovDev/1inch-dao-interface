@@ -112,7 +112,6 @@ export class TokenListElement extends LitElement {
     ]).pipe(
       debounceTime(0),
       switchMap(([type, searchFilter, chainIds, walletAddress]) => {
-        debugger
         if (type === 'flat' || searchFilter.length > 0) {
           return this.applicationContext.value.tokenStorage.getTokenIdList({
             chainIds,
