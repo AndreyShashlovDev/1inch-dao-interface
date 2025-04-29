@@ -1,11 +1,12 @@
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { subscribe } from '@1inch-community/core/lit-utils'
+import { BigFloat } from '@1inch-community/core/math'
 import { ChainId, IBigFloat, TokenRecordId } from '@1inch-community/models'
 import '@1inch-community/ui-components/loaders'
 import '@1inch-community/ui-components/number-animation'
 import { Task } from '@lit/task'
 import { html, LitElement } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { customElement, property, state } from 'lit/decorators.js'
 import { styleMap } from 'lit/directives/style-map.js'
 import { tap } from 'rxjs'
 import type { Address } from 'viem'
@@ -21,12 +22,18 @@ export class TokenBalanceElement extends LitElement {
   @property({ type: String, attribute: false }) walletAddress?: Address
   @property({ type: Boolean, attribute: true }) endTextAlign = false
   @property({ type: Boolean, attribute: true }) animateTransition = true
+  @property({ type: Number, attribute: false }) skeletonAnimationDelayMillisecond: number = 0
+
+  @state() isConnectedWallet = true
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
   private readonly task = new Task(
     this,
     async ([tokenId, symbol, chainIds, walletAddress]) => {
+      if (!this.isConnectedWallet) {
+        return BigFloat.zero()
+      }
       if (tokenId && walletAddress) {
         return await this.applicationContext.value.tokenStorage.getTokenBalanceById({
           tokenRecordId: tokenId,
@@ -51,6 +58,9 @@ export class TokenBalanceElement extends LitElement {
       [
         this.applicationContext.value.onChain.crossChainEmitter.pipe(
           tap(() => this.task.run([this.tokenId, this.symbol, this.chainIds, this.walletAddress]))
+        ),
+        this.applicationContext.value.wallet.data.isConnected$.pipe(
+          tap((state) => (this.isConnectedWallet = state))
         ),
       ],
       { requestUpdate: false }
@@ -93,7 +103,10 @@ export class TokenBalanceElement extends LitElement {
     const style = {
       marginLeft: this.endTextAlign ? 'auto' : '',
     }
-    return html`<inch-loader-skeleton style="${styleMap(style)}"></inch-loader-skeleton>`
+    return html`<inch-loader-skeleton
+      style="${styleMap(style)}"
+      .animationDelayMillisecond="${this.skeletonAnimationDelayMillisecond}"
+    ></inch-loader-skeleton>`
   }
 }
 
