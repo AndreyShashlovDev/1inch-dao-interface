@@ -35,7 +35,7 @@ export class WalletManagerRoute extends LitElement {
     'account',
     {
       account: { lazyRender: true },
-      wallets: {},
+      wallets: { lazyRender: true },
       qrcode: {
         lazyRender: true,
       },

@@ -14,7 +14,7 @@ import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { map as litMap } from 'lit/directives/map.js'
 import { when } from 'lit/directives/when.js'
-import { tap } from 'rxjs'
+import { combineLatest, tap } from 'rxjs'
 import { Address } from 'viem'
 import '../../../../shared-elements/balance-view'
 import { DisconnectEventModel } from '../../../disconnect/disconnect-event-model'
@@ -32,35 +32,42 @@ export class WalletViewElement extends LitElement {
 
   @state() private showLoader = false
 
-  @state() private isWalletConnected = false
-
-  @state() private addressList: Address[] | null = null
-
-  @state() private activeAddress: Address | null = null
-
   @state() private showAddresses = false
 
-  @state() private isActiveWallet = false
+  private isActiveWallet = false
 
-  protected override firstUpdated() {
-    if (!this.info) {
+  private activeAddress: Address | null = null
+
+  private isWalletConnected = false
+
+  private addressList: Address[] | null = null
+
+  protected override willUpdate() {
+    const info = this.info
+
+    if (!info) {
       throw new Error('')
     }
-    const providerDataAdapter = this.getController().getDataAdapter(this.info)
+
+    const providerDataAdapter = this.getController().getDataAdapter(info)
     const globalDataAdapter = this.getController().data
     subscribe(
       this,
       [
         providerDataAdapter.isConnected$.pipe(tap((state) => (this.isWalletConnected = state))),
-        providerDataAdapter.activeAddress$.pipe(tap((state) => (this.activeAddress = state))),
+        combineLatest([globalDataAdapter.activeAddress$, providerDataAdapter.activeAddress$]).pipe(
+          tap(([globalActiveAddress, walletActiveAddress]) => {
+            if (globalActiveAddress === walletActiveAddress) {
+              this.activeAddress = walletActiveAddress
+            }
+          })
+        ),
         providerDataAdapter.addresses$.pipe(
           tap((state) => (this.addressList = !state.length ? null : state))
         ),
-        globalDataAdapter
-          .isActiveWallet$(this.info)
-          .pipe(tap((state) => (this.isActiveWallet = state))),
+        globalDataAdapter.isActiveWallet$(info).pipe(tap((state) => (this.isActiveWallet = state))),
       ],
-      { requestUpdate: false }
+      { requestUpdate: true }
     )
   }
 
@@ -96,15 +103,16 @@ export class WalletViewElement extends LitElement {
   }
 
   private getAlreadyConnectedWalletView(info: EIP6963ProviderInfo) {
+    const activeAddress = this.activeAddress ?? (this.addressList ?? [])[0]
     const isWalletConnect = info.uuid === 'walletConnect'
     const isMultiWallet = (this.addressList?.length ?? 0) > 1
-    const title = !isMultiWallet && this.activeAddress ? formatHex(this.activeAddress) : info.name
+    const title = !isMultiWallet && activeAddress ? formatHex(activeAddress) : info.name
     const subtitle = isMultiWallet
       ? html`${this.addressList?.length} ${translate('widgets.wallet-view.wallet-subtitle')}`
       : html`
           <inch-wallet-total-fiat-balance
             class="wallet-sub-title"
-            .address="${this.activeAddress}"
+            .address="${activeAddress}"
           ></inch-wallet-total-fiat-balance>
         `
 

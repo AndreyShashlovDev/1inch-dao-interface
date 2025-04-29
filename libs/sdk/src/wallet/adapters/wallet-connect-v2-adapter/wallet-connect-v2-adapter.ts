@@ -92,7 +92,7 @@ export class WalletConnectV2Adapter implements IWalletAdapter {
   }
 
   async disconnect(address?: Address | null): Promise<boolean> {
-    this.provider?.disconnect(address)
+    await this.provider?.disconnect(address)
     return true
   }
 

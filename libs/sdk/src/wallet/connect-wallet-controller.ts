@@ -11,6 +11,7 @@ import {
   IWalletInternal,
 } from '@1inch-community/models'
 import {
+  BehaviorSubject,
   debounceTime,
   defaultIfEmpty,
   first,
@@ -53,6 +54,7 @@ export class WalletController implements IWallet, IWalletInternal {
 
   readonly activeAdapters = new Map<string, IWalletAdapter>()
   readonly update$ = new Subject<void>()
+  readonly supportedWallets$ = new BehaviorSubject<EIP6963ProviderInfo[]>([])
 
   private readonly connectionUriLink$ = new Subject<string | null>()
   private currentActiveAdapterId: string | null = null
@@ -78,33 +80,13 @@ export class WalletController implements IWallet, IWalletInternal {
     await this.initWallets()
     this.restoreChainId()
     await this.restoreWalletConnection()
+    this.update$.pipe(tap(() => this.updateSupportWallets())).subscribe()
+
     this.update$.next()
   }
 
   async getSupportedWallets() {
-    const info: EIP6963ProviderInfo[] = []
-    this.adapters.forEach((adapter) => info.push(adapter.data.getInfo()))
-    return info.sort((info1, info2) => {
-      const id1 = adapterId(info1)
-      const id2 = adapterId(info2)
-      if (id1 === this.currentActiveAdapterId && id2 !== this.currentActiveAdapterId) {
-        return -1
-      }
-      if (id1 !== this.currentActiveAdapterId && id2 === this.currentActiveAdapterId) {
-        return 1
-      }
-      if (this.activeAdapters.has(id1) && this.activeAdapters.has(id2)) {
-        return 0
-      }
-      if (this.activeAdapters.has(id1) && !this.activeAdapters.has(id2)) {
-        return -1
-      }
-      if (!this.activeAdapters.has(id1) && this.activeAdapters.has(id2)) {
-        return 1
-      }
-
-      return 0
-    })
+    return this.supportedWallets$.value
   }
 
   async connect(info: EIP6963ProviderInfo, opts?: unknown) {
@@ -336,7 +318,6 @@ export class WalletController implements IWallet, IWalletInternal {
     const activeWalletId = getActiveWallet(this.context.value.storage)
     const connectedWallet: string[] | null = getConnectedWallet(this.context.value.storage)
     if (!connectedWallet) return
-    await this.getSupportedWallets()
     const chainId = await this.data.getChainId()
 
     await this.restoreWalletConnectionNotActiveWallet(chainId, activeWalletId, connectedWallet)
@@ -426,6 +407,42 @@ export class WalletController implements IWallet, IWalletInternal {
         adapter.disconnect().catch()
         this.activeAdapters.delete(id)
       }
+    }
+  }
+
+  private updateSupportWallets() {
+    const info: EIP6963ProviderInfo[] = []
+    const equal = (a: EIP6963ProviderInfo[], b: EIP6963ProviderInfo[]): boolean => {
+      if (a.length !== b.length) return false
+      return a.every((val, index) => val.uuid === b[index].uuid)
+    }
+
+    this.adapters.forEach((adapter) => info.push(adapter.data.getInfo()))
+    const sortedAdapters = info.sort((info1, info2) => {
+      const id1 = adapterId(info1)
+      const id2 = adapterId(info2)
+
+      if (id1 === this.currentActiveAdapterId && id2 !== this.currentActiveAdapterId) {
+        return -1
+      }
+      if (id1 !== this.currentActiveAdapterId && id2 === this.currentActiveAdapterId) {
+        return 1
+      }
+      if (this.activeAdapters.has(id1) && this.activeAdapters.has(id2)) {
+        return 0
+      }
+      if (this.activeAdapters.has(id1) && !this.activeAdapters.has(id2)) {
+        return -1
+      }
+      if (!this.activeAdapters.has(id1) && this.activeAdapters.has(id2)) {
+        return 1
+      }
+
+      return 0
+    })
+
+    if (!equal(this.supportedWallets$.value, sortedAdapters)) {
+      this.supportedWallets$.next(sortedAdapters)
     }
   }
 }

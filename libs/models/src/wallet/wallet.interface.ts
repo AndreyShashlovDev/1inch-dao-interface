@@ -16,6 +16,7 @@ export interface IWallet extends InitializingEntity {
   readonly data: IDataAdapter & IGlobalDataAdapter
   readonly isConnected: boolean
   readonly connectedWalletInfo: EIP6963ProviderInfo | null
+  readonly supportedWallets$: Observable<EIP6963ProviderInfo[]>
   getSupportedWallets(): Promise<EIP6963ProviderInfo[]>
   connect(info: EIP6963ProviderInfo, opts?: unknown): Promise<boolean>
   addConnection(info: EIP6963ProviderInfo, opts?: unknown): Promise<boolean>
