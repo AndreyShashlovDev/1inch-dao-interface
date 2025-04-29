@@ -1,3 +1,10 @@
+# [1.0.0-rc.9](https://github.com/1inch-community/interface/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2025-04-25)
+
+
+### Features
+
+* **wallet:** update createClient type and upgrade viem dependency ([5a83852](https://github.com/1inch-community/interface/commit/5a8385206a99f99341c1dc7e9a1b85e206698ede))
+
 # [1.0.0-rc.8](https://github.com/1inch-community/interface/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2025-04-25)
 
 
