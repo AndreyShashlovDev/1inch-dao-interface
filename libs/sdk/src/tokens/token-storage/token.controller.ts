@@ -25,13 +25,29 @@ import {
   ProxyResultTokenPrice,
   TokenRecordId,
 } from '@1inch-community/models'
-import { from, switchMap } from 'rxjs'
+import { from, Observable, switchMap } from 'rxjs'
 import { Address, isAddressEqual } from 'viem'
 import { getChainIdList, isChainId, nativeTokenAddress, parseChainId } from '../../chain'
 import { buildBalanceId, buildTokenId, buildTokenPriceId, destructuringId } from '../token-id'
 import { TokenSchema } from './token.schema'
 
 export class TokenController implements ITokenStorage {
+  get tokensUpdate$(): Observable<void> {
+    return this.schema.updateEmitters.tokens as Observable<void>
+  }
+
+  get balancesUpdate$(): Observable<Address> {
+    return this.schema.updateEmitters.balances as Observable<Address>
+  }
+
+  get tokenPriceUpdate$(): Observable<void> {
+    return this.schema.updateEmitters.tokenPrice as Observable<void>
+  }
+
+  get favoriteTokensUpdate$(): Observable<void> {
+    return this.schema.updateEmitters.favoriteTokens as Observable<void>
+  }
+
   private readonly context = lazyAppContext('TokenController')
   private readonly schema = new TokenSchema()
 
@@ -55,6 +71,7 @@ export class TokenController implements ITokenStorage {
       .toArray()
   }
 
+  @CacheActivePromise()
   async getAllFavoriteTokenIds(): Promise<TokenRecordId[]> {
     const { tokens, favoriteTokens } = this.schema
     const favoriteTokenIds: TokenRecordId[] = []
@@ -71,6 +88,7 @@ export class TokenController implements ITokenStorage {
     } else {
       await favoriteTokens.where('id').equals(id).delete()
     }
+    this.schema.updateFavoriteTokensComplete()
   }
 
   @CacheActivePromise()
@@ -126,6 +144,7 @@ export class TokenController implements ITokenStorage {
     await balances
       .where('tokenRecordId')
       .anyOf(tokenIdList)
+      .and((record) => isAddressEqual(record.walletAddress, walletAddress))
       .each((record) => {
         const token = tokenMap.get(record.tokenRecordId)
         if (!token) return
@@ -206,7 +225,7 @@ export class TokenController implements ITokenStorage {
     const crossChainTokensBindingWithBalanceResult: ICrossChainTokensBindingRecord[] = []
     await balances
       .where('walletAddress')
-      .equals(walletAddress)
+      .equals(walletAddress.toLowerCase())
       .and((record) => record.amount !== '' && record.amount !== '0')
       .each((record) => {
         tokenIdsWithBalance.push(record.tokenRecordId)
@@ -290,7 +309,7 @@ export class TokenController implements ITokenStorage {
     const tokenMap = new Map<TokenRecordId, IToken>()
     await balances
       .where('walletAddress')
-      .equals(walletAddress)
+      .equals(walletAddress.toLowerCase())
       .each((record) => balanceMap.set(record.tokenRecordId, record))
     const tokenIdList = balanceMap.keys().toArray()
     await Promise.all([
@@ -306,6 +325,7 @@ export class TokenController implements ITokenStorage {
           tokenMap.set(record.id, record)
         }),
     ])
+    debugger
     let totalBalance = BigFloat.zero()
     for (const id of tokenIdList) {
       const token = tokenMap.get(id)
@@ -368,7 +388,7 @@ export class TokenController implements ITokenStorage {
     const result: TokenRecordId[] = []
     await balances
       .where('walletAddress')
-      .equals(walletAddress)
+      .equals(walletAddress.toLowerCase())
       .each((record) => {
         if (record.amount === '0') return
         if (!tokenIdSet.has(record.tokenRecordId)) return
@@ -379,8 +399,8 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   async getTokenIdList(filter: getTokenIdListQueryFilters): Promise<TokenRecordId[]> {
-    await this.updateTokenDatabase()
     const { chainIds, tokenNameSymbolAddressMatches, walletAddress, tokensOnlyWithBalance } = filter
+    await this.updateDatabase(walletAddress)
     if (walletAddress === null && tokensOnlyWithBalance) {
       throw new Error('tokensOnlyWithBalance is not supported for walletAddress = null')
     }
@@ -734,7 +754,7 @@ export class TokenController implements ITokenStorage {
           chainId,
           tokenAddress: tokenAddress,
           walletAddress: walletAddress.toLowerCase() as Address,
-          amount: balanceRecord[tokenAddress],
+          amount: balanceRecord[address as Address],
         })
       }
       walletAddressSet.add(walletAddress)
@@ -756,12 +776,12 @@ export class TokenController implements ITokenStorage {
       const chainId = parseChainId(price.id)
       const tokenPriceRecord = price.result!
       for (const address in tokenPriceRecord) {
-        const tokenAddress = address as Address
+        const tokenAddress = address.toLowerCase() as Address
         tokenPriceRecords.push({
           id: buildTokenPriceId(chainId, tokenAddress),
           tokenRecordId: buildTokenId(chainId, tokenAddress),
           chainId,
-          price: tokenPriceRecord[tokenAddress],
+          price: tokenPriceRecord[address as Address],
         })
       }
     }

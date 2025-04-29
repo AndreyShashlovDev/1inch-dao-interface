@@ -22,7 +22,7 @@ export function buildBalanceId(
   walletAddress: Address,
   tokenAddress: Address
 ): BalanceTokenRecordId {
-  return `${chainId}${separator}${walletAddress}${separator}${tokenAddress}`
+  return `${chainId}${separator}${walletAddress}${separator}${tokenAddress}`.toLowerCase() as BalanceTokenRecordId
 }
 
 export function destructuringId<T extends string[]>(id: string): T {
