@@ -12,9 +12,12 @@ import {
   BehaviorSubject,
   combineLatest,
   debounceTime,
+  defer,
   map,
+  merge,
   Observable,
   shareReplay,
+  startWith,
   switchMap,
   tap,
 } from 'rxjs'
@@ -89,29 +92,41 @@ export class TokenListElement extends LitElement {
   private readonly walletAddress$ = new BehaviorSubject<Address | undefined>(undefined)
   private readonly chainIds$ = new BehaviorSubject<ChainId[]>([])
   private readonly searchFilter$ = new BehaviorSubject<string>('')
+  private readonly crossChainEmitter$ = defer(
+    () => this.applicationContext.value.onChain.crossChainEmitter
+  ).pipe(startWith(null))
+  private readonly tokensUpdate$ = defer(
+    () => this.applicationContext.value.tokenStorage.tokensUpdate$
+  ).pipe(startWith(null))
+  private readonly balancesUpdate$ = defer(
+    () => this.applicationContext.value.tokenStorage.balancesUpdate$
+  ).pipe(startWith(null))
 
   private readonly tokenListByViewTypeAndSearchFilterAndChainIds$: TokenListByViewTypeAndSearchFilterAndChainIdsType =
-    combineLatest([this.type$, this.searchFilter$, this.chainIds$, this.walletAddress$]).pipe(
+    combineLatest([
+      this.type$,
+      this.searchFilter$,
+      this.chainIds$,
+      this.walletAddress$,
+      merge(this.crossChainEmitter$, this.tokensUpdate$, this.balancesUpdate$),
+    ]).pipe(
       debounceTime(0),
       switchMap(([type, searchFilter, chainIds, walletAddress]) => {
+        debugger
         if (type === 'flat' || searchFilter.length > 0) {
-          return this.applicationContext.value.tokenStorage.liveQuery(() =>
-            this.applicationContext.value.tokenStorage.getTokenIdList({
-              chainIds,
-              tokensOnlyWithBalance: this.showOnlyWithBalance,
-              walletAddress: walletAddress || null,
-              tokenNameSymbolAddressMatches: searchFilter || null,
-            })
-          )
+          return this.applicationContext.value.tokenStorage.getTokenIdList({
+            chainIds,
+            tokensOnlyWithBalance: this.showOnlyWithBalance,
+            walletAddress: walletAddress || null,
+            tokenNameSymbolAddressMatches: searchFilter || null,
+          })
         }
         if (type === 'accordion') {
-          return this.applicationContext.value.tokenStorage.liveQuery(() =>
-            this.applicationContext.value.tokenStorage.getSymbolData({
-              chainIds,
-              tokensOnlyWithBalance: this.showOnlyWithBalance,
-              walletAddress: walletAddress || null,
-            })
-          )
+          return this.applicationContext.value.tokenStorage.getSymbolData({
+            chainIds,
+            tokensOnlyWithBalance: this.showOnlyWithBalance,
+            walletAddress: walletAddress || null,
+          })
         }
         throw new Error(`TokenListElementError: Unknown type: ${type}`)
       })
@@ -176,7 +191,7 @@ export class TokenListElement extends LitElement {
       return this.renderAccordionItem(index)
     }
     if (typeof id === 'string') {
-      return this.renderFlatItem(id)
+      return this.renderFlatItem(id, index)
     }
     throw new Error(`TokenListElementError: Unsupported template`)
   }
@@ -216,12 +231,13 @@ export class TokenListElement extends LitElement {
     ></inch-token-item-cross-chain-accordion>`
   }
 
-  private renderFlatItem(id: TokenRecordId) {
+  private renderFlatItem(id: TokenRecordId, index: number) {
     const walletAddress = this.walletAddress$.value
     return html` <inch-token-item-cross-chain-flat
       .showFavoriteTokenToggle="${this.showFavoriteTokenToggle}"
       .tokenId="${id}"
       .walletAddress="${walletAddress}"
+      .index="${index}"
       .mobileView="${this.mobileView}"
       .isFavorite="${this.favoriteTokenIds?.includes(id)}"
     ></inch-token-item-cross-chain-flat>`
