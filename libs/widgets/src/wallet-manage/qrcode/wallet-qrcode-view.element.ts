@@ -1,6 +1,6 @@
 import { throttle } from '@1inch-community/core/decorators'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
-import { subscribe, translate } from '@1inch-community/core/lit-utils'
+import { appendClass, subscribe, translate } from '@1inch-community/core/lit-utils'
 import { EIP6963ProviderInfo } from '@1inch-community/models'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/chip'
@@ -26,9 +26,9 @@ export class WalletDisconnectViewElement extends LitElement {
 
   @property({ type: Object }) data?: EIP6963ProviderInfo
 
-  @state() private connectUriLink?: string | null
   @state() private waitConnection: boolean = false
-  @state() private qrcode?: TemplateResult[] | null
+  @state() private connectUriLink: string | null = null
+  @state() private qrcode: TemplateResult[] | null = null
 
   protected firstUpdated() {
     subscribe(
@@ -113,6 +113,9 @@ export class WalletDisconnectViewElement extends LitElement {
   }
 
   protected override render() {
+    appendClass(this, {
+      loader: this.qrcode === null,
+    })
     return html`
       <div class="qrcode-container">
         <div class="qrcode-title">

@@ -39,8 +39,11 @@ export const walletQrcodeViewStyle = css`
     aspect-ratio: 1/1;
     border-radius: 32px;
     overflow: hidden;
-    background: var(--color-core-white);
     border: 1px solid var(--color-border-border-tertiary);
+  }
+
+  :host(:not(.loader)) .qrcode-code {
+    background: var(--color-core-white);
   }
 
   .qrcode-code-svg-container {
