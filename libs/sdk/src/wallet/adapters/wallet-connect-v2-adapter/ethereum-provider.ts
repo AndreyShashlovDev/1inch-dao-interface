@@ -83,9 +83,15 @@ export class EthereumProvider extends WcEthereumProvider {
   }
 
   override async disconnect() {
-    await super.disconnect()
-    await this.signer.disconnect()
-    await this.dropPersist()
+    await super.disconnect().catch(() => {
+      /* ignore */
+    })
+    await this.signer.disconnect().catch(() => {
+      /* ignore */
+    })
+    await this.dropPersist().catch(() => {
+      /* ignore */
+    })
   }
 
   async dropPersist() {

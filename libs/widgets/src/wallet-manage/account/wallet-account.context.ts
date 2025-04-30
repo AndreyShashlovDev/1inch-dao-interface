@@ -54,10 +54,6 @@ export class WalletAccountContext implements IWalletAccountContext {
     }
   }
 
-  disconnectWallet(): void {
-    this.wallet.disconnect().catch((e) => console.warn(e))
-  }
-
   onChangeChainFilter(chainIdList: ChainId[]): void {
     this.chainFilter$.next(chainIdList)
     this.persistSyncStorage.set('inch-select-token_chain-filter', chainIdList)
