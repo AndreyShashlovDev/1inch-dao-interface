@@ -1,4 +1,3 @@
-import { getEnvironmentValue } from '@1inch-community/core/environment'
 import {
   IApplicationContext,
   ICrossChainSDKFacade,
@@ -12,9 +11,26 @@ import {
 import type { EIP712TypedData, Quote, SDK } from '@1inch/cross-chain-sdk'
 import { Address, type Hash, isAddressEqual } from 'viem'
 
-async function buildSDK(walletController: IWallet, proxyClient: IProxyClient) {
+export class CrossChainSDK {
+  private static instance: SDK
+
+  constructor(private readonly appContext: IApplicationContext) {}
+
+  async getInstance(): Promise<SDK> {
+    if (!CrossChainSDK.instance) {
+      CrossChainSDK.instance = await buildSDK(
+        this.appContext.isEmbedded ? '/' : '/proxy/direct/',
+        this.appContext.wallet,
+        this.appContext.api.getProxyClient()
+      )
+    }
+
+    return CrossChainSDK.instance
+  }
+}
+
+async function buildSDK(host: string, walletController: IWallet, proxyClient: IProxyClient) {
   const { SDK } = await import('@1inch/cross-chain-sdk')
-  const host: string = getEnvironmentValue('oneInchDevPortalHost')
   return new SDK({
     url: host,
     httpProvider: proxyClient,
@@ -104,7 +120,11 @@ export class CrossChainSDKFacade implements ICrossChainSDKFacade {
   private async buildSDK() {
     if (this.sdk) return this.sdk
     if (!this.context) return null
-    this.sdk = await buildSDK(this.context.wallet, this.context.api.getProxyClient())
+    this.sdk = await buildSDK(
+      this.context.environment.get('oneInchDevPortalHost'),
+      this.context.wallet,
+      this.context.api.getProxyClient()
+    )
     return this.sdk
   }
 }

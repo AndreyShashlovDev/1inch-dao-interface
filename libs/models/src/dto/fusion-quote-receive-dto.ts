@@ -1,5 +1,7 @@
 import type { Address } from 'viem'
 
+export interface FusionPlusQuoteReceiveDto {}
+
 export interface FusionQuoteReceiveDto {
   recommended_preset: string
   quoteId: string | null

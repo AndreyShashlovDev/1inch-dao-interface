@@ -42,7 +42,8 @@ export class OneInchOracleBaseRateAdapter implements ITokenRateSourceAdapter {
     })
     const [rate, revertedRate] = normalizeRate(rateRaw, sourceToken, destinationToken)
     return {
-      chainId,
+      sourceChainId: chainId,
+      destinationChainId: chainId,
       sourceToken,
       destinationToken,
       rate,

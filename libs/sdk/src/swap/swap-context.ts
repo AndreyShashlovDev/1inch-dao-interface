@@ -1,5 +1,6 @@
 import { lazy } from '@1inch-community/core/lazy'
 import {
+  FusionPlusQuoteReceiveDto,
   FusionQuoteReceiveDto,
   IApplicationContext,
   IOneInchDevPortalCrossChainAdapter,
@@ -38,13 +39,16 @@ import {
 } from 'rxjs'
 import { Hash, maxUint256 } from 'viem'
 import { getOneInchRouterV6ContractAddress, isNativeToken } from '../chain'
+import { CrossChainSDK } from '../one-inch-dev-portal/sdk'
 import { PairHolder } from './pair-holder'
+import { SwapContextFusionPlusStrategy } from './swap-context-fusion-plus.strategy'
 import { SwapContextFusionStrategy } from './swap-context-fusion.strategy'
 import { SwapContextOnChainStrategy } from './swap-context-onchain.strategy'
 
 type ContextStrategy = {
   onChain: ISwapContextStrategy<unknown>
   fusion: ISwapContextStrategy<FusionQuoteReceiveDto | null>
+  fusionPlus: ISwapContextStrategy<FusionPlusQuoteReceiveDto | null>
 }
 
 export class SwapContext implements ISwapContext {
@@ -133,8 +137,9 @@ export class SwapContext implements ISwapContext {
     defer(() => this.settings.value.auctionTime.value$),
   ]).pipe(
     map(([autoAuctionTime, auctionTimeSettings]) => {
-      if (auctionTimeSettings)
+      if (auctionTimeSettings) {
         return { type: auctionTimeSettings[1], value: auctionTimeSettings[0] }
+      }
       return { type: 'auto', value: autoAuctionTime } as const
     }),
     shareReplay({ bufferSize: 1, refCount: true })
@@ -156,6 +161,13 @@ export class SwapContext implements ISwapContext {
         this.wallet,
         this.settings.value,
         this.oneInchApiAdapter
+      ),
+      fusionPlus: new SwapContextFusionPlusStrategy(
+        new CrossChainSDK(this.context),
+        this.wallet,
+        this.pairHolder,
+        this,
+        this.settings.value
       ),
     }
   }
@@ -184,8 +196,9 @@ export class SwapContext implements ISwapContext {
     const chainId = await this.context.wallet.data.getChainId()
     const sourceTokenSnapshot = this.pairHolder.getSnapshot('source')
     const owner = await this.context.wallet.data.getActiveAddress()
-    if (!chainId || !sourceTokenSnapshot || !sourceTokenSnapshot.token || !owner)
+    if (!chainId || !sourceTokenSnapshot || !sourceTokenSnapshot.token || !owner) {
       throw new Error('')
+    }
     const spender = getOneInchRouterV6ContractAddress(chainId)
     const result = await this.context.onChain.simulateApprove(
       chainId,

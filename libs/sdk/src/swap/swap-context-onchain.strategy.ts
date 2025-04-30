@@ -4,6 +4,7 @@ import {
   ISwapContextStrategyDataSnapshot,
   ITokenRateProvider,
   IWallet,
+  Pair,
 } from '@1inch-community/models'
 import { Hash } from 'viem'
 import { PairHolder } from './pair-holder'
@@ -17,6 +18,19 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
 
   swap(): Promise<Hash> {
     throw new Error('OnChain strategy not support swap')
+  }
+
+  async supportSwap(pair: Pair): Promise<boolean> {
+    if (pair.source.chainId !== pair.destination.chainId) {
+      return false
+    }
+    const rate = await this.rateProvider.getOnChainRate(
+      pair.source.chainId,
+      pair.source,
+      pair.destination
+    )
+
+    return rate !== null && rate.rate > 0n
   }
 
   async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot> {
@@ -61,7 +75,8 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
     }
 
     return {
-      chainId,
+      sourceChainId: chainId,
+      destinationChainId: chainId,
       sourceToken,
       destinationToken,
       sourceTokenAmount,

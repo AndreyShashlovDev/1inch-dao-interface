@@ -6,11 +6,12 @@ import {
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
   IWallet,
+  Pair,
   Rate,
   SwapSettings,
   SwapSnapshot,
 } from '@1inch-community/models'
-import { OrderParams, PresetEnum } from '@1inch/fusion-sdk'
+import { NetworkEnum, OrderParams, PresetEnum } from '@1inch/fusion-sdk'
 import { Hash } from 'viem'
 import { getWrapperNativeToken, isNativeToken } from '../chain'
 import { PairHolder } from './pair-holder'
@@ -27,6 +28,13 @@ export class SwapContextFusionStrategy
     private readonly settings: SwapSettings,
     private readonly devPortalAdapter: IOneInchDevPortalCrossChainAdapter
   ) {}
+
+  async supportSwap(pair: Pair): Promise<boolean> {
+    return (
+      pair.destination.chainId === pair.source.chainId &&
+      NetworkEnum[pair.source.chainId] !== undefined
+    )
+  }
 
   async swap(swapSnapshot: SwapSnapshot<FusionQuoteReceiveDto | null>): Promise<Hash> {
     const {
@@ -164,7 +172,8 @@ export class SwapContextFusionStrategy
     )
 
     const rateData: Rate = {
-      chainId,
+      sourceChainId: chainId,
+      destinationChainId: chainId,
       rate,
       revertedRate,
       isReverted: false,
@@ -181,7 +190,8 @@ export class SwapContextFusionStrategy
     }
 
     return {
-      chainId,
+      sourceChainId: chainId,
+      destinationChainId: chainId,
       sourceToken,
       destinationToken,
       sourceTokenAmount,
