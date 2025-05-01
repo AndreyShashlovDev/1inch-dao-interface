@@ -1,7 +1,5 @@
 import { lazy } from '@1inch-community/core/lazy'
 import {
-  FusionPlusQuoteReceiveDto,
-  FusionQuoteReceiveDto,
   IApplicationContext,
   IOneInchDevPortalCrossChainAdapter,
   ISwapContext,
@@ -39,30 +37,24 @@ import {
 } from 'rxjs'
 import { Hash, maxUint256 } from 'viem'
 import { getOneInchRouterV6ContractAddress, isNativeToken } from '../chain'
-import { CrossChainSDK } from '../one-inch-dev-portal/sdk'
+import { OneInchCrossChainSDK } from '../one-inch-dev-portal/sdk/1inch-cross-chain-sdk'
+import { OneInchSingleChainSDK } from '../one-inch-dev-portal/sdk/1inch-single-chain-sdk'
 import { PairHolder } from './pair-holder'
 import { SwapContextFusionPlusStrategy } from './swap-context-fusion-plus.strategy'
 import { SwapContextFusionStrategy } from './swap-context-fusion.strategy'
 import { SwapContextOnChainStrategy } from './swap-context-onchain.strategy'
 
-type ContextStrategy = {
-  onChain: ISwapContextStrategy<unknown>
-  fusion: ISwapContextStrategy<FusionQuoteReceiveDto | null>
-  fusionPlus: ISwapContextStrategy<FusionPlusQuoteReceiveDto | null>
-}
-
 export class SwapContext implements ISwapContext {
   private readonly pairHolder: PairHolder
   private readonly oneInchApiAdapter: IOneInchDevPortalCrossChainAdapter
   private readonly wallet: IWallet
-  private readonly contextStrategy: ContextStrategy
 
   private readonly subscription = new Subscription()
-
   private readonly settings = lazy<SwapSettings>(() => ({
     slippage: this.context.settings.getSetting('slippage'),
     auctionTime: this.context.settings.getSetting('auctionTime'),
   }))
+  private readonly strategies: ISwapContextStrategy<unknown>[]
 
   readonly loading$ = new BehaviorSubject(false)
 
@@ -94,9 +86,9 @@ export class SwapContext implements ISwapContext {
   private readonly dataSnapshot$: Observable<ISwapContextStrategyDataSnapshot | null> =
     this.dataUpdateEmitter$.pipe(
       withLatestFrom(this.connectedWalletAddress$),
-      switchMap(([, address]) => {
+      switchMap(() => {
         this.loading$.next(true)
-        return this.getDataSnapshot(address === null)
+        return this.getDataSnapshot()
       }),
       tap(() => {
         this.loading$.next(false)
@@ -149,27 +141,25 @@ export class SwapContext implements ISwapContext {
     this.pairHolder = new PairHolder(this.context)
     this.oneInchApiAdapter = this.context.api
     this.wallet = this.context.wallet
-    this.contextStrategy = {
-      onChain: new SwapContextOnChainStrategy(
-        this.pairHolder,
-        this.wallet,
-        this.context.tokenRateProvider
-      ),
-      fusion: new SwapContextFusionStrategy(
-        this,
-        this.pairHolder,
-        this.wallet,
-        this.settings.value,
-        this.oneInchApiAdapter
-      ),
-      fusionPlus: new SwapContextFusionPlusStrategy(
-        new CrossChainSDK(this.context),
+
+    // setup strategies by priority
+    this.strategies = [
+      new SwapContextFusionPlusStrategy(
+        new OneInchCrossChainSDK(this.context),
         this.wallet,
         this.pairHolder,
         this,
         this.settings.value
       ),
-    }
+      new SwapContextFusionStrategy(
+        new OneInchSingleChainSDK(this.context),
+        this,
+        this.pairHolder,
+        this.wallet,
+        this.settings.value
+      ),
+      new SwapContextOnChainStrategy(this.pairHolder, this.wallet, this.context.tokenRateProvider),
+    ]
   }
 
   init() {
@@ -280,11 +270,16 @@ export class SwapContext implements ISwapContext {
   }
 
   async swap(swapSnapshot: SwapSnapshot): Promise<Hash> {
-    const strategy = await this.getActiveStrategy()
+    const pair: Pair = {
+      source: swapSnapshot.sourceToken,
+      destination: swapSnapshot.destinationToken,
+    }
+
+    const strategy = await this.getSupportStrategy(pair)
     return await strategy.swap(swapSnapshot)
   }
 
-  async getMaxAmount() {
+  async getMaxAmount(): Promise<bigint> {
     const snapshot = this.pairHolder.getSnapshot('source')
     const sourceToken = snapshot.token
     const connectedWalletAddress = await this.wallet.data.getActiveAddress()
@@ -345,28 +340,25 @@ export class SwapContext implements ISwapContext {
     this.pairHolder.setAmount(type, value)
   }
 
-  private async getActiveStrategy(): Promise<ISwapContextStrategy<unknown>> {
-    const address = await this.wallet.data.getActiveAddress()
-    if (address === null) {
-      return this.contextStrategy.onChain
-    }
-    return this.contextStrategy.fusion
-  }
-
-  private async getDataSnapshot(
-    useOnChainStrategy: boolean
-  ): Promise<ISwapContextStrategyDataSnapshot | null> {
-    if (!useOnChainStrategy) {
-      try {
-        return await this.contextStrategy.fusion.getDataSnapshot()
-      } catch {
-        return this.getDataSnapshot(true)
+  private async getSupportStrategy(pair: Pair): Promise<ISwapContextStrategy<unknown>> {
+    for (const strategy of this.strategies) {
+      if (await strategy.supportSwap(pair)) {
+        return strategy
       }
     }
-    try {
-      return await this.contextStrategy.onChain.getDataSnapshot()
-    } catch {
-      return null
+
+    throw new Error('Supported strategy for pair not found')
+  }
+
+  private async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot | null> {
+    for (const strategy of this.strategies) {
+      try {
+        return await strategy.getDataSnapshot()
+      } catch (e) {
+        /* ignore */
+      }
     }
+
+    return null
   }
 }

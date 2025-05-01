@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs'
 import type {
   Address,
+  Hex,
   SignTypedDataParameters,
   SignTypedDataReturnType,
   WriteContractParameters,
@@ -25,6 +26,7 @@ export interface IWallet extends InitializingEntity {
   setActiveAddress(info: EIP6963ProviderInfo, address: Address): Promise<void>
   writeContract(params: WriteContractParameters): Promise<WriteContractReturnType>
   signTypedData(typeData: SignTypedDataParameters): Promise<SignTypedDataReturnType>
+  rawCall(address: Address, callData: Hex): Promise<string>
 }
 
 export interface IWalletInternal {

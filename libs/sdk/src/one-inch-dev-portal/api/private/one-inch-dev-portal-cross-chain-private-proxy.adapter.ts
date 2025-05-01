@@ -6,13 +6,10 @@ import {
   IApplicationContext,
   IOneInchDevPortalCrossChainAdapter,
   IProxyClient,
-  IToken,
   ITokenV2Dto,
   OrderStatusResult,
   ProxyResultBalance,
   ProxyResultTokenPrice,
-  QuoteReceiveCustomPreset,
-  QuoteResult,
 } from '@1inch-community/models'
 import { Address, type Hash } from 'viem'
 import { CrossChainSDKFacade } from '../../sdk'
@@ -72,25 +69,6 @@ export class OneInchDevPortalCrossChainPrivateProxyAdapter
   @CacheActivePromise()
   async getTokenPrice(): Promise<ProxyResultTokenPrice> {
     return this.client.get('/proxy/token-price')
-  }
-
-  @CacheActivePromise()
-  getQuote(
-    fromToken: IToken,
-    toToken: IToken,
-    amount: bigint,
-    walletAddress: Address,
-    customPreset?: QuoteReceiveCustomPreset,
-    enableEstimate?: boolean
-  ): Promise<QuoteResult | null> {
-    return this.sdkFacade.getQuote(
-      fromToken,
-      toToken,
-      amount,
-      walletAddress,
-      customPreset,
-      enableEstimate
-    )
   }
 
   @CacheActivePromise()

@@ -10,7 +10,6 @@ import {
   ProxyResultBalance,
   ProxyResultBalanceItem,
   ProxyResultTokenPrice,
-  QuoteResult,
 } from '@1inch-community/models'
 import { Abi, Address, Hash, parseAbi, PublicClient } from 'viem'
 import { getBalanceHelperAddress, isNativeToken } from '../../../chain'
@@ -100,10 +99,6 @@ export class OneInchDevPortalCrossChainOnChainAdapter
 
   getProxyClient(): IProxyClient {
     throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getProxyClient call')
-  }
-
-  getQuote(): Promise<QuoteResult | null> {
-    throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getQuote call')
   }
 
   getOrderStatus(): Promise<OrderStatusResult | null> {

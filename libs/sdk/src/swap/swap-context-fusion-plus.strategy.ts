@@ -1,7 +1,7 @@
 import { BigMath } from '@1inch-community/core/math'
 import {
   FusionPlusQuoteReceiveDto,
-  ISwapContext,
+  IAmountDataSource,
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
   IWallet,
@@ -10,10 +10,19 @@ import {
   SwapSettings,
   SwapSnapshot,
 } from '@1inch-community/models'
-import { HashLock, OrderStatus, QuoteParams, SDK, SupportedChains } from '@1inch/cross-chain-sdk'
+import {
+  HashLock,
+  OrderStatus,
+  OrderStatusResponse,
+  QuoteParams,
+  ReadyToAcceptSecretFills,
+  SDK,
+  SupportedChains,
+} from '@1inch/cross-chain-sdk'
 import { Hash } from 'viem'
 import { getWrapperNativeToken, isNativeToken } from '../chain'
-import { CrossChainSDK } from '../one-inch-dev-portal/sdk'
+import { OneInchCrossChainSDK } from '../one-inch-dev-portal/sdk/1inch-cross-chain-sdk'
+import { FusionPlusQuoteMapper } from '../one-inch-dev-portal/sdk/mapper/fusion-plus-quote.mapper'
 import { PairHolder } from './pair-holder'
 
 interface Secret {
@@ -22,46 +31,40 @@ interface Secret {
 }
 
 export class SwapContextFusionPlusStrategy
-  implements ISwapContextStrategy<FusionPlusQuoteReceiveDto | null>
+  implements ISwapContextStrategy<FusionPlusQuoteReceiveDto>
 {
   private static supportChainIds = new Set<number>(SupportedChains.map((item) => item))
 
   constructor(
-    private readonly crossChainSDK: CrossChainSDK,
+    private readonly crossChainSDK: OneInchCrossChainSDK,
     private readonly wallet: IWallet,
     private readonly pairHolder: PairHolder,
-    private readonly swapContext: ISwapContext,
+    private readonly amountDataSource: IAmountDataSource,
     private readonly settings: SwapSettings
   ) {}
 
   async supportSwap(pair: Pair): Promise<boolean> {
     return (
+      pair.source.chainId !== pair.destination.chainId &&
       SwapContextFusionPlusStrategy.supportChainIds.has(pair.source.chainId) &&
       SwapContextFusionPlusStrategy.supportChainIds.has(pair.destination.chainId)
     )
   }
 
-  async swap(swapSnapshot: SwapSnapshot<FusionPlusQuoteReceiveDto | null>): Promise<Hash> {
+  async swap(swapSnapshot: SwapSnapshot<FusionPlusQuoteReceiveDto>): Promise<Hash> {
     const walletAddress = await this.wallet.data.getActiveAddress()
     const sdk = await this.crossChainSDK.getInstance()
 
     if (!walletAddress) {
       throw new Error('')
     }
-
-    const params: QuoteParams = {
-      srcChainId: swapSnapshot.sourceToken.chainId.valueOf(),
-      dstChainId: swapSnapshot.destinationToken.chainId.valueOf(),
-      srcTokenAddress: swapSnapshot.sourceToken.address,
-      dstTokenAddress: swapSnapshot.destinationToken.address,
-      amount: swapSnapshot.sourceTokenAmount.toString(),
-      enableEstimate: true,
-      walletAddress,
+    const quote = FusionPlusQuoteMapper.toDomain(swapSnapshot.rawResponseData)
+    if (!quote.quoteId) {
+      throw new Error('quoter has not returned quoteId')
     }
 
-    const quote = await sdk.getQuote(params)
     const preset = quote.recommendedPreset
-    const presetConfig = quote.getPreset(preset)
+    const presetConfig = quote.presets[preset]!
     const secretsCount = presetConfig.secretsCount
     const [hashLock, secrets] = this.generateSecrets(secretsCount)
     const secretHashes = secrets.map((item) => item.hash)
@@ -74,28 +77,28 @@ export class SwapContextFusionPlusStrategy
       secretHashes,
     })
 
-    await sdk.submitOrder(quote.srcChainId, order, quoteId, secretHashes)
-    await this.finalizeEscrowSecretsProcess(sdk, hash, secrets) // or wait in background
+    await sdk.submitOrder(swapSnapshot.sourceToken.chainId.valueOf(), order, quoteId, secretHashes)
+    await this.finalizeEscrowSecretsProcess(sdk, hash, secrets) // or wait in background?
 
     return hash as Hash
   }
 
-  async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot> {
+  async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot<FusionPlusQuoteReceiveDto>> {
     const sdk = await this.crossChainSDK.getInstance()
     const srcTokenSnapshot = this.pairHolder.getSnapshot('source')
-    const destTokenSnapshot = this.pairHolder.getSnapshot('destination')
+    const dstTokenSnapshot = this.pairHolder.getSnapshot('destination')
     let { token: srcToken } = srcTokenSnapshot
     const { amount: srcTokenAmount } = srcTokenSnapshot
-    const { token: destToken } = destTokenSnapshot
+    const { token: dstToken } = dstTokenSnapshot
     const srcChainId = srcToken?.chainId
-    const destChainId = destToken?.chainId
+    const dstChainId = dstToken?.chainId
     const walletAddress = await this.wallet.data.getActiveAddress()
 
     if (
       !srcChainId ||
-      !destChainId ||
+      !dstChainId ||
       srcToken === null ||
-      destToken === null ||
+      dstToken === null ||
       srcTokenAmount === null ||
       walletAddress === null ||
       srcTokenAmount === 0n ||
@@ -105,7 +108,18 @@ export class SwapContextFusionPlusStrategy
       throw new Error('')
     }
 
-    const balance = await this.swapContext.getMaxAmount()
+    const isSupportExchange = await this.supportSwap({
+      source: srcToken,
+      destination: dstToken,
+    })
+
+    if (!isSupportExchange) {
+      throw new Error(
+        `Strategy ${SwapContextFusionPlusStrategy.name} not support exchange by presented pair/chain`
+      )
+    }
+
+    const balance = await this.amountDataSource.getMaxAmount()
 
     if (balance < srcTokenAmount) {
       throw new Error('')
@@ -117,9 +131,9 @@ export class SwapContextFusionPlusStrategy
 
     const params: QuoteParams = {
       srcChainId: srcChainId.valueOf(),
-      dstChainId: destChainId.valueOf(),
+      dstChainId: dstChainId.valueOf(),
       srcTokenAddress: srcToken.address,
-      dstTokenAddress: destToken.address,
+      dstTokenAddress: dstToken.address,
       amount: srcTokenAmount.toString(),
       enableEstimate: true,
       walletAddress,
@@ -131,22 +145,22 @@ export class SwapContextFusionPlusStrategy
 
     const marketPrice = quote.dstTokenAmount
 
-    const rate = BigMath.div(marketPrice, srcTokenAmount, destToken.decimals, srcToken.decimals)
+    const rate = BigMath.div(marketPrice, srcTokenAmount, dstToken.decimals, srcToken.decimals)
     const revertedRate = BigMath.div(
       srcTokenAmount,
       marketPrice,
       srcToken.decimals,
-      destToken.decimals
+      dstToken.decimals
     )
 
     const rateData: Rate = {
       sourceChainId: srcChainId,
-      destinationChainId: destChainId,
+      destinationChainId: dstChainId,
       rate,
       revertedRate,
       isReverted: false,
       sourceToken: srcToken,
-      destinationToken: destToken,
+      destinationToken: dstToken,
     }
 
     const slippageSettings = this.settings.slippage
@@ -160,41 +174,59 @@ export class SwapContextFusionPlusStrategy
     return {
       sourceChainId: srcChainId,
       sourceToken: srcToken,
-      destinationChainId: destChainId,
-      destinationToken: destToken,
+      destinationChainId: dstChainId,
+      destinationToken: dstToken,
       sourceTokenAmount: srcTokenAmount,
       minReceive,
       destinationTokenAmount: marketPrice,
       autoAuctionTime: Number(presetConfig.auctionDuration),
       autoSlippage: 1,
       rate: rateData,
-      rawResponseData: quote,
+      rawResponseData: FusionPlusQuoteMapper.toDto(params, quote),
     }
   }
 
   private async finalizeEscrowSecretsProcess(sdk: SDK, orderHash: string, secrets: Secret[]) {
+    let secretsToShareResponse: ReadyToAcceptSecretFills | undefined
+    let statusResponse: OrderStatusResponse | undefined
+
     while (true) {
-      const secretsToShare = await sdk.getReadyToAcceptSecretFills(orderHash)
-
-      if (secretsToShare.fills.length) {
-        for (const { idx } of secretsToShare.fills) {
-          await sdk.submitSecret(orderHash, secrets[idx].secret)
-
-          console.log({ idx }, 'shared secret')
-        }
+      try {
+        secretsToShareResponse = await sdk.getReadyToAcceptSecretFills(orderHash)
+      } catch (e) {
+        secretsToShareResponse = undefined
+        console.warn(e)
       }
 
-      const { status } = await sdk.getOrderStatus(orderHash)
+      try {
+        statusResponse = await sdk.getOrderStatus(orderHash)
+      } catch (e) {
+        statusResponse = undefined
+        console.warn(e)
+      }
+
+      const status = statusResponse?.status
 
       if (status === OrderStatus.Executed) {
         break
       }
 
-      if (status === OrderStatus.Expired || status === OrderStatus.Refunded) {
-        throw new Error('')
+      if (
+        status === OrderStatus.Expired ||
+        status === OrderStatus.Refunded ||
+        status === OrderStatus.Cancelled
+      ) {
+        throw new Error(`Order break by ${status} reason`)
       }
 
-      await new Promise((resolve) => setTimeout(() => resolve(undefined), 1000))
+      if (!secretsToShareResponse || secretsToShareResponse.fills.length === 0) {
+        await new Promise((resolve) => setTimeout(() => resolve(undefined), 1000))
+        continue
+      }
+
+      for (const { idx } of secretsToShareResponse.fills) {
+        await sdk.submitSecret(orderHash, secrets[idx].secret)
+      }
     }
   }
 

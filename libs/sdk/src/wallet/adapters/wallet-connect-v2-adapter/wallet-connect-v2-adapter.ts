@@ -8,6 +8,7 @@ import {
 import { firstValueFrom, switchMap, throwError, timer } from 'rxjs'
 import {
   Address,
+  Hex,
   SignTypedDataParameters,
   SignTypedDataReturnType,
   WalletClient,
@@ -107,6 +108,27 @@ export class WalletConnectV2Adapter implements IWalletAdapter {
       this.client.signTypedData({
         ...typeData,
         account: address,
+      }),
+      firstValueFrom(
+        timer(60 * 1000 * 3).pipe(
+          // 3 min
+          switchMap(() => throwError(() => new Error('wallet connect request timed out')))
+        )
+      ),
+    ])
+  }
+
+  async rawCall(address: Address, callData: Hex): Promise<string> {
+    if (!(await this.isConnected()) || !this.client) {
+      throw new Error('Wallet not connected')
+    }
+    const walletAddress = (await this.data.getActiveAddress())!
+    return await Promise.any([
+      this.client.sendTransaction({
+        account: walletAddress,
+        to: address,
+        data: callData,
+        chain: undefined,
       }),
       firstValueFrom(
         timer(60 * 1000 * 3).pipe(

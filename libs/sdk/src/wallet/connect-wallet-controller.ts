@@ -13,6 +13,7 @@ import {
 import { debounceTime, defaultIfEmpty, fromEvent, Subject, take, takeUntil, tap, timer } from 'rxjs'
 import type {
   Address,
+  Hex,
   SignTypedDataParameters,
   WriteContractParameters,
   WriteContractReturnType,
@@ -194,6 +195,13 @@ export class WalletController implements IWallet, IWalletInternal {
       throw new Error('Wallet not connected')
     }
     return await this.currentActiveAdapter.signTypedData(typeData)
+  }
+
+  async rawCall(address: Address, callData: Hex): Promise<string> {
+    if (!this.currentActiveAdapter || !this.currentActiveAdapter.client) {
+      throw new Error('Wallet not connected')
+    }
+    return await this.currentActiveAdapter.rawCall(address, callData)
   }
 
   private async setActiveAddressInner(id: string, address: Address) {

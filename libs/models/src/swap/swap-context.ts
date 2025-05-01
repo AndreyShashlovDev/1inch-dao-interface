@@ -4,6 +4,7 @@ import { NullableValue } from '../base'
 import { ChainId } from '../chain'
 import { IToken } from '../token'
 import { Rate } from '../token-price'
+import { IAmountDataSource } from './amount-data-source'
 import { SwapSettings } from './swap-settings'
 import { SwapSnapshot } from './swap-snapshot'
 
@@ -12,7 +13,7 @@ export type SettingsValue = {
   value: number | null
 }
 
-export interface ISwapContext {
+export interface ISwapContext extends IAmountDataSource {
   readonly rate$: Observable<Rate | null>
   readonly minReceive$: Observable<bigint>
   readonly chainId$: Observable<ChainId | null>

@@ -1,14 +1,10 @@
 import {
   IApplicationContext,
-  ICrossChainSDKFacade,
   IProxyClient,
-  IToken,
   IWallet,
   OrderStatusResult,
-  QuoteReceiveCustomPreset,
-  QuoteResult,
 } from '@1inch-community/models'
-import type { EIP712TypedData, Quote, SDK } from '@1inch/cross-chain-sdk'
+import type { EIP712TypedData, SDK } from '@1inch/cross-chain-sdk'
 import { Address, type Hash, isAddressEqual } from 'viem'
 
 export class CrossChainSDK {
@@ -52,45 +48,12 @@ async function buildSDK(host: string, walletController: IWallet, proxyClient: IP
   })
 }
 
-export class CrossChainSDKFacade implements ICrossChainSDKFacade {
+export class CrossChainSDKFacade {
   private context?: IApplicationContext
   private sdk?: SDK
 
   async init(context: IApplicationContext): Promise<void> {
     this.context = context
-  }
-
-  async getQuote(
-    fromToken: IToken,
-    toToken: IToken,
-    amount: bigint,
-    walletAddress: Address,
-    customPreset?: QuoteReceiveCustomPreset,
-    enableEstimate?: boolean
-  ): Promise<QuoteResult | null> {
-    const sdk = await this.buildSDK()
-    if (!sdk) return null
-    const params = {
-      srcChainId: fromToken.chainId as any,
-      dstChainId: toToken.chainId as any,
-      srcTokenAddress: fromToken.address,
-      dstTokenAddress: toToken.address,
-      amount: amount.toString(),
-      walletAddress: walletAddress,
-      enableEstimate: enableEstimate,
-    }
-    let quote: Quote
-    if (customPreset) {
-      quote = await sdk.getQuoteWithCustomPreset(params, { customPreset })
-    } else {
-      quote = await sdk.getQuote(params)
-    }
-    return {
-      toTokenAmount: quote.dstTokenAmount,
-      recommendedPresetName: quote.recommendedPreset,
-      presets: quote.presets as any,
-      autoSlippage: 1,
-    } satisfies QuoteResult
   }
 
   async getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null> {

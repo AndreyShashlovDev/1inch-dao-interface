@@ -29,7 +29,7 @@ export class PrivateProxyClient implements IProxyClient {
 
   async get<T>(url: string): Promise<T> {
     await this.auth()
-    const response = await fetch(`${this.host}${url}`, {
+    const response = await fetch(this.getRequestUrl(url), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ export class PrivateProxyClient implements IProxyClient {
 
   async post<T, Body = unknown>(url: string, body: Body): Promise<T> {
     await this.auth()
-    const response = await fetch(`${this.host}${url}`, {
+    const response = await fetch(this.getRequestUrl(url), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export class PrivateProxyClient implements IProxyClient {
   private async auth() {
     if (this.isAuth) return
     const turnstileToken = await this.context.value.turnstile.getToken()
-    const response = await fetch(`${this.host}/auth`, {
+    const response = await fetch(this.getRequestUrl('/auth'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -69,5 +69,12 @@ export class PrivateProxyClient implements IProxyClient {
     this.context.value.storage.set('private-proxy-client-token', this.token)
     this.context.value.storage.set('private-proxy-client-expiration-time', this.expirationTime)
     console.warn('auth complete')
+  }
+
+  private getRequestUrl(urlPath: string): string {
+    const url = new URL(urlPath, this.host)
+    url.pathname = url.pathname.replace(/\/+/g, '/')
+
+    return url.toString()
   }
 }

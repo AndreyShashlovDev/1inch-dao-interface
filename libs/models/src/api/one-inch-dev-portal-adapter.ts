@@ -2,8 +2,7 @@ import type { OrderStatusResponse } from '@1inch/fusion-sdk'
 import type { Address, Hash } from 'viem'
 import { InitializingEntity } from '../base'
 import { ChainId } from '../chain'
-import { FusionPresetDto, FusionQuoteReceiveDto, GasPriceDto, ITokenDto, ITokenV2Dto } from '../dto'
-import { IToken } from '../token'
+import { FusionQuoteReceiveDto, GasPriceDto, ITokenDto, ITokenV2Dto } from '../dto'
 import { IProxyClient } from './proxy-client'
 import { ProxyResultBalance, ProxyResultTokenPrice } from './proxy-result'
 
@@ -38,22 +37,15 @@ export interface IOneInchDevPortalAdapter extends InitializingEntity {
   cancelFusionOrder(chainId: ChainId, orderHash: Hash): Promise<Hash>
 }
 
-export interface IOneInchDevPortalCrossChainAdapter
-  extends InitializingEntity,
-    ICrossChainSDKFacade {
+export interface IOneInchDevPortalCrossChainAdapter extends InitializingEntity {
   getBalances(chainIds: ChainId[], walletAddresses: Address[]): Promise<ProxyResultBalance>
   getTokenBalances(chainId: ChainId, walletAddress: Address, tokenAddress: Address): Promise<bigint>
   getTokenPrice(chainIds: ChainId[]): Promise<ProxyResultTokenPrice>
   getTokenList(): Promise<ITokenV2Dto[]>
   getGasPrice(chainId: ChainId): Promise<GasPriceDto | null>
   getProxyClient(): IProxyClient
-}
-
-export interface QuoteResult {
-  toTokenAmount: bigint
-  recommendedPresetName: string
-  presets: Record<string, FusionPresetDto>
-  autoSlippage: number
+  getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null>
+  cancelOrder(orderHash: Hash): Promise<Hash | null>
 }
 
 export enum OrderStatus {
@@ -74,17 +66,4 @@ export interface OrderStatusResult {
   makingAmount: bigint
   auctionDuration: number
   auctionStartDate: number
-}
-
-export interface ICrossChainSDKFacade extends InitializingEntity {
-  getQuote(
-    fromToken: IToken,
-    toToken: IToken,
-    amount: bigint,
-    walletAddress: Address,
-    customPreset?: QuoteReceiveCustomPreset,
-    enableEstimate?: boolean
-  ): Promise<QuoteResult | null>
-  getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null>
-  cancelOrder(orderHash: Hash): Promise<Hash | null>
 }
