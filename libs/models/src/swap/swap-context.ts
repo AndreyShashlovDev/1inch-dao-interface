@@ -7,6 +7,7 @@ import { Rate } from '../token-price'
 import { IAmountDataSource } from './amount-data-source'
 import { SwapSettings } from './swap-settings'
 import { SwapSnapshot } from './swap-snapshot'
+import { ResolverResult } from './token-transfer/token-transfer-requirement-resolver'
 
 export type SettingsValue = {
   type: 'auto' | 'custom' | 'preset'
@@ -37,6 +38,7 @@ export interface ISwapContext extends IAmountDataSource {
   setMaxAmount(): Promise<void>
   getApprove(): Promise<Hash>
   getPermit(): Promise<void>
+  checkTransferRequirements(): Promise<ResolverResult<unknown> | null>
 }
 
 export type Pair = {

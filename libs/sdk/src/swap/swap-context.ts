@@ -6,9 +6,11 @@ import {
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
   IToken,
+  ITokenTransferRequirementResolver,
   IWallet,
   NullableValue,
   Pair,
+  ResolverResult,
   SettingsValue,
   SwapSettings,
   SwapSnapshot,
@@ -43,11 +45,14 @@ import { PairHolder } from './pair-holder'
 import { SwapContextFusionPlusStrategy } from './swap-context-fusion-plus.strategy'
 import { SwapContextFusionStrategy } from './swap-context-fusion.strategy'
 import { SwapContextOnChainStrategy } from './swap-context-onchain.strategy'
+import { TokenTransferRequirementResolver } from './transfer-requirement/token-transfer-requirement-resolver'
+import { TransferResolverFactory } from './transfer-requirement/transfer-resolver-factory'
 
 export class SwapContext implements ISwapContext {
   private readonly pairHolder: PairHolder
   private readonly oneInchApiAdapter: IOneInchDevPortalCrossChainAdapter
   private readonly wallet: IWallet
+  private readonly tokenTransferRequirementsResolver: ITokenTransferRequirementResolver
 
   private readonly subscription = new Subscription()
   private readonly settings = lazy<SwapSettings>(() => ({
@@ -142,6 +147,10 @@ export class SwapContext implements ISwapContext {
     this.oneInchApiAdapter = this.context.api
     this.wallet = this.context.wallet
 
+    this.tokenTransferRequirementsResolver = new TokenTransferRequirementResolver(
+      TransferResolverFactory.createDefault(this.context.onChain, this.context.wallet)
+    )
+
     // setup strategies by priority
     this.strategies = [
       new SwapContextFusionPlusStrategy(
@@ -235,6 +244,31 @@ export class SwapContext implements ISwapContext {
     //   sign,
     //   typeData.message as any
     // );
+  }
+
+  public async checkTransferRequirements(): Promise<ResolverResult<unknown> | null> {
+    const snapshot = this.pairHolder.getSnapshot('source')
+    const sourceToken = snapshot.token
+    const connectedWalletAddress = await this.wallet.data.getActiveAddress()
+
+    if (!sourceToken) {
+      throw new Error('select token before')
+    }
+
+    if (!connectedWalletAddress) {
+      throw new Error('connect wallet before')
+    }
+
+    if (!snapshot.amount) {
+      throw new Error('change amount before')
+    }
+
+    return this.tokenTransferRequirementsResolver.provideRequirements(
+      sourceToken.chainId,
+      connectedWalletAddress,
+      sourceToken,
+      snapshot.amount
+    )
   }
 
   destroy() {

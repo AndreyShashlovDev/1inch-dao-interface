@@ -1,3 +1,5 @@
 export * from './is-support-fusion'
 export * from './swap-context'
 export * from './swap-context-token'
+export * from './transfer-requirement/token-transfer-requirement-resolver'
+export * from './transfer-requirement/transfer-resolver-factory'
