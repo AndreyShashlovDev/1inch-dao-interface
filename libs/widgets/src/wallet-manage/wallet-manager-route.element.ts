@@ -1,5 +1,6 @@
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { subscribe, translate } from '@1inch-community/core/lit-utils'
+import { EIP6963ProviderInfo } from '@1inch-community/models'
 import '@1inch-community/ui-components/card'
 import { SceneController, shiftAnimation } from '@1inch-community/ui-components/scene'
 import { html, LitElement } from 'lit'
@@ -8,10 +9,13 @@ import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { combineLatest, tap } from 'rxjs'
 import './account'
+import './disconnect'
+import { DisconnectEventModel } from './disconnect/disconnect-event-model'
+import './qrcode'
 import './wallet'
 import { WalletManagerRouteStyle } from './wallet-manager-route.style'
 
-type Scenes = 'account' | 'wallets'
+type Scenes = 'account' | 'wallets' | 'qrcode' | 'disconnect'
 
 @customElement(WalletManagerRoute.tagName)
 export class WalletManagerRoute extends LitElement {
@@ -24,16 +28,23 @@ export class WalletManagerRoute extends LitElement {
 
   private readonly applicationContext = lazyAppContextConsumer(this)
 
+  private disconnectData: DisconnectEventModel | null = null
+  private connectionLinkData: EIP6963ProviderInfo | null = null
+
   private readonly scene = new SceneController(
     'account',
     {
-      wallets: {},
       account: { lazyRender: true },
+      wallets: { lazyRender: true },
+      qrcode: {
+        lazyRender: true,
+      },
+      disconnect: {},
     },
     shiftAnimation()
   )
 
-  @state() currentSceneName: Scenes = this.scene.activeScene
+  @state() private isWalletConnected: boolean = false
 
   protected firstUpdated() {
     const wallet = this.applicationContext.value.wallet
@@ -42,14 +53,20 @@ export class WalletManagerRoute extends LitElement {
       this,
       combineLatest([wallet.data.isConnected$, wallet.data.activeAddress$]).pipe(
         tap(([isConnected, address]) => {
-          if (!isConnected && address === null && this.currentSceneName !== 'wallets') {
+          if (this.isWalletConnected !== isConnected) {
+            this.isWalletConnected = isConnected
+          }
+
+          if (!isConnected && address === null && this.scene.activeScene !== 'wallets') {
+            this.scene.resetScene()
             this.navigateTo('wallets', true)
           }
-          if (isConnected && address && this.currentSceneName !== 'account') {
+          if (isConnected && address && this.scene.activeScene !== 'account') {
             this.onBackPress()
           }
         })
-      )
+      ),
+      { requestUpdate: false }
     )
   }
 
@@ -58,20 +75,53 @@ export class WalletManagerRoute extends LitElement {
       <inch-wallet-account-view
         .mobileView="${this.mobileView}"
         @changeWalletClick="${() => this.navigateTo('wallets')}"
+        @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
       ></inch-wallet-account-view>
     `
   }
 
   private getWalletsView() {
-    return html` <inch-wallet-manage></inch-wallet-manage> `
+    return html`
+      <inch-wallet-manage
+        @disconnectEvent="${(event: CustomEvent) => this.onDisconnectClick(event.detail.value)}"
+        @onUseConnectionLink="${(event: CustomEvent) =>
+          this.onUseConnectionLink(event.detail.value)}"
+      ></inch-wallet-manage>
+    `
+  }
+
+  private getQrcodeView() {
+    const data = { ...this.connectionLinkData }
+    this.connectionLinkData = null
+
+    return html` <inch-wallet-qrcode-view .data="${data}"></inch-wallet-qrcode-view>`
+  }
+
+  private getDisconnectView() {
+    const data = { ...this.disconnectData }
+    this.disconnectData = null
+
+    return html`
+      <inch-wallet-disconnect-view
+        .data="${data}"
+        @onBackClick="${() => this.onBackPress()}"
+      ></inch-wallet-disconnect-view>
+    `
   }
 
   private getHeaderView() {
-    if (this.currentSceneName === 'wallets') {
-      return this.walletsHeaderView()
+    switch (this.scene.activeScene) {
+      case 'account':
+        return this.accountHeaderView()
+      case 'wallets':
+        return this.walletsHeaderView()
+      case 'qrcode':
+        return this.qrcodeHeaderView()
+      case 'disconnect':
+        return this.disconnectHeaderView()
+      default:
+        throw new Error('unknown screen!', this.scene.activeScene)
     }
-
-    return this.accountHeaderView()
   }
 
   private accountHeaderView() {
@@ -91,28 +141,57 @@ export class WalletManagerRoute extends LitElement {
   }
 
   private walletsHeaderView() {
-    const isConnected = this.applicationContext.value.wallet.isConnected
-    const title = isConnected
+    const title = this.isWalletConnected
       ? 'widgets.wallet-manager-route.wallets.manager'
       : 'widgets.wallet-manager-route.wallets.connect'
 
     return html` <inch-card-header
       headerTextPosition="center"
       headerText="${translate(title)}"
-      backButton="${ifDefined(isConnected || undefined)}"
+      backButton="${ifDefined(this.isWalletConnected || undefined)}"
       @backCard="${() => this.onBackPress()}"
     >
     </inch-card-header>`
   }
 
-  private async navigateTo(scene: Scenes, immediate: boolean = false) {
-    this.currentSceneName = scene
-    await this.scene.nextTo(scene, immediate)
+  private qrcodeHeaderView() {
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate('widgets.wallet-manager-route.wallets.qrcode.wallet-connect')}"
+      backButton="${true}"
+      @backCard="${() => this.onBackPress()}"
+    >
+    </inch-card-header>`
   }
 
-  private async onBackPress() {
-    await this.scene.back()
-    this.currentSceneName = this.scene.activeScene
+  private disconnectHeaderView() {
+    return html` <inch-card-header
+      headerTextPosition="center"
+      headerText="${translate('widgets.wallet-manager-route.wallets.disconnect')}"
+      backButton="${true}"
+      @backCard="${() => this.onBackPress()}"
+    >
+    </inch-card-header>`
+  }
+
+  private onDisconnectClick(data: DisconnectEventModel) {
+    this.disconnectData = data
+    this.navigateTo('disconnect')
+  }
+
+  private onUseConnectionLink(data: EIP6963ProviderInfo) {
+    this.connectionLinkData = data
+    this.navigateTo('qrcode')
+  }
+
+  private navigateTo(scene: Scenes, immediate: boolean = false) {
+    this.scene.nextTo(scene, immediate)
+    this.requestUpdate()
+  }
+
+  private onBackPress() {
+    this.scene.back()
+    this.requestUpdate()
   }
 
   protected render() {
@@ -121,8 +200,10 @@ export class WalletManagerRoute extends LitElement {
         ${when(!this.mobileView, () => html` <inch-card-close-overlay></inch-card-close-overlay> `)}
         ${this.getHeaderView()}
         ${this.scene.render({
-          wallets: () => this.getWalletsView(),
           account: () => this.getAccountView(),
+          wallets: () => this.getWalletsView(),
+          qrcode: () => this.getQrcodeView(),
+          disconnect: () => this.getDisconnectView(),
         })}
       </inch-card>
     `

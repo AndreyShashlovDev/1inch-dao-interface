@@ -263,12 +263,27 @@ export const icons: Record<string, IconsRecord> = {
   copy16: {
     width: '16px',
     height: '16px',
-    loader: () => import('./copy_16.svg').then((m) => m.сopy16Svg),
+    loader: () => import('./copy_16.svg').then((m) => m.copy16Svg),
   },
   externalLink16: {
     width: '16px',
     height: '16px',
     loader: () => import('./external-link_16.svg').then((m) => m.externalLink16Svg),
+  },
+  arrowTopToRightRounded32: {
+    width: '32px',
+    height: '32px',
+    loader: () => import('./arrow-top-to-right-rounded_32').then((m) => m.arrowTopToRightRounded32),
+  },
+  disconnectImageBig: {
+    width: '160px',
+    height: '160px',
+    loader: () => import('./disconnect-image_big').then((m) => m.disconnectImage_big),
+  },
+  scan16: {
+    width: '16px',
+    height: '16px',
+    loader: () => import('./scan_16.svg').then((m) => m.scan16Svg),
   },
 
   // chain icons

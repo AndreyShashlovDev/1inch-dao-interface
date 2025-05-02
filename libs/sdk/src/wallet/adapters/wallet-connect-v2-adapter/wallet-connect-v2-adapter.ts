@@ -5,10 +5,21 @@ import {
   IProviderDataAdapterInternal,
   IWalletAdapter,
 } from '@1inch-community/models'
-import { firstValueFrom, switchMap, throwError, timer } from 'rxjs'
+import {
+  catchError,
+  firstValueFrom,
+  Observable,
+  of,
+  Subject,
+  switchMap,
+  tap,
+  throwError,
+  timer,
+} from 'rxjs'
 import {
   Address,
   Hex,
+  Omit,
   SignTypedDataParameters,
   SignTypedDataReturnType,
   WalletClient,
@@ -24,6 +35,8 @@ export class WalletConnectV2Adapter implements IWalletAdapter {
 
   private provider: MultiConnectProvider | null = null
 
+  private readonly connectionUriLink$ = new Subject<string>()
+
   client: WalletClient | null = null
 
   get info() {
@@ -38,25 +51,38 @@ export class WalletConnectV2Adapter implements IWalletAdapter {
     return this.provider?.isConnected() ?? false
   }
 
-  async connect(chainId: ChainId): Promise<boolean> {
-    if (!this.provider) {
-      const provider = await import('./multi-connect-provider').then((m) =>
-        m.MultiConnectProvider.connect()
+  private async createProvider(): Promise<MultiConnectProvider> {
+    const provider = new (await import('./multi-connect-provider')).MultiConnectProvider()
+
+    provider.connectionUriLink$
+      .pipe(
+        tap((uri) => this.connectionUriLink$.next(uri)),
+        catchError(() => of(null))
       )
+      .subscribe()
+
+    return provider
+  }
+
+  async connect(chainId: ChainId, opts?: unknown): Promise<boolean> {
+    if (!this.provider) {
+      const provider = await this.createProvider()
+      await provider.connect(opts)
+
       this.client = await createClientAndSyncChain(chainId, provider)
       this.data.setProvider(provider)
       this.provider = provider
     } else {
-      await this.provider.connect()
+      await this.provider.connect(opts)
     }
     return true
   }
 
   async restoreConnect(): Promise<boolean> {
     if (!this.provider) {
-      const provider = await import('./multi-connect-provider').then((m) =>
-        m.MultiConnectProvider.restoreConnect()
-      )
+      const provider = await this.createProvider()
+      await provider.restoreConnect()
+
       this.client = await createClientAndSyncChain(provider.chainId, provider)
       this.data.setProvider(provider)
       this.provider = provider
@@ -66,8 +92,8 @@ export class WalletConnectV2Adapter implements IWalletAdapter {
     return true
   }
 
-  async disconnect(): Promise<boolean> {
-    this.provider?.disconnect()
+  async disconnect(address?: Address | null): Promise<boolean> {
+    await this.provider?.disconnect(address)
     return true
   }
 
@@ -137,5 +163,13 @@ export class WalletConnectV2Adapter implements IWalletAdapter {
         )
       ),
     ])
+  }
+
+  connectionUriLink(): Observable<string | null> {
+    return this.connectionUriLink$.asObservable()
+  }
+
+  async isSupportConnectionUriLink(): Promise<boolean> {
+    return true
   }
 }

@@ -1,4 +1,5 @@
 import { ChainId, EIP6963ProviderDetail, IWalletAdapter } from '@1inch-community/models'
+import { Observable, of } from 'rxjs'
 import type {
   Address,
   Hex,
@@ -50,7 +51,7 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
     return state
   }
 
-  async disconnect(): Promise<boolean> {
+  async disconnect(address?: Address | null): Promise<boolean> {
     this.client = null
     this.data.setProvider(null)
     this.setActiveAddress(null)
@@ -122,6 +123,14 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
       data: callData,
       chain: undefined,
     })
+  }
+
+  connectionUriLink(): Observable<string | null> {
+    return of(null)
+  }
+
+  async isSupportConnectionUriLink(): Promise<boolean> {
+    return false
   }
 }
 

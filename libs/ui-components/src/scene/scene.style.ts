@@ -20,6 +20,7 @@ export const sceneStyle = (config?: Partial<StyleConfig>) => {
     .scene-container {
       min-height: 50px;
       min-width: 50px;
+      height: 100%;
       position: relative;
       overflow: hidden;
       border-radius: 16px;
