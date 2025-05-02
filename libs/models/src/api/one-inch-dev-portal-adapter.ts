@@ -36,7 +36,9 @@ export interface IOneInchDevPortalAdapter extends InitializingEntity {
   getFusionOrderStatus(chainId: ChainId, orderHash: Hash): Promise<OrderStatusResponse>
   cancelFusionOrder(chainId: ChainId, orderHash: Hash): Promise<Hash>
 }
-
+/**
+ * @deprecated
+ * */
 export interface IOneInchDevPortalCrossChainAdapter extends InitializingEntity {
   getBalances(chainIds: ChainId[], walletAddresses: Address[]): Promise<ProxyResultBalance>
   getTokenBalances(chainId: ChainId, walletAddress: Address, tokenAddress: Address): Promise<bigint>

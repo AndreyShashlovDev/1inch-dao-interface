@@ -20,8 +20,20 @@ interface QuoterRequestParams {
 
 export class FusionQuoteMapper {
   public static toDomain(data: FusionQuoteReceiveDto): Quote {
-    // fixme transform data.params to QuoterRequest
-    return new Quote(data.params as any, data.response)
+    const requestParams: QuoterRequestParams = {
+      fromTokenAddress: data.params.fromTokenAddress,
+      toTokenAddress: data.params.toTokenAddress,
+      amount: data.params.amount,
+      walletAddress: data.params.walletAddress,
+      enableEstimate: data.params.enableEstimate,
+      permit: data.params.permit,
+      integratorFee: data.params.integratorFee,
+      source: data.params.source,
+      isPermit2: data.params.isPermit2,
+    }
+    const request = QuoterRequest.new(requestParams)
+
+    return new Quote(request, data.response)
   }
 
   public static toDto(quoteParams: QuoteParams, quote: Quote): FusionQuoteReceiveDto {

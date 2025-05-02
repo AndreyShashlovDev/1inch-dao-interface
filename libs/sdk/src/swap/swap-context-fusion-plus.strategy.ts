@@ -58,7 +58,9 @@ export class SwapContextFusionPlusStrategy
     if (!walletAddress) {
       throw new Error('')
     }
+
     const quote = FusionPlusQuoteMapper.toDomain(swapSnapshot.rawResponseData)
+
     if (!quote.quoteId) {
       throw new Error('quoter has not returned quoteId')
     }

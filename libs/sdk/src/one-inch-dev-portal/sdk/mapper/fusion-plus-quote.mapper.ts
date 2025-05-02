@@ -15,8 +15,23 @@ import {
 
 export class FusionPlusQuoteMapper {
   public static toDomain(data: FusionPlusQuoteReceiveDto): Quote {
-    // fixme transform data.params to QuoterRequest
-    return new Quote(data.params as any, data.response)
+    const requestParams: QuoterRequestParams = {
+      srcChain: data.params.srcChain,
+      dstChain: data.params.dstChain,
+      srcTokenAddress: data.params.srcTokenAddress,
+      dstTokenAddress: data.params.dstTokenAddress,
+      amount: data.params.amount,
+      walletAddress: data.params.walletAddress,
+      enableEstimate: data.params.enableEstimate,
+      permit: data.params.permit,
+      fee: data.params.fee,
+      source: data.params.source,
+      isPermit2: data.params.isPermit2,
+    }
+
+    const request = QuoterRequest.new(requestParams)
+
+    return new Quote(request, data.response)
   }
 
   public static toDto(quoteParams: QuoteParams, quote: Quote): FusionPlusQuoteReceiveDto {
