@@ -122,7 +122,7 @@ export class SwapButtonElement extends LitElement {
     switchMap(([wallet, sourceToken, amount]) => {
       if (!wallet || !sourceToken || amount === 0n || !this.context) return of(false)
       return this.context.getMaxAmount().then((balance) => {
-        if (balance === 0n) return true
+        if (balance.isZero()) return true
         return !amount || amount > balance
       })
     }),

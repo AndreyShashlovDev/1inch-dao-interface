@@ -1,4 +1,4 @@
-import { formatSeconds, smartFormatNumber } from '@1inch-community/core/formatters'
+import { formatSeconds } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import {
   async,
@@ -7,14 +7,20 @@ import {
   observe,
   translate,
 } from '@1inch-community/core/lit-utils'
-import { FusionQuoteReceiveDto, ISwapContext, IToken, SwapSnapshot } from '@1inch-community/models'
+import {
+  FusionQuoteReceiveDto,
+  IBigFloat,
+  ISwapContext,
+  IToken,
+  SwapSnapshot,
+} from '@1inch-community/models'
 import {
   getSymbolFromWrapToken,
   getWrapperNativeToken,
   isNativeToken,
 } from '@1inch-community/sdk/chain'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
-import { isTokensEqual } from '@1inch-community/sdk/tokens'
+import { buildTokenId, isTokensEqual } from '@1inch-community/sdk/tokens'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
 import '@1inch-community/ui-components/icon'
@@ -26,7 +32,7 @@ import { choose } from 'lit/directives/choose.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import { when } from 'lit/directives/when.js'
 import { Observable, shareReplay, switchMap } from 'rxjs'
-import { formatUnits, UserRejectedRequestError } from 'viem'
+import { UserRejectedRequestError } from 'viem'
 import '../../../shared-elements/token-icon'
 import { confirmSwapStyle } from './confirm-swap.style'
 
@@ -157,7 +163,7 @@ export class ConfirmSwapElement extends LitElement {
     const secondaryToken = isTokensEqual(primaryToken, sourceToken) ? destinationToken : sourceToken
     const isRevertedRate = isTokensEqual(primaryToken, sourceToken)
     const targetRate = isRevertedRate ? revertedRate : rate
-    const rateFormated = smartFormatNumber(formatUnits(targetRate, secondaryToken.decimals), 2)
+    const rateFormated = targetRate.toFixedSmart(2)
     return html`
       <div class="detail-info-raw-value">
         <span class="rate-view"
@@ -199,13 +205,10 @@ export class ConfirmSwapElement extends LitElement {
   }
 
   private getMinReceive() {
-    const amountView = formatUnits(
-      this.swapSnapshot.minReceive,
-      this.swapSnapshot.destinationToken.decimals
-    )
+    const amountView = this.swapSnapshot.minReceive.toFixedSmart(6)
     return html`
       <div class="detail-info-raw-value">
-        ${smartFormatNumber(amountView, 6)} ${this.swapSnapshot.destinationToken.symbol}
+        ${amountView} ${this.swapSnapshot.destinationToken.symbol}
       </div>
     `
   }
@@ -219,8 +222,8 @@ export class ConfirmSwapElement extends LitElement {
     `
   }
 
-  private getTokenView(token: IToken, amount: bigint, type: 'source' | 'wrap' | 'destination') {
-    const amountView = formatUnits(amount, token.decimals)
+  private getTokenView(token: IToken, amount: IBigFloat, type: 'source' | 'wrap' | 'destination') {
+    const amountView = amount.toFixedSmart(6)
     return html`
       <div class="token-view">
         <div class="token-view-row token-view-top">
@@ -243,7 +246,7 @@ export class ConfirmSwapElement extends LitElement {
             ></inch-token-icon>
             <span class="primary-text">${token.symbol}</span>
           </div>
-          <span class="primary-text">${smartFormatNumber(amountView, 6)}</span>
+          <span class="primary-text">${amountView}</span>
         </div>
       </div>
     `
@@ -278,7 +281,7 @@ export class ConfirmSwapElement extends LitElement {
     `
   }
 
-  private getFiatAmountStream(token: IToken, amount: bigint) {
+  private getFiatAmountStream(token: IToken, amount: IBigFloat) {
     if (this.fiatAmountMap.has(token.address)) {
       return this.fiatAmountMap.get(token.address)!
     }
@@ -287,13 +290,11 @@ export class ConfirmSwapElement extends LitElement {
       .getBlockEmitter(this.swapSnapshot.chainId)
       .pipe(
         switchMap(async () => {
-          const usdPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
-            this.swapSnapshot.chainId,
-            token.address
-          )
-          const balanceFormatted = formatUnits(amount, token.decimals)
-          const balanceUsd = Number(balanceFormatted) * Number(usdPrice)
-          return `~$${smartFormatNumber(balanceUsd.toString(), 2)}`
+          const fiatPrice = await this.applicationContext.value.tokenStorage.getTokenFiatPrice({
+            tokenRecordId: buildTokenId(this.swapSnapshot.chainId, token.address),
+          })
+          const fiatBalance = amount.mul(fiatPrice)
+          return `~$${fiatBalance.toFixedSmart(2)}`
         }),
         shareReplay({ bufferSize: 1, refCount: true })
       )
