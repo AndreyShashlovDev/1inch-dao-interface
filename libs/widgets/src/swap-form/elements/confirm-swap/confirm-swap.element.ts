@@ -149,9 +149,9 @@ export class ConfirmSwapElement extends LitElement {
   }
 
   private async getRateView() {
-    const { chainId, rate, revertedRate, sourceToken, destinationToken } = this.swapSnapshot.rate
+    const { rate, revertedRate, sourceToken, destinationToken } = this.swapSnapshot.rate
     const primaryToken = await this.applicationContext.value.tokenStorage.getPriorityToken(
-      chainId,
+      sourceToken.chainId,
       [sourceToken.address, destinationToken.address]
     )
     const secondaryToken = isTokensEqual(primaryToken, sourceToken) ? destinationToken : sourceToken
@@ -237,7 +237,7 @@ export class ConfirmSwapElement extends LitElement {
         <div class="token-view-row">
           <div class="symbol-view">
             <inch-token-icon
-              chainId="${this.swapSnapshot.chainId}"
+              chainId="${this.swapSnapshot.sourceToken.chainId}"
               symbol="${token.symbol}"
               address="${token.address}"
             ></inch-token-icon>
@@ -253,7 +253,7 @@ export class ConfirmSwapElement extends LitElement {
     if (this.needWrap) {
       return html`
         ${this.getTokenView(
-          getWrapperNativeToken(this.swapSnapshot.chainId),
+          getWrapperNativeToken(this.swapSnapshot.sourceToken.chainId),
           this.swapSnapshot.sourceTokenAmount,
           'wrap'
         )}
@@ -284,11 +284,11 @@ export class ConfirmSwapElement extends LitElement {
     }
 
     const stream = this.applicationContext.value.onChain
-      .getBlockEmitter(this.swapSnapshot.chainId)
+      .getBlockEmitter(this.swapSnapshot.sourceToken.chainId)
       .pipe(
         switchMap(async () => {
           const usdPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
-            this.swapSnapshot.chainId,
+            this.swapSnapshot.sourceToken.chainId,
             token.address
           )
           const balanceFormatted = formatUnits(amount, token.decimals)

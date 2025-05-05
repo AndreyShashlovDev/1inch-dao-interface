@@ -1,5 +1,10 @@
 import { ApplicationContext } from '@1inch-community/core/application-context'
-import { EmbeddedBootstrapConfig, IEnvironment } from '@1inch-community/models'
+import {
+  EmbeddedBootstrapConfig,
+  IAmountDataSource,
+  IEnvironment,
+  SwapSettings,
+} from '@1inch-community/models'
 import { GlobalEmbeddedContextElement } from './global-embedded-context.element'
 
 export async function bootstrapApplicationContext(config: EmbeddedBootstrapConfig) {
@@ -51,7 +56,34 @@ export async function bootstrapApplicationContext(config: EmbeddedBootstrapConfi
         ),
       swapContextFactory: (context) =>
         import('@1inch-community/sdk/swap').then((m) => {
-          const swapContext = new m.SwapContext(context)
+          const settings: SwapSettings = {
+            slippage: context.settings.getSetting('slippage'),
+            auctionTime: context.settings.getSetting('auctionTime'),
+          }
+          const pairHolder = new m.PairHolder(context)
+          const amountDataSource: IAmountDataSource = new m.AmountDataSourceImpl(
+            pairHolder,
+            context.api,
+            context.wallet,
+            context.tokenStorage,
+            context.onChain
+          )
+
+          const swapStrategies = m.SwapStrategyFactory.createDefault(
+            context,
+            amountDataSource,
+            settings
+          )
+
+          const swapContext = new m.SwapContext(
+            context.wallet,
+            context.onChain,
+            settings,
+            pairHolder,
+            amountDataSource,
+            swapStrategies
+          )
+
           swapContext.init()
           return swapContext
         }),

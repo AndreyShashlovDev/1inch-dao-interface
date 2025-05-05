@@ -4,38 +4,26 @@ import {
   ChainId,
   GasPriceDto,
   IApplicationContext,
-  IOneInchDevPortalCrossChainAdapter,
+  ICryptoAssetDataProvider,
   IProxyClient,
-  IToken,
   ITokenV2Dto,
-  OrderStatusResult,
   ProxyResultBalance,
   ProxyResultBalanceItem,
   ProxyResultTokenPrice,
   ProxyResultTokenPriceItem,
-  QuoteReceiveCustomPreset,
-  QuoteResult,
 } from '@1inch-community/models'
-import { Address, type Hash } from 'viem'
-import { CrossChainSDKFacade } from '../../sdk'
+import { Address } from 'viem'
 import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain'
 import { PublicProxyClient } from './public-proxy-client'
 
-export class OneInchDevPortalCrossChainPublicProxyAdapter
-  implements IOneInchDevPortalCrossChainAdapter
-{
+export class OneInchDevPortalCrossChainPublicProxyAdapter implements ICryptoAssetDataProvider {
   private readonly context = lazyAppContext('OneInchDevPortalCrossChainPublicProxyAdapter')
   private readonly client = new PublicProxyClient()
-  private readonly sdkFacade = new CrossChainSDKFacade()
   private readonly fallBackAdapter = new OneInchDevPortalCrossChainOnChainAdapter()
 
   async init(context: IApplicationContext): Promise<void> {
     this.context.set(context)
-    await Promise.all([
-      this.client.init(context),
-      this.sdkFacade.init(context),
-      this.fallBackAdapter.init(context),
-    ])
+    await Promise.all([this.client.init(context), this.fallBackAdapter.init(context)])
   }
 
   @CacheActivePromise()
@@ -71,14 +59,6 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
     return await Promise.all(pending)
   }
 
-  async getTokenBalances(
-    chainId: ChainId,
-    walletAddress: Address,
-    tokenAddress: Address
-  ): Promise<bigint> {
-    return await this.fallBackAdapter.getTokenBalances(chainId, walletAddress, tokenAddress)
-  }
-
   @CacheActivePromise()
   async getTokenList(): Promise<ITokenV2Dto[]> {
     const walletIsConnected = await this.walletIsConnected()
@@ -106,35 +86,6 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
         } satisfies ProxyResultTokenPriceItem
       })
     )
-  }
-
-  @CacheActivePromise()
-  getQuote(
-    fromToken: IToken,
-    toToken: IToken,
-    amount: bigint,
-    walletAddress: Address,
-    customPreset?: QuoteReceiveCustomPreset,
-    enableEstimate?: boolean
-  ): Promise<QuoteResult | null> {
-    return this.sdkFacade.getQuote(
-      fromToken,
-      toToken,
-      amount,
-      walletAddress,
-      customPreset,
-      enableEstimate
-    )
-  }
-
-  @CacheActivePromise()
-  getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null> {
-    return this.sdkFacade.getOrderStatus(orderHash)
-  }
-
-  @CacheActivePromise()
-  cancelOrder(orderHash: Hash): Promise<Hash | null> {
-    return this.sdkFacade.cancelOrder(orderHash)
   }
 
   getGasPrice(): Promise<GasPriceDto | null> {

@@ -80,9 +80,9 @@ export class FusionSwapInfoMainElement extends LitElement {
     distinctUntilChanged(rateViewDistinctUntilChangedHandler),
     switchMap(async (rateData) => {
       if (rateData === null) return this.getLoadRateView()
-      const { chainId, rate, revertedRate, sourceToken, destinationToken } = rateData
+      const { rate, revertedRate, sourceToken, destinationToken } = rateData
       const primaryToken = await this.applicationContext.value.tokenStorage.getPriorityToken(
-        chainId,
+        sourceToken.chainId,
         [sourceToken.address, destinationToken.address]
       )
       const secondaryToken = isTokensEqual(primaryToken, sourceToken)
@@ -92,7 +92,7 @@ export class FusionSwapInfoMainElement extends LitElement {
       const targetRate = isRevertedRate ? revertedRate : rate
       const rateFormated = smartFormatNumber(formatUnits(targetRate, secondaryToken.decimals), 2)
       const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
-        chainId,
+        sourceToken.chainId,
         secondaryToken.address
       )
       const rateUsd = parseUnits(tokenPrice, secondaryToken.decimals)

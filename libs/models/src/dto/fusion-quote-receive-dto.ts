@@ -1,27 +1,94 @@
-import type { Address } from 'viem'
-
-export interface FusionQuoteReceiveDto {
-  recommended_preset: string
-  quoteId: string | null
-  settlementAddress: Address
-  pfGas: number
-  gas: number
-  presets: Record<string, FusionPresetDto>
-  toTokenAmount: string
-  fromTokenAmount: string
-  feeToken: Address
-  autoK: number
+enum PresetEnum {
+  fast = 'fast',
+  medium = 'medium',
+  slow = 'slow',
+  custom = 'custom',
 }
 
-export interface FusionPresetDto {
+interface Cost {
+  usd: {
+    fromToken: string
+    toToken: string
+  }
+}
+
+export interface RawPresetData {
   auctionDuration: number
-  auctionEndAmount: string
-  auctionStartAmount: string
+  startAuctionIn: number
   bankFee: string
   initialRateBump: number
-  points: { delay: number; coefficient: number }[]
-  startAuctionIn: number
+  auctionStartAmount: string
+  auctionEndAmount: string
   tokenFee: string
-  startAmount: string
-  gasCost: { gasBumpEstimate: number; gasPriceEstimate: string }
+  points: {
+    delay: number
+    coefficient: number
+  }[]
+  allowPartialFills: boolean
+  allowMultipleFills: boolean
+  gasCost: {
+    gasBumpEstimate: number
+    gasPriceEstimate: string
+  }
+  exclusiveResolver: string | null
+}
+
+export interface RawQuoterResponse {
+  fromTokenAmount: string
+  presets: {
+    fast: RawPresetData
+    medium: RawPresetData
+    slow: RawPresetData
+    custom?: RawPresetData
+  }
+  recommended_preset: PresetEnum
+  toTokenAmount: string
+  prices: Cost
+  volume: Cost
+  settlementAddress: string
+  whitelist: string[]
+  quoteId: string | null
+  autoK: number
+  fee: {
+    receiver: string
+    bps: number
+    whitelistDiscountPercent: number
+  }
+}
+
+interface QuoterRequestParams {
+  fromTokenAddress: string
+  toTokenAddress: string
+  amount: string
+  walletAddress: string
+  enableEstimate?: boolean
+  permit?: string
+  integratorFee?: {
+    receiver: string
+    value: unknown
+    share: unknown
+  }
+  source?: string
+  isPermit2?: boolean
+}
+
+export interface RawQuoterRequest {
+  readonly fromTokenAddress: string
+  readonly toTokenAddress: string
+  readonly amount: string
+  readonly walletAddress: string
+  readonly enableEstimate: boolean
+  readonly permit: string | undefined
+  readonly integratorFee?: {
+    receiver: string
+    value: unknown
+    share: unknown
+  }
+  readonly source: string
+  readonly isPermit2: boolean
+}
+
+export interface FusionQuoteReceiveDto {
+  params: RawQuoterRequest
+  response: RawQuoterResponse
 }

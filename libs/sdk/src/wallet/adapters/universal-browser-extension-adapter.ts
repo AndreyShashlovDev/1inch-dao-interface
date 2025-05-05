@@ -107,11 +107,11 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
     })) as Hex
   }
 
-  public connectionUriLink(): Observable<string | null> {
+  connectionUriLink(): Observable<string | null> {
     return of(null)
   }
 
-  public async isSupportConnectionUriLink(): Promise<boolean> {
+  async isSupportConnectionUriLink(): Promise<boolean> {
     return false
   }
 }

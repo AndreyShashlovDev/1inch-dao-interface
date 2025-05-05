@@ -1,13 +1,13 @@
 import {
   IAnimationsManager,
   IApplicationContext,
+  ICryptoAssetDataProvider,
   IEnvironmentController,
   Ii18nManager,
   ILogger,
   InitializingEntity,
   INotificationsManager,
   IOnChain,
-  IOneInchDevPortalCrossChainAdapter,
   IOverlayController,
   IPersistSyncStorage,
   ISettingsManager,
@@ -28,7 +28,7 @@ export type ApplicationContextPayload = {
   themesManagerFactory: () => Promise<IThemeManager>
   storageManagerFactory: () => Promise<IPersistSyncStorage>
   tokenRateProviderFactory: () => Promise<ITokenRateProvider>
-  apiFactory: () => Promise<IOneInchDevPortalCrossChainAdapter>
+  apiFactory: () => Promise<ICryptoAssetDataProvider>
   loggerFactory: () => Promise<ILogger>
   turnstileFactory: () => Promise<ITurnstileController>
   onChainFactory: () => Promise<IOnChain>
@@ -49,7 +49,7 @@ export class ApplicationContext implements IApplicationContext {
   private _theme?: IThemeManager
   private _storageManager?: IPersistSyncStorage
   private _tokenRateProvider?: ITokenRateProvider
-  private _api?: IOneInchDevPortalCrossChainAdapter
+  private _api?: ICryptoAssetDataProvider
   private _logger?: ILogger
   private _turnstile?: ITurnstileController
   private _chainController?: IOnChain
@@ -95,7 +95,7 @@ export class ApplicationContext implements IApplicationContext {
     return this._tokenRateProvider
   }
 
-  get api(): IOneInchDevPortalCrossChainAdapter {
+  get api(): ICryptoAssetDataProvider {
     if (!this._api) throw new Error(contextNotInitErrorMessage)
     return this._api
   }

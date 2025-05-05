@@ -1,5 +1,5 @@
 import { IAnimationsManager } from '../animations'
-import { IOneInchDevPortalCrossChainAdapter } from '../api'
+import { ICryptoAssetDataProvider } from '../api'
 import { InitializingEntity } from '../base'
 import { IOnChain } from '../chain'
 import { IEnvironmentController } from '../environment'
@@ -26,7 +26,7 @@ export interface IApplicationContext {
   readonly i18n: Ii18nManager
   readonly theme: IThemeManager
   readonly storage: IPersistSyncStorage
-  readonly api: IOneInchDevPortalCrossChainAdapter
+  readonly api: ICryptoAssetDataProvider
   readonly logger: ILogger
   readonly turnstile: ITurnstileController
   readonly settings: ISettingsManager

@@ -81,7 +81,6 @@ export class UniswapV2BaseRateAdapter implements ITokenRateSourceAdapter {
         sourceToken.decimals
       )
       return {
-        chainId,
         rate,
         revertedRate,
         isReverted: isRevertRate,
