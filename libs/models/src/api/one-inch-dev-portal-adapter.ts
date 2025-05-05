@@ -1,8 +1,16 @@
 import type { OrderStatusResponse } from '@1inch/fusion-sdk'
 import type { Address, Hash } from 'viem'
 import { InitializingEntity } from '../base'
+import { IBigFloat } from '../big-float'
 import { ChainId } from '../chain'
-import { FusionPresetDto, FusionQuoteReceiveDto, GasPriceDto, ITokenDto, ITokenV2Dto } from '../dto'
+import {
+  FusionPlusQuoteReceiveDto,
+  FusionPresetDto,
+  FusionQuoteReceiveDto,
+  GasPriceDto,
+  ITokenDto,
+  ITokenV2Dto,
+} from '../dto'
 import { IToken } from '../token'
 import { IProxyClient } from './proxy-client'
 import { ProxyResultBalance, ProxyResultTokenPrice } from './proxy-result'
@@ -46,6 +54,14 @@ export interface IOneInchDevPortalCrossChainAdapter
   getTokenPrice(chainIds: ChainId[]): Promise<ProxyResultTokenPrice>
   getTokenList(): Promise<ITokenV2Dto[]>
   getGasPrice(chainId: ChainId): Promise<GasPriceDto | null>
+  getQuote(
+    fromToken: IToken,
+    toToken: IToken,
+    amount: IBigFloat,
+    walletAddress: Address,
+    customPreset?: QuoteReceiveCustomPreset,
+    enableEstimate?: boolean
+  ): Promise<FusionQuoteReceiveDto | FusionPlusQuoteReceiveDto | null>
   getProxyClient(): IProxyClient
 }
 
@@ -77,14 +93,6 @@ export interface OrderStatusResult {
 }
 
 export interface ICrossChainSDKFacade extends InitializingEntity {
-  getQuote(
-    fromToken: IToken,
-    toToken: IToken,
-    amount: bigint,
-    walletAddress: Address,
-    customPreset?: QuoteReceiveCustomPreset,
-    enableEstimate?: boolean
-  ): Promise<QuoteResult | null>
   getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null>
   cancelOrder(orderHash: Hash): Promise<Hash | null>
 }
