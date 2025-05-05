@@ -1,5 +1,5 @@
-import { BigMath } from '@1inch-community/core/math'
 import {
+  IBigFloat,
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
   ITokenRateProvider,
@@ -41,23 +41,11 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
       throw new Error('')
     }
 
-    let destinationTokenAmount: bigint
+    let destinationTokenAmount: IBigFloat
     if (rate.isReverted) {
-      destinationTokenAmount = BigMath.div(
-        sourceTokenAmount,
-        rate.revertedRate,
-        sourceToken.decimals,
-        sourceToken.decimals,
-        destinationToken.decimals
-      )
+      destinationTokenAmount = sourceTokenAmount.div(rate.revertedRate)
     } else {
-      destinationTokenAmount = BigMath.mul(
-        sourceTokenAmount,
-        rate.rate,
-        sourceToken.decimals,
-        destinationToken.decimals,
-        destinationToken.decimals
-      )
+      destinationTokenAmount = sourceTokenAmount.mul(rate.rate)
     }
 
     return {
