@@ -1,3 +1,4 @@
+export * from './quote'
 export * from './swap-context'
 export * from './swap-context-strategy'
 export * from './swap-settings'

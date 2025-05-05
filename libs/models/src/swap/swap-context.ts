@@ -1,6 +1,7 @@
 import { type Observable } from 'rxjs'
 import { type Address, Hash } from 'viem'
 import { NullableValue } from '../base'
+import { IBigFloat } from '../big-float'
 import { ChainId } from '../chain'
 import { IToken } from '../token'
 import { Rate } from '../token-price'
@@ -14,7 +15,7 @@ export type SettingsValue = {
 
 export interface ISwapContext {
   readonly rate$: Observable<Rate | null>
-  readonly minReceive$: Observable<bigint>
+  readonly minReceive$: Observable<IBigFloat>
   readonly chainId$: Observable<ChainId | null>
   readonly connectedWalletAddress$: Observable<Address | null>
   readonly slippage$: Observable<SettingsValue>
@@ -25,14 +26,14 @@ export interface ISwapContext {
   setToken(tokenType: TokenType, token: IToken): void
   switchPair(): void
   getTokenByType(type: 'source' | 'destination'): Observable<IToken | null>
-  getTokenAmountByType(type: 'source' | 'destination'): Observable<bigint | null>
-  getTokenRawAmountByType(type: 'source' | 'destination'): Observable<bigint | null>
-  setTokenAmountByType(type: 'source' | 'destination', value: bigint, markDirty?: boolean): void
+  getTokenAmountByType(type: 'source' | 'destination'): Observable<IBigFloat | null>
+  getTokenRawAmountByType(type: 'source' | 'destination'): Observable<IBigFloat | null>
+  setTokenAmountByType(type: 'source' | 'destination', value: IBigFloat, markDirty?: boolean): void
   getSettingsController<V extends keyof SwapSettings>(name: V): SwapSettings[V]
   swap(swapSnapshot: SwapSnapshot): Promise<Hash>
-  wrapNativeToken(amount: bigint): Promise<void>
+  wrapNativeToken(amount: IBigFloat): Promise<void>
   getSnapshot(): Promise<SwapSnapshot>
-  getMaxAmount(): Promise<bigint>
+  getMaxAmount(): Promise<IBigFloat>
   setMaxAmount(): Promise<void>
   getApprove(): Promise<Hash>
   getPermit(): Promise<void>

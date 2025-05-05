@@ -1,4 +1,5 @@
 import { Hash } from 'viem'
+import { IBigFloat } from '../big-float'
 import { ChainId } from '../chain'
 import { IToken } from '../token'
 import { Rate } from '../token-price'
@@ -13,9 +14,9 @@ export interface ISwapContextStrategyDataSnapshot<T = unknown> {
   chainId: ChainId
   sourceToken: IToken
   destinationToken: IToken
-  sourceTokenAmount: bigint
-  destinationTokenAmount: bigint
-  minReceive: bigint
+  sourceTokenAmount: IBigFloat
+  destinationTokenAmount: IBigFloat
+  minReceive: IBigFloat
   autoSlippage: number | null
   autoAuctionTime: number | null
   rate: Rate
