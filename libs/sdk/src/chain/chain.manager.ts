@@ -1,6 +1,7 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { lazyAppContext } from '@1inch-community/core/lazy'
-import { ChainId, IApplicationContext, IOnChain } from '@1inch-community/models'
+import { BigFloat } from '@1inch-community/core/math'
+import { ChainId, IApplicationContext, IBigFloat, IOnChain } from '@1inch-community/models'
 import {
   combineLatest,
   distinctUntilChanged,
@@ -24,12 +25,12 @@ import {
   BlockTag,
   createPublicClient,
   Hash,
-  maxUint256,
   parseAbi,
   PublicClient,
   Transaction,
   type WriteContractParameters,
 } from 'viem'
+import { buildTokenId } from '../tokens'
 import { averageBlockTime } from './average-block-time'
 import { BlockTimeCache } from './block-time-cache'
 import { getWrapperNativeTokenAddress } from './contracts'
@@ -53,7 +54,7 @@ export class OnChainManager implements IOnChain {
   private readonly clientMap = new Map<ChainId, ClientRecord>()
   private readonly blockEmitterMap = new Map<ChainId, Observable<Block>>()
   private readonly chainTickEmitterMap = new Map<ChainId, Observable<void>>()
-  private readonly allowanceCache = new BlockTimeCache<string, bigint>()
+  private readonly allowanceCache = new BlockTimeCache<string, IBigFloat>()
 
   get crossChainEmitter() {
     return this.getChainTickEmitter(ChainId.eth)
@@ -86,25 +87,29 @@ export class OnChainManager implements IOnChain {
   }
 
   @CacheActivePromise()
-  async estimateWrapNativeToken(chainId: ChainId, value: bigint): Promise<bigint> {
+  async estimateWrapNativeToken(chainId: ChainId, value: IBigFloat): Promise<IBigFloat> {
     const client = await this.getClient(chainId)
     const address = getWrapperNativeTokenAddress(chainId)
-    return await client.estimateContractGas({
+    const result = await client.estimateContractGas({
       abi,
       address,
-      value,
+      value: value.toBigInt(18),
       functionName: 'deposit',
     })
+    return BigFloat.fromBigInt(result, 18)
   }
 
   @CacheActivePromise()
-  async simulateWrapNativeToken(chainId: ChainId, value: bigint): Promise<WriteContractParameters> {
+  async simulateWrapNativeToken(
+    chainId: ChainId,
+    value: IBigFloat
+  ): Promise<WriteContractParameters> {
     const client = await this.getClient(chainId)
     const address = getWrapperNativeTokenAddress(chainId)
     const result = await client.simulateContract({
       abi,
       address,
-      value,
+      value: value.toBigInt(18),
       functionName: 'deposit',
     })
     return result.request as WriteContractParameters
@@ -134,47 +139,54 @@ export class OnChainManager implements IOnChain {
   @CacheActivePromise()
   async getAllowance(
     chainId: ChainId,
-    token: Address,
+    tokenAddress: Address,
     owner: Address,
     spender: Address
-  ): Promise<bigint> {
-    if (isNativeToken(token)) {
-      return maxUint256
+  ): Promise<BigFloat> {
+    if (isNativeToken(tokenAddress)) {
+      return BigFloat.maxUint256()
     }
-    const id = [chainId, token, owner, spender].join(':')
+    const id = [chainId, tokenAddress, owner, spender].join(':')
     const cachedValue = this.allowanceCache.get(chainId, id)
     if (cachedValue !== null) {
       return cachedValue
     }
+    const tokenRecordId = buildTokenId(chainId, tokenAddress)
+    const token = await this.context.value.tokenStorage.getTokenById({ tokenRecordId })
+    if (!token) return BigFloat.zero()
     const client = await this.getClient(chainId)
     const result = await client.readContract({
       abi,
       functionName: 'allowance',
       args: [owner, spender],
-      address: token,
+      address: tokenAddress,
     })
-    this.allowanceCache.set(chainId, id, result)
-    return result
+    const allowance = BigFloat.fromBigInt(result, token.decimals)
+    this.allowanceCache.set(chainId, id, allowance)
+    return allowance
   }
 
   @CacheActivePromise()
   async simulateApprove(
     chainId: ChainId,
-    token: Address,
+    tokenAddress: Address,
     owner: Address,
     spender: Address,
-    value: bigint
+    value: IBigFloat
   ): Promise<WriteContractParameters> {
-    if (isNativeToken(token)) {
+    if (isNativeToken(tokenAddress)) {
       throw new Error('Native token in not supported approve')
     }
+    const tokenRecordId = buildTokenId(chainId, tokenAddress)
+    const token = await this.context.value.tokenStorage.getTokenById({ tokenRecordId })
+    if (!token) throw new Error('Token not found')
     const client = await this.getClient(chainId)
     const result = await client.simulateContract({
       abi,
       account: owner,
       functionName: 'approve',
-      args: [spender, value],
-      address: token,
+      args: [spender, value.toBigInt(token.decimals)],
+      address: tokenAddress,
     })
     return result.request
   }
