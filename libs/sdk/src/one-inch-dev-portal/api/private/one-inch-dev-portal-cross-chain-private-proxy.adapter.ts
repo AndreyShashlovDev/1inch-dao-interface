@@ -2,8 +2,11 @@ import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { lazyAppContext } from '@1inch-community/core/lazy'
 import {
   ChainId,
+  FusionPlusQuoteReceiveDto,
+  FusionQuoteReceiveDto,
   GasPriceDto,
   IApplicationContext,
+  IBigFloat,
   IOneInchDevPortalCrossChainAdapter,
   IProxyClient,
   IToken,
@@ -12,10 +15,8 @@ import {
   ProxyResultBalance,
   ProxyResultTokenPrice,
   QuoteReceiveCustomPreset,
-  QuoteResult,
 } from '@1inch-community/models'
 import { Address, type Hash } from 'viem'
-import { CrossChainSDKFacade } from '../../sdk'
 import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain'
 import { PrivateProxyClient } from './private-proxy-client'
 
@@ -24,16 +25,11 @@ export class OneInchDevPortalCrossChainPrivateProxyAdapter
 {
   private readonly context = lazyAppContext('OneInchDevPortalCrossChainPublicProxyAdapter')
   private readonly client = new PrivateProxyClient()
-  private readonly sdkFacade = new CrossChainSDKFacade()
   private readonly fallBackAdapter = new OneInchDevPortalCrossChainOnChainAdapter()
 
   async init(context: IApplicationContext): Promise<void> {
     this.context.set(context)
-    await Promise.all([
-      this.client.init(context),
-      this.sdkFacade.init(context),
-      this.fallBackAdapter.init(context),
-    ])
+    await Promise.all([this.client.init(context), this.fallBackAdapter.init(context)])
   }
 
   @CacheActivePromise()
@@ -78,29 +74,50 @@ export class OneInchDevPortalCrossChainPrivateProxyAdapter
   getQuote(
     fromToken: IToken,
     toToken: IToken,
-    amount: bigint,
+    amount: IBigFloat,
     walletAddress: Address,
     customPreset?: QuoteReceiveCustomPreset,
     enableEstimate?: boolean
-  ): Promise<QuoteResult | null> {
-    return this.sdkFacade.getQuote(
-      fromToken,
-      toToken,
-      amount,
+  ): Promise<FusionQuoteReceiveDto | FusionPlusQuoteReceiveDto | null> {
+    if (fromToken.chainId !== toToken.chainId) {
+      const params = new URLSearchParams({
+        srcChain: fromToken.chainId.toString(),
+        dstChain: toToken.chainId.toString(),
+        srcTokenAddress: fromToken.address,
+        dstTokenAddress: toToken.address,
+        amount: amount.toBigInt(fromToken.decimals).toString(10),
+        walletAddress: walletAddress,
+        enableEstimate: `${enableEstimate ?? false}`,
+      })
+      const url = `/proxy/direct/fusion-plus/quoter/v1.0/quote/receive?${params.toString()}`
+      if (customPreset) {
+        return this.client.post(url, customPreset)
+      }
+      return this.client.get(url)
+    }
+    const chain = fromToken.chainId.toString()
+    const params = new URLSearchParams({
+      fromTokenAddress: fromToken.address,
+      toTokenAddress: toToken.address,
+      amount: amount.toBigInt(fromToken.decimals).toString(10),
       walletAddress,
-      customPreset,
-      enableEstimate
-    )
+      enableEstimate: `${enableEstimate ?? false}`,
+    })
+    const url = `/proxy/direct/fusion/quoter/v2.0/${chain}/quote/receive?${params.toString()}`
+    if (customPreset) {
+      return this.client.post(url, customPreset)
+    }
+    return this.client.get(url)
   }
 
   @CacheActivePromise()
-  getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null> {
-    return this.sdkFacade.getOrderStatus(orderHash)
+  getOrderStatus(): Promise<OrderStatusResult | null> {
+    throw new Error('Method not implemented.')
   }
 
   @CacheActivePromise()
-  cancelOrder(orderHash: Hash): Promise<Hash | null> {
-    return this.sdkFacade.cancelOrder(orderHash)
+  cancelOrder(): Promise<Hash | null> {
+    throw new Error('Method not implemented.')
   }
 
   getGasPrice(): Promise<GasPriceDto | null> {

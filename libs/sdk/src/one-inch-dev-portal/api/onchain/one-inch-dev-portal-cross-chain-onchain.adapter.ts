@@ -1,6 +1,8 @@
 import { CacheActivePromise } from '@1inch-community/core/decorators'
 import {
   ChainId,
+  FusionPlusQuoteReceiveDto,
+  FusionQuoteReceiveDto,
   GasPriceDto,
   IApplicationContext,
   IOneInchDevPortalCrossChainAdapter,
@@ -10,7 +12,6 @@ import {
   ProxyResultBalance,
   ProxyResultBalanceItem,
   ProxyResultTokenPrice,
-  QuoteResult,
 } from '@1inch-community/models'
 import { Abi, Address, Hash, parseAbi, PublicClient } from 'viem'
 import { getBalanceHelperAddress, isNativeToken } from '../../../chain'
@@ -102,7 +103,7 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getProxyClient call')
   }
 
-  getQuote(): Promise<QuoteResult | null> {
+  getQuote(): Promise<FusionQuoteReceiveDto | FusionPlusQuoteReceiveDto | null> {
     throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getQuote call')
   }
 
