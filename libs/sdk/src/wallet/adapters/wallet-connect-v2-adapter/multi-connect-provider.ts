@@ -1,6 +1,7 @@
 import { genRandomHex } from '@1inch-community/core/random'
 import { storage } from '@1inch-community/core/storage'
 import { ChainId, EIP1193Provider, EventMap, RequestArguments } from '@1inch-community/models'
+import { EthereumProviderOptions } from '@walletconnect/ethereum-provider'
 import { EventEmitter } from 'eventemitter3'
 import { fromEvent, merge, Subject, Subscription, tap } from 'rxjs'
 import { Address, isAddressEqual } from 'viem'
@@ -37,7 +38,7 @@ export class MultiConnectProvider implements EIP1193Provider {
   async connect(opts?: unknown) {
     const persistStorePrefix = genRandomHex(10)
     try {
-      const provider = await makeProvider(persistStorePrefix)
+      const provider = await makeProvider(persistStorePrefix, opts as EthereumProviderOptions)
       const subscription = this.listenEvents(provider)
       const { topic } = await provider.signer.client.core.pairing.create()
       let originalUri: string = ''
@@ -264,10 +265,15 @@ export class MultiConnectProvider implements EIP1193Provider {
   }
 }
 
-async function makeProvider(persistStorePrefix: string): Promise<EthereumProvider> {
+async function makeProvider(
+  persistStorePrefix: string,
+  opts?: EthereumProviderOptions
+): Promise<EthereumProvider> {
   const options = await import('./wallet-connect-init-options').then((m) => m.options())
   const { EthereumProvider } = await import('./ethereum-provider')
-  return await EthereumProvider.initProvider(options, persistStorePrefix)
+  const updatedOptions = opts && typeof opts === 'object' ? { ...options, ...opts } : options
+
+  return await EthereumProvider.initProvider(updatedOptions, persistStorePrefix)
 }
 
 async function dropStorageByName(name: string) {

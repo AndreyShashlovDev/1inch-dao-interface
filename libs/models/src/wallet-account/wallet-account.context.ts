@@ -13,6 +13,5 @@ export interface IWalletAccountContext {
 
   copyAddress(walletAddress: Address): void
   openExplorer(chainId: ChainId, walletAddress: Address): void
-  disconnectWallet(): void
   onChangeChainFilter(value: ChainId[]): void
 }

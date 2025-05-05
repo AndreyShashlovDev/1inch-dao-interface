@@ -20,7 +20,7 @@ import {
   isNativeToken,
 } from '@1inch-community/sdk/chain'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
-import { buildTokenId, isTokensEqual } from '@1inch-community/sdk/tokens'
+import { buildTokenIdByToken, isTokensEqual } from '@1inch-community/sdk/tokens'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/card'
 import '@1inch-community/ui-components/icon'
@@ -155,9 +155,9 @@ export class ConfirmSwapElement extends LitElement {
   }
 
   private async getRateView() {
-    const { chainId, rate, revertedRate, sourceToken, destinationToken } = this.swapSnapshot.rate
+    const { rate, revertedRate, sourceToken, destinationToken } = this.swapSnapshot.rate
     const primaryToken = await this.applicationContext.value.tokenStorage.getPriorityToken(
-      chainId,
+      sourceToken.chainId,
       [sourceToken.address, destinationToken.address]
     )
     const secondaryToken = isTokensEqual(primaryToken, sourceToken) ? destinationToken : sourceToken
@@ -240,7 +240,7 @@ export class ConfirmSwapElement extends LitElement {
         <div class="token-view-row">
           <div class="symbol-view">
             <inch-token-icon
-              chainId="${this.swapSnapshot.chainId}"
+              chainId="${this.swapSnapshot.sourceToken.chainId}"
               symbol="${token.symbol}"
               address="${token.address}"
             ></inch-token-icon>
@@ -256,7 +256,7 @@ export class ConfirmSwapElement extends LitElement {
     if (this.needWrap) {
       return html`
         ${this.getTokenView(
-          getWrapperNativeToken(this.swapSnapshot.chainId),
+          getWrapperNativeToken(this.swapSnapshot.sourceToken.chainId),
           this.swapSnapshot.sourceTokenAmount,
           'wrap'
         )}
@@ -287,11 +287,11 @@ export class ConfirmSwapElement extends LitElement {
     }
 
     const stream = this.applicationContext.value.onChain
-      .getBlockEmitter(this.swapSnapshot.chainId)
+      .getBlockEmitter(this.swapSnapshot.sourceToken.chainId)
       .pipe(
         switchMap(async () => {
           const fiatPrice = await this.applicationContext.value.tokenStorage.getTokenFiatPrice({
-            tokenRecordId: buildTokenId(this.swapSnapshot.chainId, token.address),
+            tokenRecordId: buildTokenIdByToken(token),
           })
           const fiatBalance = amount.mul(fiatPrice)
           return `~$${fiatBalance.toFixedSmart(2)}`

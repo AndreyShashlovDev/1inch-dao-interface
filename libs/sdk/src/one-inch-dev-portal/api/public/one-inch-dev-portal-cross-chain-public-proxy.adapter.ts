@@ -2,26 +2,21 @@ import { CacheActivePromise } from '@1inch-community/core/decorators'
 import { lazyAppContext } from '@1inch-community/core/lazy'
 import {
   ChainId,
-  FusionPlusQuoteReceiveDto,
-  FusionQuoteReceiveDto,
   GasPriceDto,
   IApplicationContext,
-  IOneInchDevPortalCrossChainAdapter,
+  ICryptoAssetDataProvider,
   IProxyClient,
   ITokenV2Dto,
-  OrderStatusResult,
   ProxyResultBalance,
   ProxyResultBalanceItem,
   ProxyResultTokenPrice,
   ProxyResultTokenPriceItem,
 } from '@1inch-community/models'
-import { Address, type Hash } from 'viem'
+import { Address } from 'viem'
 import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain'
 import { PublicProxyClient } from './public-proxy-client'
 
-export class OneInchDevPortalCrossChainPublicProxyAdapter
-  implements IOneInchDevPortalCrossChainAdapter
-{
+export class OneInchDevPortalCrossChainPublicProxyAdapter implements ICryptoAssetDataProvider {
   private readonly context = lazyAppContext('OneInchDevPortalCrossChainPublicProxyAdapter')
   private readonly client = new PublicProxyClient()
   private readonly fallBackAdapter = new OneInchDevPortalCrossChainOnChainAdapter()
@@ -64,14 +59,6 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
     return await Promise.all(pending)
   }
 
-  async getTokenBalances(
-    chainId: ChainId,
-    walletAddress: Address,
-    tokenAddress: Address
-  ): Promise<bigint> {
-    return await this.fallBackAdapter.getTokenBalances(chainId, walletAddress, tokenAddress)
-  }
-
   @CacheActivePromise()
   async getTokenList(): Promise<ITokenV2Dto[]> {
     const walletIsConnected = await this.walletIsConnected()
@@ -99,27 +86,6 @@ export class OneInchDevPortalCrossChainPublicProxyAdapter
         } satisfies ProxyResultTokenPriceItem
       })
     )
-  }
-
-  @CacheActivePromise()
-  getQuote() // fromToken: IToken,
-  // toToken: IToken,
-  // amount: bigint,
-  // walletAddress: Address,
-  // customPreset?: QuoteReceiveCustomPreset,
-  // enableEstimate?: boolean
-  : Promise<FusionQuoteReceiveDto | FusionPlusQuoteReceiveDto | null> {
-    throw new Error('Method not implemented.')
-  }
-
-  @CacheActivePromise()
-  getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null> {
-    throw new Error('Method not implemented.')
-  }
-
-  @CacheActivePromise()
-  cancelOrder(orderHash: Hash): Promise<Hash | null> {
-    throw new Error('Method not implemented.')
   }
 
   getGasPrice(): Promise<GasPriceDto | null> {

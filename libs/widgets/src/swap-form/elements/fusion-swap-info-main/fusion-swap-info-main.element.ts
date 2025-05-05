@@ -4,7 +4,12 @@ import { dispatchEvent, observe, translate } from '@1inch-community/core/lit-uti
 import { ISwapContext, Rate } from '@1inch-community/models'
 import { getSymbolFromWrapToken } from '@1inch-community/sdk/chain'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
-import { buildTokenId, isRateEqual, isTokensEqual } from '@1inch-community/sdk/tokens'
+import {
+  buildTokenId,
+  buildTokenIdByToken,
+  isRateEqual,
+  isTokensEqual,
+} from '@1inch-community/sdk/tokens'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { consume } from '@lit/context'
@@ -74,9 +79,9 @@ export class FusionSwapInfoMainElement extends LitElement {
     distinctUntilChanged(rateViewDistinctUntilChangedHandler),
     switchMap(async (rateData) => {
       if (rateData === null) return this.getLoadRateView()
-      const { chainId, rate, revertedRate, sourceToken, destinationToken } = rateData
+      const { rate, revertedRate, sourceToken, destinationToken } = rateData
       const primaryToken = await this.applicationContext.value.tokenStorage.getPriorityToken(
-        chainId,
+        sourceToken.chainId,
         [sourceToken.address, destinationToken.address]
       )
       const secondaryToken = isTokensEqual(primaryToken, sourceToken)
@@ -86,7 +91,7 @@ export class FusionSwapInfoMainElement extends LitElement {
       const targetRate = isRevertedRate ? revertedRate : rate
       const rateFormated = targetRate.toFixedSmart(2)
       const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenFiatPrice({
-        tokenRecordId: buildTokenId(chainId, secondaryToken.address),
+        tokenRecordId: buildTokenIdByToken(secondaryToken),
       })
       const rateFiatFormated = tokenPrice.toFixedSmart(2)
       return html`

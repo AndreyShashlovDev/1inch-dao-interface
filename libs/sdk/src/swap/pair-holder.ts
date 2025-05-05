@@ -18,9 +18,7 @@ export class PairHolder {
 
   private readonly pairChance$ = new Subject<void>()
 
-  constructor(private readonly applicationContext: IApplicationContext) {}
-
-  init() {
+  constructor(private readonly applicationContext: IApplicationContext) {
     this.restorePair()
   }
 

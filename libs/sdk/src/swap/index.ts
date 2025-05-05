@@ -1,3 +1,6 @@
+export * from './amount-data-source.impl'
 export * from './is-support-fusion'
+export * from './pair-holder'
 export * from './swap-context'
 export * from './swap-context-token'
+export * from './swap-strategy'
