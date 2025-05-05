@@ -2,7 +2,7 @@ import { genRandomHex } from '@1inch-community/core/random'
 import { storage } from '@1inch-community/core/storage'
 import { ChainId, EIP1193Provider, EventMap, RequestArguments } from '@1inch-community/models'
 import { EventEmitter } from 'eventemitter3'
-import { fromEvent, merge, Subscription, tap } from 'rxjs'
+import { fromEvent, merge, Subject, Subscription, tap } from 'rxjs'
 import { Address, isAddressEqual } from 'viem'
 import type { EthereumProvider } from './ethereum-provider'
 
@@ -18,39 +18,35 @@ type MultiConnectProviderStorage = {
 const internalEvents = ['accountsChanged']
 
 export class MultiConnectProvider implements EIP1193Provider {
-  static async connect() {
-    const provider = new MultiConnectProvider()
-    await provider.connect()
-    return provider
-  }
-
-  static async restoreConnect() {
-    const provider = new MultiConnectProvider()
-    await provider.restoreConnect()
-    return provider
-  }
-
+  readonly connectionUriLink$ = new Subject<string>()
   private readonly storage = new Map<Address, MultiConnectProviderStorage>()
   private activeAddress: Address | null = null
   private readonly eventEmitter = new EventEmitter()
 
-  private get signer(): EthereumProvider | null {
-    if (this.activeAddress && this.storage.has(this.activeAddress)) {
-      return this.storage.get(this.activeAddress)?.provider ?? null
+  get chainId() {
+    return this.signer()?.chainId ?? ChainId.eth
+  }
+
+  private signer(address: Address | null = this.activeAddress): EthereumProvider | null {
+    if (address && this.storage.has(address)) {
+      return this.storage.get(address)?.provider ?? null
     }
     return null
   }
 
-  get chainId() {
-    return this.signer?.chainId ?? ChainId.eth
-  }
-
-  async connect() {
+  async connect(opts?: unknown) {
     const persistStorePrefix = genRandomHex(10)
     try {
       const provider = await makeProvider(persistStorePrefix)
       const subscription = this.listenEvents(provider)
-      const { topic, uri } = await provider.signer.client.core.pairing.create()
+      const { topic } = await provider.signer.client.core.pairing.create()
+      let originalUri: string = ''
+
+      provider.signer.once('display_uri', (uri: string) => {
+        originalUri = uri
+        this.connectionUriLink$.next(uri)
+      })
+
       await provider.connect({
         pairingTopic: topic,
       })
@@ -61,7 +57,7 @@ export class MultiConnectProvider implements EIP1193Provider {
       const storage: MultiConnectProviderStorage = {
         provider: provider,
         topic: topic,
-        uri: uri,
+        uri: originalUri,
         address: address,
         persistStorePrefix,
         subscription,
@@ -78,15 +74,15 @@ export class MultiConnectProvider implements EIP1193Provider {
 
   async restoreConnect() {
     const persistData = this.getPersistData()
-    for (const data of persistData)
+    for (const data of persistData) {
       try {
         const provider = await makeProvider(data.persistStorePrefix)
-        const subscription = this.listenEvents(provider)
         const address = provider.accounts[0] as Address
-        if (address !== data.address) {
+        if (!isAddressEqual(address, data.address as Address)) {
           await dropStorage(data.persistStorePrefix)
           continue
         }
+        const subscription = this.listenEvents(provider)
         this.storage.set(address, {
           provider: provider,
           uri: data.uri,
@@ -102,6 +98,7 @@ export class MultiConnectProvider implements EIP1193Provider {
         await dropStorage(data.persistStorePrefix)
         throw error
       }
+    }
     this.eventEmitter.emit('accountsChanged', this.getAddresses())
   }
 
@@ -110,13 +107,40 @@ export class MultiConnectProvider implements EIP1193Provider {
     this.eventEmitter.emit('accountsChanged', this.getAddresses())
   }
 
-  async disconnect() {
-    if (this.activeAddress) {
-      this.storage.delete(this.activeAddress)
+  private async disconnectAll() {
+    for (const address of this.storage.keys()) {
+      await this.signer(address)
+        ?.disconnect()
+        .catch(() => {
+          /* ignore */
+        })
     }
-    this.activeAddress = null
 
-    this.setActiveAddress(this.getAddresses()[0] ?? null)
+    this.storage.clear()
+    this.activeAddress = null
+    this.setActiveAddress(null)
+    this.updatePersist()
+  }
+
+  async disconnect(address?: Address | null) {
+    if (!address) {
+      await this.disconnectAll()
+    } else {
+      this.storage.delete(address)
+
+      await this.signer(address)
+        ?.disconnect()
+        .catch(() => {
+          /* ignore */
+        })
+
+      if (this.activeAddress === address) {
+        this.activeAddress = null
+
+        this.setActiveAddress(this.getAddresses()[0] ?? null)
+      }
+    }
+
     this.updatePersist()
   }
 
@@ -129,7 +153,7 @@ export class MultiConnectProvider implements EIP1193Provider {
     if (method === 'eth_requestAccounts' || method === 'eth_accounts') {
       return this.getAddresses()
     }
-    return (await this.signer?.request(args)) ?? null
+    return (await this.signer()?.request(args)) ?? null
   }
 
   async enable(): Promise<Address[]> {
@@ -144,7 +168,7 @@ export class MultiConnectProvider implements EIP1193Provider {
       this.eventEmitter.on(event, listener)
       return
     }
-    this.signer?.on(event, listener as any)
+    this.signer()?.on(event, listener as any)
   }
 
   removeListener<TEvent extends keyof EventMap>(
@@ -155,7 +179,7 @@ export class MultiConnectProvider implements EIP1193Provider {
       this.eventEmitter.removeListener(event, listener)
       return
     }
-    this.signer?.removeListener(event, listener as any)
+    this.signer()?.removeListener(event, listener as any)
   }
 
   private updatePersist() {

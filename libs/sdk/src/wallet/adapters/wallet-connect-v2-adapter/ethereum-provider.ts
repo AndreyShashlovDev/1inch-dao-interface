@@ -83,9 +83,15 @@ export class EthereumProvider extends WcEthereumProvider {
   }
 
   override async disconnect() {
-    await super.disconnect()
-    await this.signer.disconnect()
-    await this.dropPersist()
+    await super.disconnect().catch(() => {
+      /* ignore */
+    })
+    await this.signer.disconnect().catch(() => {
+      /* ignore */
+    })
+    await this.dropPersist().catch(() => {
+      /* ignore */
+    })
   }
 
   async dropPersist() {
@@ -94,6 +100,8 @@ export class EthereumProvider extends WcEthereumProvider {
 }
 
 export class WalletConnectStorage {
+  private static instances: Map<string, WalletConnectStorage> = new Map()
+
   static async dropStorage(persistStorePrefix: string) {
     const storage = await WalletConnectStorage.init(persistStorePrefix)
     await storage.dropStorage()
@@ -109,9 +117,12 @@ export class WalletConnectStorage {
   }
 
   static async init(persistStorePrefix: string) {
-    const instance = new WalletConnectStorage()
-    await instance.init(WalletConnectStorage.getDatabaseName(persistStorePrefix))
-    return instance
+    if (!this.instances.has(persistStorePrefix)) {
+      const instance = new WalletConnectStorage()
+      await instance.init(WalletConnectStorage.getDatabaseName(persistStorePrefix))
+      this.instances.set(persistStorePrefix, instance)
+    }
+    return this.instances.get(persistStorePrefix)!
   }
 
   private data!: Table<{ key: string; value: unknown }, string>
