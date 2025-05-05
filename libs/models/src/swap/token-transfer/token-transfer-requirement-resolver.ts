@@ -1,17 +1,17 @@
 import { Address } from 'viem'
 import { ChainId } from '../../chain'
-import { IToken } from '../../token'
+import { EmptyResult, ResolverStep } from './transfer-requirement-resolver'
 
-export interface ResolverResult<T> {
+export interface ResolverResult {
   resolver: string
-  result: T
+  result: ResolverStep<string, EmptyResult>[] | null
 }
 
 export interface ITokenTransferRequirementResolver {
   provideRequirements(
     chainId: ChainId,
     walletAddress: Address,
-    token: Address | IToken,
+    token: Address,
     amount: bigint
-  ): Promise<ResolverResult<unknown> | null>
+  ): Promise<ResolverResult | null>
 }

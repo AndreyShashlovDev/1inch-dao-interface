@@ -1,18 +1,30 @@
-import { ChainId, IToken } from 'index'
+import { ChainId } from 'index'
 import { Address } from 'viem'
 
-export interface ITransferRequirementResolver<Result> {
+export interface ResolverStepResult {
+  status: 'error' | 'canceled' | 'success'
+  error?: Error
+}
+
+export interface ResolverStep<S extends string, R extends ResolverStepResult> {
+  alias: S
+  wait: () => Promise<R>
+}
+
+export interface EmptyResult extends ResolverStepResult {}
+
+export interface ITransferRequirementResolver<Step extends string, R extends ResolverStepResult> {
   requirementProvided(
     chainId: ChainId,
     walletAddress: Address,
-    token: Address | IToken,
+    token: Address,
     amount: bigint
   ): Promise<boolean>
 
   provideRequirements(
     chainId: ChainId,
     walletAddress: Address,
-    token: Address | IToken,
+    token: Address,
     amount: bigint
-  ): Promise<Result>
+  ): Promise<ResolverStep<Step, R>[]>
 }

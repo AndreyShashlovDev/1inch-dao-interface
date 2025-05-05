@@ -51,7 +51,12 @@ export async function bootstrapApplicationContext(config: EmbeddedBootstrapConfi
         ),
       swapContextFactory: (context) =>
         import('@1inch-community/sdk/swap').then((m) => {
-          const swapContext = new m.SwapContext(context)
+          const tokenTransferRequirementsResolver = new m.TokenTransferRequirementResolver(
+            m.TransferResolverFactory.createDefault(context.onChain, context.wallet),
+            '1InchApprove'
+          )
+
+          const swapContext = new m.SwapContext(context, tokenTransferRequirementsResolver)
           swapContext.init()
           return swapContext
         }),

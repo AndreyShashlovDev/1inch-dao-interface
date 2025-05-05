@@ -1,24 +1,32 @@
 import {
   ChainId,
-  IToken,
+  EmptyResult,
   ITokenTransferRequirementResolver,
   ITransferRequirementResolver,
   ResolverResult,
 } from '@1inch-community/models'
 import { Address } from 'viem'
 
-export class TokenTransferRequirementResolver implements ITokenTransferRequirementResolver {
-  constructor(private readonly providers: Map<string, ITransferRequirementResolver<unknown>>) {}
+export class TokenTransferRequirementResolver<K extends string>
+  implements ITokenTransferRequirementResolver
+{
+  constructor(
+    private readonly providers: Map<K, ITransferRequirementResolver<string, EmptyResult>>,
+    private readonly fallbackResolverName: K
+  ) {}
 
   async provideRequirements(
     chainId: ChainId,
     walletAddress: Address,
-    token: Address | IToken,
+    token: Address,
     amount: bigint
-  ): Promise<ResolverResult<unknown> | null> {
-    console.log(this.providers)
-    // check already simple approve for oneInchRouter if support
-    if (await this.justCheckOneInchApproveBefore()) {
+  ): Promise<ResolverResult | null> {
+    const fallbackResolver = this.providers.get(this.fallbackResolverName)
+
+    if (
+      fallbackResolver &&
+      (await fallbackResolver.requirementProvided(chainId, walletAddress, token, amount))
+    ) {
       return null
     }
 
@@ -45,9 +53,5 @@ export class TokenTransferRequirementResolver implements ITokenTransferRequireme
     }
 
     return null
-  }
-
-  private async justCheckOneInchApproveBefore(): Promise<boolean> {
-    return false
   }
 }

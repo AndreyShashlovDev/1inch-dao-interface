@@ -38,7 +38,7 @@ export interface ISwapContext extends IAmountDataSource {
   setMaxAmount(): Promise<void>
   getApprove(): Promise<Hash>
   getPermit(): Promise<void>
-  checkTransferRequirements(): Promise<ResolverResult<unknown> | null>
+  provideTransferRequirements(): Promise<ResolverResult | null>
 }
 
 export type Pair = {

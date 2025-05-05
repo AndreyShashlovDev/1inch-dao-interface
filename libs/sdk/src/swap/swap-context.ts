@@ -45,14 +45,11 @@ import { PairHolder } from './pair-holder'
 import { SwapContextFusionPlusStrategy } from './swap-context-fusion-plus.strategy'
 import { SwapContextFusionStrategy } from './swap-context-fusion.strategy'
 import { SwapContextOnChainStrategy } from './swap-context-onchain.strategy'
-import { TokenTransferRequirementResolver } from './transfer-requirement/token-transfer-requirement-resolver'
-import { TransferResolverFactory } from './transfer-requirement/transfer-resolver-factory'
 
 export class SwapContext implements ISwapContext {
   private readonly pairHolder: PairHolder
   private readonly oneInchApiAdapter: IOneInchDevPortalCrossChainAdapter
   private readonly wallet: IWallet
-  private readonly tokenTransferRequirementsResolver: ITokenTransferRequirementResolver
 
   private readonly subscription = new Subscription()
   private readonly settings = lazy<SwapSettings>(() => ({
@@ -142,14 +139,13 @@ export class SwapContext implements ISwapContext {
     shareReplay({ bufferSize: 1, refCount: true })
   )
 
-  constructor(private readonly context: IApplicationContext) {
+  constructor(
+    private readonly context: IApplicationContext,
+    private readonly tokenTransferRequirementsResolver: ITokenTransferRequirementResolver
+  ) {
     this.pairHolder = new PairHolder(this.context)
     this.oneInchApiAdapter = this.context.api
     this.wallet = this.context.wallet
-
-    this.tokenTransferRequirementsResolver = new TokenTransferRequirementResolver(
-      TransferResolverFactory.createDefault(this.context.onChain, this.context.wallet)
-    )
 
     // setup strategies by priority
     this.strategies = [
@@ -246,7 +242,7 @@ export class SwapContext implements ISwapContext {
     // );
   }
 
-  public async checkTransferRequirements(): Promise<ResolverResult<unknown> | null> {
+  public async provideTransferRequirements(): Promise<ResolverResult | null> {
     const snapshot = this.pairHolder.getSnapshot('source')
     const sourceToken = snapshot.token
     const connectedWalletAddress = await this.wallet.data.getActiveAddress()
@@ -266,7 +262,7 @@ export class SwapContext implements ISwapContext {
     return this.tokenTransferRequirementsResolver.provideRequirements(
       sourceToken.chainId,
       connectedWalletAddress,
-      sourceToken,
+      sourceToken.address,
       snapshot.amount
     )
   }
