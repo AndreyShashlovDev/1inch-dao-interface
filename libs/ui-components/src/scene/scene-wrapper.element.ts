@@ -10,10 +10,10 @@ export class SceneWrapperElement extends LitElement {
 
   static override styles = css`
     :host {
+      height: 100%;
       background-color: var(--scene-background-color);
       will-change: transform;
       transform: translate3d(0, 0, 0);
-      height: fit-content;
       box-sizing: border-box;
       position: relative;
       display: block;
