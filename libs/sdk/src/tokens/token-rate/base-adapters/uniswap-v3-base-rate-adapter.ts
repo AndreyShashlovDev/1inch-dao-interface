@@ -71,8 +71,6 @@ export class UniswapV3BaseRateAdapter implements ITokenRateSourceAdapter {
         isRevertRate
       )
       return {
-        sourceChainId: chainId,
-        destinationChainId: chainId,
         rate,
         revertedRate,
         sourceToken,

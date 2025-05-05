@@ -4,53 +4,32 @@ import {
   ChainId,
   GasPriceDto,
   IApplicationContext,
-  IOneInchDevPortalCrossChainAdapter,
+  ICryptoAssetDataProvider,
   IProxyClient,
   ITokenV2Dto,
-  OrderStatusResult,
   ProxyResultBalance,
   ProxyResultTokenPrice,
 } from '@1inch-community/models'
-import { Address, type Hash } from 'viem'
-import { CrossChainSDKFacade } from '../../sdk'
+import { Address } from 'viem'
 import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain'
 import { PrivateProxyClient } from './private-proxy-client'
 
-export class OneInchDevPortalCrossChainPrivateProxyAdapter
-  implements IOneInchDevPortalCrossChainAdapter
-{
+export class OneInchDevPortalCrossChainPrivateProxyAdapter implements ICryptoAssetDataProvider {
   private readonly context = lazyAppContext('OneInchDevPortalCrossChainPublicProxyAdapter')
   private readonly client = new PrivateProxyClient()
-  private readonly sdkFacade = new CrossChainSDKFacade()
   private readonly fallBackAdapter = new OneInchDevPortalCrossChainOnChainAdapter()
 
   async init(context: IApplicationContext): Promise<void> {
     this.context.set(context)
-    await Promise.all([
-      this.client.init(context),
-      this.sdkFacade.init(context),
-      this.fallBackAdapter.init(context),
-    ])
+    await Promise.all([this.client.init(context), this.fallBackAdapter.init(context)])
   }
 
   @CacheActivePromise()
   async getBalances(chainIds: ChainId[], walletAddresses: Address[]): Promise<ProxyResultBalance> {
-    try {
-      return await this.client.post<ProxyResultBalance>('/proxy/balance', {
-        chain_ids: chainIds.map((chainId) => chainId.toString()),
-        addresses: walletAddresses,
-      })
-    } catch {
-      return await this.fallBackAdapter.getBalances(chainIds, walletAddresses)
-    }
-  }
-
-  async getTokenBalances(
-    chainId: ChainId,
-    walletAddress: Address,
-    tokenAddress: Address
-  ): Promise<bigint> {
-    return await this.fallBackAdapter.getTokenBalances(chainId, walletAddress, tokenAddress)
+    return await this.client.post<ProxyResultBalance>('/proxy/balance', {
+      chain_ids: chainIds.map((chainId) => chainId.toString()),
+      addresses: walletAddresses,
+    })
   }
 
   @CacheActivePromise()
@@ -69,16 +48,6 @@ export class OneInchDevPortalCrossChainPrivateProxyAdapter
   @CacheActivePromise()
   async getTokenPrice(): Promise<ProxyResultTokenPrice> {
     return this.client.get('/proxy/token-price')
-  }
-
-  @CacheActivePromise()
-  getOrderStatus(orderHash: Hash): Promise<OrderStatusResult | null> {
-    return this.sdkFacade.getOrderStatus(orderHash)
-  }
-
-  @CacheActivePromise()
-  cancelOrder(orderHash: Hash): Promise<Hash | null> {
-    return this.sdkFacade.cancelOrder(orderHash)
   }
 
   getGasPrice(): Promise<GasPriceDto | null> {

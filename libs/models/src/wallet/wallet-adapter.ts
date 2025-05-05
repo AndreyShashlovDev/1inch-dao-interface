@@ -1,7 +1,6 @@
 import { Observable } from 'rxjs'
 import type {
   Address,
-  Hex,
   SignTypedDataParameters,
   SignTypedDataReturnType,
   WalletClient,
@@ -24,7 +23,6 @@ export interface IWalletAdapter {
   setActiveAddress(address: Address | null): void
   writeContract(params: WriteContractParameters): Promise<WriteContractReturnType>
   signTypedData(typeData: SignTypedDataParameters): Promise<SignTypedDataReturnType>
-  rawCall(address: Address, callData: Hex): Promise<string>
   connectionUriLink(): Observable<string | null>
   isSupportConnectionUriLink(): Promise<boolean>
 }

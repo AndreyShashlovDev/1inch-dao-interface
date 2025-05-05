@@ -1,7 +1,13 @@
-import { ChainId, IApplicationContext, IProxyClient, IWallet } from '@1inch-community/models'
+import {
+  ChainId,
+  IApplicationContext,
+  IOnChain,
+  IProxyClient,
+  IWallet,
+} from '@1inch-community/models'
 import type { EIP712TypedData } from '@1inch/cross-chain-sdk'
 import { FusionSDK } from '@1inch/fusion-sdk'
-import { Address, Hex, isAddressEqual } from 'viem'
+import { type Address, type Hex, isAddressEqual } from 'viem'
 
 export class OneInchSingleChainSDK {
   private static instance: Map<ChainId, FusionSDK> = new Map()
@@ -16,6 +22,7 @@ export class OneInchSingleChainSDK {
         this.appContext.isEmbedded ? '/' : '/proxy/direct/',
         chain,
         this.appContext.wallet,
+        this.appContext.onChain,
         this.appContext.api.getProxyClient()
       )
 
@@ -30,6 +37,7 @@ async function buildFusionSDK(
   host: string,
   chain: ChainId,
   walletController: IWallet,
+  onChain: IOnChain,
   proxyClient: IProxyClient
 ) {
   const { FusionSDK } = await import('@1inch/fusion-sdk')
@@ -49,11 +57,13 @@ async function buildFusionSDK(
         return await walletController.signTypedData(typedData as any)
       },
       ethCall: async (address: string, callData: string): Promise<string> => {
-        const activeWalletAddress = await walletController.data.getActiveAddress()
-        if (!activeWalletAddress) {
-          throw new Error('')
-        }
-        return walletController.rawCall(address as Address, callData as Hex)
+        const client = await onChain.getClient(chain)
+        const result = await client.call({
+          to: address as Address,
+          data: callData as Hex,
+        })
+
+        return result.data ?? ''
       },
     },
   })

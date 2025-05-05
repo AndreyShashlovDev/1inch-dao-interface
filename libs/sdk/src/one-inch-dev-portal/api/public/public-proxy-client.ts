@@ -21,7 +21,7 @@ export class PublicProxyClient implements IProxyClient {
   }
 
   async get<T>(url: string): Promise<T> {
-    const response = await fetch(`${this.host}${url}`, {
+    const response = await fetch(this.getRequestUrl(url), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ export class PublicProxyClient implements IProxyClient {
   }
 
   async post<T, Body = unknown>(url: string, body: Body): Promise<T> {
-    const response = await fetch(`${this.host}${url}`, {
+    const response = await fetch(this.getRequestUrl(url), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,5 +41,12 @@ export class PublicProxyClient implements IProxyClient {
       body: JSON.stringify(body),
     })
     return await response.json()
+  }
+
+  private getRequestUrl(urlPath: string): URL {
+    const url = new URL(urlPath, this.host)
+    url.pathname = url.pathname.replace(/\/+/g, '/')
+
+    return url
   }
 }

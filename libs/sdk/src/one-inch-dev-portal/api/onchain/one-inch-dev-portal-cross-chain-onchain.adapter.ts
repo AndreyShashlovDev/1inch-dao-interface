@@ -3,15 +3,14 @@ import {
   ChainId,
   GasPriceDto,
   IApplicationContext,
-  IOneInchDevPortalCrossChainAdapter,
+  ICryptoAssetDataProvider,
   IProxyClient,
   ITokenV2Dto,
-  OrderStatusResult,
   ProxyResultBalance,
   ProxyResultBalanceItem,
   ProxyResultTokenPrice,
 } from '@1inch-community/models'
-import { Abi, Address, Hash, parseAbi, PublicClient } from 'viem'
+import { Abi, Address, parseAbi, PublicClient } from 'viem'
 import { getBalanceHelperAddress, isNativeToken } from '../../../chain'
 
 const abi = parseAbi([
@@ -31,35 +30,11 @@ interface MulticallContract {
   }
 }
 
-export class OneInchDevPortalCrossChainOnChainAdapter
-  implements IOneInchDevPortalCrossChainAdapter
-{
+export class OneInchDevPortalCrossChainOnChainAdapter implements ICryptoAssetDataProvider {
   private context?: IApplicationContext
 
   async init(context: IApplicationContext): Promise<void> {
     this.context = context
-  }
-
-  @CacheActivePromise()
-  async getTokenBalances(
-    chainId: ChainId,
-    walletAddress: Address,
-    tokenAddress: Address
-  ): Promise<bigint> {
-    if (!this.context)
-      throw new Error(
-        'OneInchDevPortalCrossChainOnChainAdapter.getTokenBalances Error: Missing context'
-      )
-    const client = await this.context.onChain.getClient(chainId)
-    if (isNativeToken(tokenAddress)) {
-      return await client.getBalance({ address: walletAddress })
-    }
-    return await client.readContract({
-      abi,
-      address: tokenAddress,
-      functionName: 'balanceOf',
-      args: [walletAddress],
-    })
   }
 
   @CacheActivePromise()
@@ -101,14 +76,6 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getProxyClient call')
   }
 
-  getOrderStatus(): Promise<OrderStatusResult | null> {
-    throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported getOrderStatus call')
-  }
-
-  cancelOrder(): Promise<Hash | null> {
-    throw new Error('OneInchDevPortalCrossChainOnChainAdapter not supported cancelOrder call')
-  }
-
   private getBalancesMulticall(
     chainId: ChainId,
     client: PublicClient,
@@ -116,10 +83,11 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     tokenList: Address[],
     collector: (collect: Promise<ProxyResultBalance>) => void
   ) {
-    if (!this.context)
+    if (!this.context) {
       throw new Error(
         'OneInchDevPortalCrossChainOnChainAdapter.getBalancesMulticall Error: Missing context'
       )
+    }
     const contracts: MulticallContract[] = []
 
     for (const token of tokenList) {
@@ -204,10 +172,11 @@ export class OneInchDevPortalCrossChainOnChainAdapter
     collector: (collect: Promise<ProxyResultBalance>) => void
   ) {
     const contractAddress = getBalanceHelperAddress(chainId)
-    if (contractAddress === null)
+    if (contractAddress === null) {
       throw new Error(
         `OneInchDevPortalCrossChainOnChainAdapter.getBalancesHelper Error, contract address address does not exist by chain ${chainId}`
       )
+    }
     for (const walletAddress of walletAddresses) {
       const pending = client
         .readContract({

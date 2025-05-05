@@ -4,27 +4,22 @@ import {
   IAmountDataSource,
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
-  IWallet,
   Pair,
   Rate,
   SwapSettings,
   SwapSnapshot,
 } from '@1inch-community/models'
 import {
-  Address,
+  Address as FusionAddress,
   FusionSDK,
   NetworkEnum,
   OrderParams,
   OrderStatus,
   OrderStatusResponse,
 } from '@1inch/fusion-sdk'
-import { Hash } from 'viem'
-import { getWrapperNativeToken, isNativeToken } from '../chain'
-import { OneInchSingleChainSDK } from '../one-inch-dev-portal/sdk/1inch-single-chain-sdk'
-import { FusionQuoteMapper } from '../one-inch-dev-portal/sdk/mapper/fusion-quote.mapper'
-import { PairHolder } from './pair-holder'
-
-// const RATE_BUMP_DENOMINATOR = 10_000_000n // 100%
+import { type Address, type Hash } from 'viem'
+import { getWrapperNativeToken, isNativeToken } from '../../chain'
+import { FusionQuoteMapper, OneInchSingleChainSDK } from '../../one-inch-dev-portal/sdk'
 
 export class SwapContextFusionStrategy
   implements ISwapContextStrategy<FusionQuoteReceiveDto | null>
@@ -32,23 +27,20 @@ export class SwapContextFusionStrategy
   constructor(
     private readonly chainSdk: OneInchSingleChainSDK,
     private readonly amountDataSource: IAmountDataSource,
-    private readonly pairHolder: PairHolder,
-    private readonly wallet: IWallet,
     private readonly settings: SwapSettings
   ) {}
 
-  async supportSwap(pair: Pair): Promise<boolean> {
+  async supportSwap(pair: Pair, address: Address | null): Promise<boolean> {
     return (
+      address !== null &&
       pair.destination.chainId === pair.source.chainId &&
       NetworkEnum[pair.source.chainId] !== undefined
     )
   }
 
   async swap(swapSnapshot: SwapSnapshot<FusionQuoteReceiveDto>): Promise<Hash> {
-    const { sourceChainId, sourceToken, destinationToken, sourceTokenAmount, rawResponseData } =
+    const { sourceToken, destinationToken, sourceTokenAmount, rawResponseData, walletAddress } =
       swapSnapshot
-
-    const walletAddress = await this.wallet.data.getActiveAddress()
 
     if (walletAddress === null) {
       throw new Error('Wallet not connected')
@@ -58,56 +50,7 @@ export class SwapContextFusionStrategy
       throw new Error('')
     }
 
-    const sdk = await this.chainSdk.getInstance(swapSnapshot.sourceChainId)
-    // const permitData = await getPermit(chainId, sourceToken.address, walletAddress, getOneInchRouterV6ContractAddress(chainId))
-
-    // if (permitData) {
-    //   // orderParams.permit = await preparePermit2ForSwap(chainId, walletAddress, permitData.signature, permitData.permitSingle)
-    //   // orderParams.isPermit2 = true
-    // }
-
-    // const { type: slippageType, value: slippageValue } = slippage
-    // const { type: auctionTimeType, value: auctionTimeValue } = auctionTime
-    // if (slippageType !== 'auto' || auctionTimeType !== 'auto') {
-    //   const preset = rawResponseData.presets[rawResponseData.recommended_preset]
-    //   const auctionEndAmount =
-    //     slippageType !== 'auto'
-    //       ? destinationTokenAmount -
-    //         BigMath.calculatePercentage(
-    //           destinationTokenAmount,
-    //           slippageValue ?? rawResponseData.autoK
-    //         )
-    //       : BigInt(preset.auctionEndAmount)
-    //
-    //   const auctionDuration =
-    //     auctionTimeType !== 'auto'
-    //       ? (auctionTimeValue ?? preset.auctionDuration)
-    //       : preset.auctionDuration
-    //   const auctionStartAmount = preset.auctionStartAmount
-
-    // const getToTokenAmount = (coefficient: number) => {
-    //   let rate = coefficient - preset.gasCost.gasBumpEstimate
-    //   if (rate < 0) rate = 0
-    //   return (auctionEndAmount * (BigInt(rate) + RATE_BUMP_DENOMINATOR)) / RATE_BUMP_DENOMINATOR
-    // }
-    // const getDelay = (delay: number) => {
-    //   if (auctionTimeType === 'auto') return delay
-    //   return (delay * auctionTimeValue!) / preset.auctionDuration
-    // }
-    //   orderParams.customPreset = {
-    //     auctionDuration,
-    //     auctionStartAmount: BigInt(auctionStartAmount).toString(),
-    //     auctionEndAmount: auctionEndAmount.toString(),
-    //     // points: [
-    //     //   ...preset.points.map((point, index) => ({
-    //     //       delay: getDelay(point.delay),
-    //     //       toTokenAmount: getToTokenAmount(point.coefficient).toString()
-    //     //   }))
-    //     // ]
-    //   }
-    //   orderParams.preset = PresetEnum.custom
-    // }
-
+    const sdk = await this.chainSdk.getInstance(swapSnapshot.sourceToken.chainId)
     const quote = FusionQuoteMapper.toDomain(rawResponseData)
 
     if (!quote.quoteId) {
@@ -123,13 +66,13 @@ export class SwapContextFusionStrategy
     }
 
     const order = await quote.createFusionOrder({
-      receiver: orderParams.receiver ? new Address(orderParams.receiver) : undefined,
+      receiver: orderParams.receiver ? new FusionAddress(orderParams.receiver) : undefined,
       preset: orderParams.preset,
       nonce: orderParams.nonce,
       allowPartialFills: orderParams.allowPartialFills,
       allowMultipleFills: orderParams.allowMultipleFills,
       orderExpirationDelay: orderParams.orderExpirationDelay,
-      network: sourceChainId.valueOf(),
+      network: swapSnapshot.sourceToken.chainId.valueOf(),
     })
 
     const info = await sdk.submitOrder(order, quote.quoteId)
@@ -138,30 +81,26 @@ export class SwapContextFusionStrategy
     return info.orderHash as Hash
   }
 
-  async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot<FusionQuoteReceiveDto>> {
-    const sourceTokenSnapshot = this.pairHolder.getSnapshot('source')
-    const destinationTokenSnapshot = this.pairHolder.getSnapshot('destination')
-    let { token: sourceToken } = sourceTokenSnapshot
-    const { amount: sourceTokenAmount } = sourceTokenSnapshot
-    const { token: destinationToken } = destinationTokenSnapshot
-    const chainId = await this.wallet.data.getChainId()
-    const activeAddress = await this.wallet.data.getActiveAddress()
+  async getDataSnapshot(
+    pair: Pair,
+    sourceTokenAmount: bigint,
+    walletAddress: Address | null
+  ): Promise<ISwapContextStrategyDataSnapshot<FusionQuoteReceiveDto>> {
+    let sourceToken = pair.source
+    const destinationToken = pair.destination
+    const chainId = sourceToken.chainId
 
-    if (
-      chainId === null ||
-      sourceToken === null ||
-      destinationToken === null ||
-      sourceTokenAmount === null ||
-      activeAddress === null ||
-      sourceTokenAmount === 0n
-    ) {
+    if (sourceTokenAmount === 0n || !walletAddress) {
       throw new Error('')
     }
 
-    const isSupportExchange = await this.supportSwap({
-      source: sourceToken,
-      destination: destinationToken,
-    })
+    const isSupportExchange = await this.supportSwap(
+      {
+        source: sourceToken,
+        destination: destinationToken,
+      },
+      walletAddress
+    )
 
     if (!isSupportExchange) {
       throw new Error(
@@ -181,7 +120,7 @@ export class SwapContextFusionStrategy
     }
 
     const orderParams: OrderParams = {
-      walletAddress: activeAddress,
+      walletAddress: walletAddress.toString(),
       fromTokenAddress: sourceToken.address,
       toTokenAddress: destinationToken.address,
       amount: sourceTokenAmount.toString(),
@@ -211,8 +150,6 @@ export class SwapContextFusionStrategy
     )
 
     const rateData: Rate = {
-      sourceChainId: chainId,
-      destinationChainId: chainId,
       rate,
       revertedRate,
       isReverted: false,
@@ -230,8 +167,7 @@ export class SwapContextFusionStrategy
     }
 
     return {
-      sourceChainId: chainId,
-      destinationChainId: chainId,
+      walletAddress,
       sourceToken,
       destinationToken,
       sourceTokenAmount,

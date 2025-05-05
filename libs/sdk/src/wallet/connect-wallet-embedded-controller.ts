@@ -8,13 +8,7 @@ import {
   IWalletInternal,
 } from '@1inch-community/models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
-import {
-  Address,
-  Hex,
-  SignTypedDataParameters,
-  WriteContractParameters,
-  WriteContractReturnType,
-} from 'viem'
+import { SignTypedDataParameters, WriteContractParameters, WriteContractReturnType } from 'viem'
 import { adapterId } from './adapter-id'
 import { UniversalBrowserExtensionAdapter } from './adapters/universal-browser-extension-adapter'
 import { GlobalDataAdapter } from './global-data-adapter'
@@ -68,13 +62,6 @@ export class ConnectWalletEmbeddedController implements IWallet, IWalletInternal
       throw new Error('Wallet not connected')
     }
     return await this.currentActiveAdapter.signTypedData(typeData)
-  }
-
-  async rawCall(address: Address, callData: Hex): Promise<string> {
-    if (!this.currentActiveAdapter || !this.currentActiveAdapter.client) {
-      throw new Error('Wallet not connected')
-    }
-    return await this.currentActiveAdapter.rawCall(address, callData)
   }
 
   setChainIds(chainIds: ChainId[]): void {

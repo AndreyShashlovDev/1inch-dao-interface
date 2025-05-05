@@ -25,7 +25,6 @@ import {
 } from 'rxjs'
 import type {
   Address,
-  Hex,
   SignTypedDataParameters,
   WriteContractParameters,
   WriteContractReturnType,
@@ -225,13 +224,6 @@ export class WalletController implements IWallet, IWalletInternal {
     const support = await this.adapters.get(id)?.isSupportConnectionUriLink()
 
     return support ?? false
-  }
-
-  async rawCall(address: Address, callData: Hex): Promise<string> {
-    if (!this.currentActiveAdapter || !this.currentActiveAdapter.client) {
-      throw new Error('Wallet not connected')
-    }
-    return await this.currentActiveAdapter.rawCall(address, callData)
   }
 
   private async setActiveAddressInner(id: string, address: Address) {

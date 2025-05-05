@@ -3,24 +3,18 @@ import {
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
   ITokenRateProvider,
-  IWallet,
   Pair,
 } from '@1inch-community/models'
-import { Hash } from 'viem'
-import { PairHolder } from './pair-holder'
+import { type Address, type Hash } from 'viem'
 
 export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown> {
-  constructor(
-    private readonly pairHolder: PairHolder,
-    private readonly wallet: IWallet,
-    private readonly rateProvider: ITokenRateProvider
-  ) {}
+  constructor(private readonly rateProvider: ITokenRateProvider) {}
 
   swap(): Promise<Hash> {
     throw new Error('OnChain strategy not support swap')
   }
 
-  async supportSwap(pair: Pair): Promise<boolean> {
+  async supportSwap(pair: Pair, address: Address | null): Promise<boolean> {
     if (pair.source.chainId !== pair.destination.chainId) {
       return false
     }
@@ -33,19 +27,17 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
     return rate !== null && rate.rate > 0n
   }
 
-  async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot> {
-    const sourceTokenSnapshot = this.pairHolder.getSnapshot('source')
-    const destinationTokenSnapshot = this.pairHolder.getSnapshot('destination')
-    const { token: sourceToken, amount: sourceTokenAmount } = sourceTokenSnapshot
-    const { token: destinationToken } = destinationTokenSnapshot
-    const chainId = await this.wallet.data.getChainId()
+  async getDataSnapshot(
+    pair: Pair,
+    amount: bigint,
+    walletAddress: Address | null
+  ): Promise<ISwapContextStrategyDataSnapshot> {
+    const sourceToken = pair.source
+    const sourceTokenAmount = amount
+    const destinationToken = pair.destination
+    const chainId = pair.source.chainId
 
-    if (
-      chainId === null ||
-      sourceToken === null ||
-      destinationToken === null ||
-      sourceTokenAmount === null
-    ) {
+    if (sourceTokenAmount === 0n) {
       throw new Error('')
     }
 
@@ -75,8 +67,7 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
     }
 
     return {
-      sourceChainId: chainId,
-      destinationChainId: chainId,
+      walletAddress,
       sourceToken,
       destinationToken,
       sourceTokenAmount,

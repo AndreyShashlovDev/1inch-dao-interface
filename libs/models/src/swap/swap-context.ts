@@ -1,10 +1,11 @@
 import { type Observable } from 'rxjs'
-import { type Address, Hash } from 'viem'
+import { type Address, type Hash } from 'viem'
 import { NullableValue } from '../base'
 import { ChainId } from '../chain'
 import { IToken } from '../token'
 import { Rate } from '../token-price'
 import { IAmountDataSource } from './amount-data-source'
+import { SwapOrderStatus } from './swap-order-status'
 import { SwapSettings } from './swap-settings'
 import { SwapSnapshot } from './swap-snapshot'
 
@@ -37,6 +38,8 @@ export interface ISwapContext extends IAmountDataSource {
   setMaxAmount(): Promise<void>
   getApprove(): Promise<Hash>
   getPermit(): Promise<void>
+  getOrderStatus(orderHash: Hash): Promise<SwapOrderStatus>
+  cancelOrder(orderHash: Hash): Promise<Hash | null>
 }
 
 export type Pair = {

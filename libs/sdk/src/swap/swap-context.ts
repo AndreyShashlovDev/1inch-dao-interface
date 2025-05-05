@@ -1,7 +1,6 @@
-import { lazy } from '@1inch-community/core/lazy'
 import {
-  IApplicationContext,
-  IOneInchDevPortalCrossChainAdapter,
+  IAmountDataSource,
+  IOnChain,
   ISwapContext,
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
@@ -10,6 +9,7 @@ import {
   NullableValue,
   Pair,
   SettingsValue,
+  SwapOrderStatus,
   SwapSettings,
   SwapSnapshot,
   TokenType,
@@ -36,25 +36,11 @@ import {
   withLatestFrom,
 } from 'rxjs'
 import { Hash, maxUint256 } from 'viem'
-import { getOneInchRouterV6ContractAddress, isNativeToken } from '../chain'
-import { OneInchCrossChainSDK } from '../one-inch-dev-portal/sdk/1inch-cross-chain-sdk'
-import { OneInchSingleChainSDK } from '../one-inch-dev-portal/sdk/1inch-single-chain-sdk'
+import { getOneInchRouterV6ContractAddress } from '../chain'
 import { PairHolder } from './pair-holder'
-import { SwapContextFusionPlusStrategy } from './swap-context-fusion-plus.strategy'
-import { SwapContextFusionStrategy } from './swap-context-fusion.strategy'
-import { SwapContextOnChainStrategy } from './swap-context-onchain.strategy'
 
 export class SwapContext implements ISwapContext {
-  private readonly pairHolder: PairHolder
-  private readonly oneInchApiAdapter: IOneInchDevPortalCrossChainAdapter
-  private readonly wallet: IWallet
-
   private readonly subscription = new Subscription()
-  private readonly settings = lazy<SwapSettings>(() => ({
-    slippage: this.context.settings.getSetting('slippage'),
-    auctionTime: this.context.settings.getSetting('auctionTime'),
-  }))
-  private readonly strategies: ISwapContextStrategy<unknown>[]
 
   readonly loading$ = new BehaviorSubject(false)
 
@@ -63,7 +49,7 @@ export class SwapContext implements ISwapContext {
     distinctUntilChanged()
   )
   readonly block$ = this.chainId$.pipe(
-    switchMap((chainId) => (chainId ? this.context.onChain.getBlockEmitter(chainId) : of(null)))
+    switchMap((chainId) => (chainId ? this.onChain.getBlockEmitter(chainId) : of(null)))
   )
 
   private readonly updateData$ = new Subject<void>()
@@ -115,7 +101,7 @@ export class SwapContext implements ISwapContext {
 
   readonly slippage$: Observable<SettingsValue> = combineLatest([
     this.autoSlippage$,
-    defer(() => this.settings.value.slippage.value$),
+    defer(() => this.settings.slippage.value$),
   ]).pipe(
     map(([autoSlippage, slippageSettings]) => {
       if (slippageSettings) return { type: slippageSettings[1], value: slippageSettings[0] }
@@ -126,7 +112,7 @@ export class SwapContext implements ISwapContext {
 
   readonly auctionTime$: Observable<SettingsValue> = combineLatest([
     this.autoAuctionTime$,
-    defer(() => this.settings.value.auctionTime.value$),
+    defer(() => this.settings.auctionTime.value$),
   ]).pipe(
     map(([autoAuctionTime, auctionTimeSettings]) => {
       if (auctionTimeSettings) {
@@ -137,34 +123,16 @@ export class SwapContext implements ISwapContext {
     shareReplay({ bufferSize: 1, refCount: true })
   )
 
-  constructor(private readonly context: IApplicationContext) {
-    this.pairHolder = new PairHolder(this.context)
-    this.oneInchApiAdapter = this.context.api
-    this.wallet = this.context.wallet
-
-    // setup strategies by priority
-    this.strategies = [
-      new SwapContextFusionPlusStrategy(
-        new OneInchCrossChainSDK(this.context),
-        this.wallet,
-        this.pairHolder,
-        this,
-        this.settings.value
-      ),
-      new SwapContextFusionStrategy(
-        new OneInchSingleChainSDK(this.context),
-        this,
-        this.pairHolder,
-        this.wallet,
-        this.settings.value
-      ),
-      new SwapContextOnChainStrategy(this.pairHolder, this.wallet, this.context.tokenRateProvider),
-    ]
-  }
+  constructor(
+    private readonly wallet: IWallet,
+    private readonly onChain: IOnChain,
+    private readonly settings: SwapSettings,
+    private readonly pairHolder: PairHolder,
+    private readonly amountDataSource: IAmountDataSource,
+    private readonly strategies: ISwapContextStrategy<unknown>[]
+  ) {}
 
   init() {
-    this.pairHolder.init()
-
     this.subscription.add(
       merge(
         this.destinationTokenAmount$.pipe(
@@ -183,25 +151,25 @@ export class SwapContext implements ISwapContext {
   }
 
   async getApprove(): Promise<Hash> {
-    const chainId = await this.context.wallet.data.getChainId()
+    const chainId = await this.wallet.data.getChainId()
     const sourceTokenSnapshot = this.pairHolder.getSnapshot('source')
-    const owner = await this.context.wallet.data.getActiveAddress()
+    const owner = await this.wallet.data.getActiveAddress()
     if (!chainId || !sourceTokenSnapshot || !sourceTokenSnapshot.token || !owner) {
       throw new Error('')
     }
     const spender = getOneInchRouterV6ContractAddress(chainId)
-    const result = await this.context.onChain.simulateApprove(
+    const result = await this.onChain.simulateApprove(
       chainId,
       sourceTokenSnapshot.token.address,
       owner,
       spender,
       maxUint256
     )
-    return await this.context.wallet.writeContract(result)
+    return await this.wallet.writeContract(result)
   }
 
   getSettingsController<V extends keyof SwapSettings>(name: V): SwapSettings[V] {
-    const controller = this.settings.value[name]
+    const controller = this.settings[name]
     if (!controller) throw new Error('')
     return controller
   }
@@ -280,32 +248,7 @@ export class SwapContext implements ISwapContext {
   }
 
   async getMaxAmount(): Promise<bigint> {
-    const snapshot = this.pairHolder.getSnapshot('source')
-    const sourceToken = snapshot.token
-    const connectedWalletAddress = await this.wallet.data.getActiveAddress()
-    if (!sourceToken || !connectedWalletAddress) return 0n
-    const balance = await this.context.tokenStorage.getTokenBalance(
-      sourceToken.chainId,
-      sourceToken.address,
-      connectedWalletAddress
-    )
-    let amount = BigInt(balance?.amount ?? 0)
-    if (isNativeToken(sourceToken.address)) {
-      const chainId = await this.wallet.data.getChainId()
-      if (!chainId) return 0n
-      const [gasUnits, gasPriceDTO] = await Promise.all([
-        this.context.onChain.estimateWrapNativeToken(chainId, amount),
-        this.oneInchApiAdapter.getGasPrice(chainId),
-      ])
-      if (!gasPriceDTO) return 0n
-      const gasPrice = gasPriceDTO.high
-      const fee = gasUnits * (BigInt(gasPrice.maxFeePerGas) + BigInt(gasPrice.maxPriorityFeePerGas))
-      amount = amount - fee
-      if (amount < 0n) {
-        amount = 0n
-      }
-    }
-    return amount
+    return this.amountDataSource.getMaxAmount()
   }
 
   async setMaxAmount() {
@@ -340,9 +283,19 @@ export class SwapContext implements ISwapContext {
     this.pairHolder.setAmount(type, value)
   }
 
+  public async getOrderStatus(orderHash: Hash): Promise<SwapOrderStatus> {
+    throw new Error('Not implemented yet')
+  }
+
+  public cancelOrder(orderHash: Hash): Promise<Hash | null> {
+    throw new Error('Not implemented yet')
+  }
+
   private async getSupportStrategy(pair: Pair): Promise<ISwapContextStrategy<unknown>> {
+    const walletAddress = await this.wallet.data.getActiveAddress()
+
     for (const strategy of this.strategies) {
-      if (await strategy.supportSwap(pair)) {
+      if (await strategy.supportSwap(pair, walletAddress)) {
         return strategy
       }
     }
@@ -351,9 +304,17 @@ export class SwapContext implements ISwapContext {
   }
 
   private async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot | null> {
+    const { token: source, amount } = this.pairHolder.getSnapshot('source')
+    const { token: destination } = this.pairHolder.getSnapshot('destination')
+    const walletAddress = await this.wallet.data.getActiveAddress()
+
+    if (!source || !destination || !amount) {
+      throw new Error('')
+    }
+
     for (const strategy of this.strategies) {
       try {
-        return await strategy.getDataSnapshot()
+        return await strategy.getDataSnapshot({ source, destination }, amount, walletAddress)
       } catch (e) {
         /* ignore */
       }

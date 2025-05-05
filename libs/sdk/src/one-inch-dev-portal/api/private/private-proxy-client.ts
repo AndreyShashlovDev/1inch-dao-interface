@@ -71,10 +71,10 @@ export class PrivateProxyClient implements IProxyClient {
     console.warn('auth complete')
   }
 
-  private getRequestUrl(urlPath: string): string {
+  private getRequestUrl(urlPath: string): URL {
     const url = new URL(urlPath, this.host)
     url.pathname = url.pathname.replace(/\/+/g, '/')
 
-    return url.toString()
+    return url
   }
 }

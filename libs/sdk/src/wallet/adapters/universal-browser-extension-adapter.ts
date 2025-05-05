@@ -107,24 +107,6 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
     })) as Hex
   }
 
-  async rawCall(address: Address, callData: Hex): Promise<string> {
-    if (!(await this.isConnected()) || !this.client) {
-      throw new Error('Wallet not connected')
-    }
-    const walletAddress = await this.data.getActiveAddress()
-
-    if (!walletAddress) {
-      throw new Error('Wallet not connected')
-    }
-
-    return await this.client.sendTransaction({
-      account: walletAddress,
-      to: address,
-      data: callData,
-      chain: undefined,
-    })
-  }
-
   connectionUriLink(): Observable<string | null> {
     return of(null)
   }

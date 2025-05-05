@@ -4,7 +4,6 @@ import {
   IAmountDataSource,
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
-  IWallet,
   Pair,
   Rate,
   SwapSettings,
@@ -19,11 +18,9 @@ import {
   SDK,
   SupportedChains,
 } from '@1inch/cross-chain-sdk'
-import { Hash } from 'viem'
-import { getWrapperNativeToken, isNativeToken } from '../chain'
-import { OneInchCrossChainSDK } from '../one-inch-dev-portal/sdk/1inch-cross-chain-sdk'
-import { FusionPlusQuoteMapper } from '../one-inch-dev-portal/sdk/mapper/fusion-plus-quote.mapper'
-import { PairHolder } from './pair-holder'
+import { type Address, type Hash } from 'viem'
+import { getWrapperNativeToken, isNativeToken } from '../../chain'
+import { FusionPlusQuoteMapper, OneInchCrossChainSDK } from '../../one-inch-dev-portal/sdk'
 
 interface Secret {
   hash: string
@@ -37,14 +34,13 @@ export class SwapContextFusionPlusStrategy
 
   constructor(
     private readonly crossChainSDK: OneInchCrossChainSDK,
-    private readonly wallet: IWallet,
-    private readonly pairHolder: PairHolder,
     private readonly amountDataSource: IAmountDataSource,
     private readonly settings: SwapSettings
   ) {}
 
-  async supportSwap(pair: Pair): Promise<boolean> {
+  async supportSwap(pair: Pair, address: Address | null): Promise<boolean> {
     return (
+      address !== null &&
       pair.source.chainId !== pair.destination.chainId &&
       SwapContextFusionPlusStrategy.supportChainIds.has(pair.source.chainId) &&
       SwapContextFusionPlusStrategy.supportChainIds.has(pair.destination.chainId)
@@ -52,7 +48,7 @@ export class SwapContextFusionPlusStrategy
   }
 
   async swap(swapSnapshot: SwapSnapshot<FusionPlusQuoteReceiveDto>): Promise<Hash> {
-    const walletAddress = await this.wallet.data.getActiveAddress()
+    const { walletAddress } = swapSnapshot
     const sdk = await this.crossChainSDK.getInstance()
 
     if (!walletAddress) {
@@ -85,35 +81,30 @@ export class SwapContextFusionPlusStrategy
     return hash as Hash
   }
 
-  async getDataSnapshot(): Promise<ISwapContextStrategyDataSnapshot<FusionPlusQuoteReceiveDto>> {
+  async getDataSnapshot(
+    pair: Pair,
+    amount: bigint,
+    walletAddress: Address | null
+  ): Promise<ISwapContextStrategyDataSnapshot<FusionPlusQuoteReceiveDto>> {
     const sdk = await this.crossChainSDK.getInstance()
-    const srcTokenSnapshot = this.pairHolder.getSnapshot('source')
-    const dstTokenSnapshot = this.pairHolder.getSnapshot('destination')
-    let { token: srcToken } = srcTokenSnapshot
-    const { amount: srcTokenAmount } = srcTokenSnapshot
-    const { token: dstToken } = dstTokenSnapshot
+    let srcToken = pair.source
+    const srcTokenAmount = amount
+    const dstToken = pair.destination
+
     const srcChainId = srcToken?.chainId
     const dstChainId = dstToken?.chainId
-    const walletAddress = await this.wallet.data.getActiveAddress()
 
-    if (
-      !srcChainId ||
-      !dstChainId ||
-      srcToken === null ||
-      dstToken === null ||
-      srcTokenAmount === null ||
-      walletAddress === null ||
-      srcTokenAmount === 0n ||
-      srcTokenSnapshot === null ||
-      srcTokenSnapshot.token === null
-    ) {
+    if (walletAddress === null || srcTokenAmount === 0n) {
       throw new Error('')
     }
 
-    const isSupportExchange = await this.supportSwap({
-      source: srcToken,
-      destination: dstToken,
-    })
+    const isSupportExchange = await this.supportSwap(
+      {
+        source: srcToken,
+        destination: dstToken,
+      },
+      walletAddress
+    )
 
     if (!isSupportExchange) {
       throw new Error(
@@ -138,7 +129,7 @@ export class SwapContextFusionPlusStrategy
       dstTokenAddress: dstToken.address,
       amount: srcTokenAmount.toString(),
       enableEstimate: true,
-      walletAddress,
+      walletAddress: walletAddress.toString(),
     }
 
     const quote = await sdk.getQuote(params)
@@ -156,8 +147,6 @@ export class SwapContextFusionPlusStrategy
     )
 
     const rateData: Rate = {
-      sourceChainId: srcChainId,
-      destinationChainId: dstChainId,
       rate,
       revertedRate,
       isReverted: false,
@@ -174,9 +163,8 @@ export class SwapContextFusionPlusStrategy
     }
 
     return {
-      sourceChainId: srcChainId,
+      walletAddress,
       sourceToken: srcToken,
-      destinationChainId: dstChainId,
       destinationToken: dstToken,
       sourceTokenAmount: srcTokenAmount,
       minReceive,

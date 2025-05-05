@@ -1,7 +1,7 @@
 import { smartFormatNumber } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { subscribe, translate } from '@1inch-community/core/lit-utils'
-import { ChainId, IToken, OrderStatus, OrderStatusResult } from '@1inch-community/models'
+import { ChainId, IToken, OrderStatus, SwapOrderStatus } from '@1inch-community/models'
 import { Task, TaskStatus } from '@lit/task'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
@@ -16,7 +16,7 @@ import('../../../shared-elements/token-icon')
 import('@1inch-community/ui-components/timer')
 import('@1inch-community/ui-components/button')
 
-type TaskResult = [OrderStatusResult | null, IToken | null, IToken | null]
+type TaskResult = [SwapOrderStatus | null, IToken | null, IToken | null]
 
 @customElement(NotificationFusionSwapViewElement.tagName)
 export class NotificationFusionSwapViewElement extends LitElement {
@@ -41,8 +41,10 @@ export class NotificationFusionSwapViewElement extends LitElement {
         this.startUpdate(chainId)
       }
       this.chainId = chainId
-      const status = await this.applicationContext.value.api.getOrderStatus(orderHash)
-      if (status === null) {
+      const status = await this.applicationContext.value
+        .getActiveSwapContext()
+        ?.getOrderStatus(orderHash)
+      if (!status) {
         return [null, null, null]
       }
       if ('statusCode' in status) {
@@ -85,7 +87,7 @@ export class NotificationFusionSwapViewElement extends LitElement {
   }
 
   private onCompleteView(
-    status: OrderStatusResult | null,
+    status: SwapOrderStatus | null,
     sourceToken: IToken | null,
     destinationToken: IToken | null
   ) {
@@ -155,7 +157,7 @@ export class NotificationFusionSwapViewElement extends LitElement {
     `
   }
 
-  private getStatusView(status: OrderStatusResult) {
+  private getStatusView(status: SwapOrderStatus) {
     const statusText: string = status.status
     const classes = {
       'status-view': true,
@@ -178,8 +180,9 @@ export class NotificationFusionSwapViewElement extends LitElement {
               loader="${ifDefined(this.cancelInProgress ? '' : undefined)}"
               @click="${async () => {
                 this.cancelInProgress = true
-                await this.applicationContext.value.api
-                  .cancelOrder(this.orderHash!)
+                await this.applicationContext.value
+                  .getActiveSwapContext()
+                  ?.cancelOrder(this.orderHash!)
                   .catch(() => null)
                 await this.task.run([this.orderHash])
               }}"
