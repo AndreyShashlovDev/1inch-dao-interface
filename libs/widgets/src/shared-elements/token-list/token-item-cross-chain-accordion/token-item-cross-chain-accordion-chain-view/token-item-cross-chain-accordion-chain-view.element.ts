@@ -36,7 +36,9 @@ export class TokenItemCrossChainAccordionChainViewElement extends LitElement {
     this,
     async ([tokenId]) => {
       if (!tokenId) throw new Error('')
-      const token = await this.applicationContext.value.tokenStorage.getTokenById(tokenId)
+      const token = await this.applicationContext.value.tokenStorage.getTokenById({
+        tokenRecordId: tokenId,
+      })
       if (!token) {
         console.error('token not found', tokenId)
         throw new Error('')

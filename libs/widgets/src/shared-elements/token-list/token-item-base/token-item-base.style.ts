@@ -57,10 +57,12 @@ export const tokenItemBaseStyle = css`
 
   .token-balance {
     grid-area: token-balance;
+    justify-self: end;
   }
 
   .token-fiat-balance {
     grid-area: token-fiat-balance;
+    justify-self: end;
   }
 
   .icon-after {
