@@ -10,7 +10,6 @@ import {
 import { Observable, startWith, switchMap } from 'rxjs'
 import { BlockTimeCache, getWrapperNativeToken, isNativeToken } from '../../chain'
 import { oneInchOracleAdapter } from './adapters/one-inch-oracle-adapter'
-// import { oneInchOracleAdapter } from './adapters/one-inch-oracle-adapter';
 
 export class TokenRateProvider implements ITokenRateProvider {
   private readonly rateCache = new BlockTimeCache<string, Rate[]>()
@@ -88,16 +87,5 @@ export class TokenRateProvider implements ITokenRateProvider {
 }
 
 export function buildDefaultTokenRateProvider() {
-  return new TokenRateProvider([
-    oneInchOracleAdapter,
-    // v3
-    // uniswapV3Adapter,
-    // pancakeswapV3Adapter,
-    // sushiswapV3Adapter,
-    // spookyswapV3Adapter,
-    // v2
-    // uniswapV2Adapter,
-    // sushiswapV2Adapter,
-    // pancakeswapV2Adapter
-  ])
+  return new TokenRateProvider([oneInchOracleAdapter])
 }

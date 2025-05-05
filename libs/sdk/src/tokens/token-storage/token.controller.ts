@@ -6,7 +6,9 @@ import {
   getCrossChainTotalFiatBalanceQueryFilters,
   getSymbolDataQueryFilters,
   getTokenBalanceByIdQueryFilters,
+  getTokenByIdQueryFilters,
   getTokenFiatBalanceByIdQueryFilters,
+  getTokenFiatPriceQueryFilters,
   getTokenIdListQueryFilters,
   getTotalTokenBalanceBySymbolQueryFilters,
   getTotalTokenFiatBalanceBySymbolQueryFilters,
@@ -499,9 +501,10 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTokenById(id: TokenRecordId): Promise<IToken | null> {
+  async getTokenById(filter: getTokenByIdQueryFilters): Promise<IToken | null> {
     await this.updateTokenDatabase()
-    const token = await this.schema.tokens.get(id)
+    const { tokenRecordId } = filter
+    const token = await this.schema.tokens.get(tokenRecordId)
     return token ?? null
   }
 
@@ -510,7 +513,7 @@ export class TokenController implements ITokenStorage {
     const { tokenRecordId, walletAddress } = filter
     await this.updateDatabase(walletAddress)
     const { balances } = this.schema
-    const token = await this.getTokenById(tokenRecordId)
+    const token = await this.getTokenById({ tokenRecordId })
     if (!token) return BigFloat.zero()
     const balanceRecord = await balances
       .where('tokenRecordId')
@@ -530,6 +533,16 @@ export class TokenController implements ITokenStorage {
     const tokenPriceRecord = await tokenPrice.where('tokenRecordId').equals(tokenRecordId).first()
     if (!tokenPriceRecord) return BigFloat.zero()
     return balance.mul(BigFloat.fromString(tokenPriceRecord.price))
+  }
+
+  @CacheActivePromise()
+  async getTokenFiatPrice(filter: getTokenFiatPriceQueryFilters): Promise<IBigFloat> {
+    await this.updateDatabase()
+    const { tokenRecordId } = filter
+    const { tokenPrice } = this.schema
+    const record = await tokenPrice.where('tokenRecordId').equals(tokenRecordId).first()
+    if (!record) return BigFloat.zero()
+    return BigFloat.fromString(record.price)
   }
 
   async getNativeToken(chainId: ChainId) {

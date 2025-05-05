@@ -1,11 +1,13 @@
+import { BigFloat } from '@1inch-community/core/math'
 import {
   ChainId,
   IApplicationContext,
+  IBigFloat,
   IToken,
   ITokenRateSourceAdapter,
   Rate,
 } from '@1inch-community/models'
-import { Address, parseAbi, parseUnits } from 'viem'
+import { Address, parseAbi } from 'viem'
 
 const abi = parseAbi([
   'function getRate(address srcToken, address dstToken, bool useWrappers) external view returns (uint256 weightedRate)',
@@ -40,6 +42,12 @@ export class OneInchOracleBaseRateAdapter implements ITokenRateSourceAdapter {
       functionName: 'getRate',
       args: [sourceToken.address, destinationToken.address, false],
     })
+    const gas = await client.estimateContractGas({
+      abi,
+      address: contractAddress,
+      functionName: 'getRate',
+      args: [sourceToken.address, destinationToken.address, false],
+    })
     const [rate, revertedRate] = normalizeRate(rateRaw, sourceToken, destinationToken)
     return {
       chainId,
@@ -60,12 +68,10 @@ function normalizeRate(
   rate: bigint,
   sourceToken: IToken,
   destinationToken: IToken
-): [bigint, bigint] {
-  const numerator = 10 ** sourceToken.decimals
-  const denominator = 10 ** destinationToken.decimals
-  const price = (Number(rate) * numerator) / denominator / 1e18
-  return [
-    parseUnits(price.toString(), destinationToken.decimals),
-    parseUnits((1 / price).toString(), sourceToken.decimals),
-  ]
+): [IBigFloat, IBigFloat] {
+  const numerator = BigFloat.from(10 ** sourceToken.decimals)
+  const denominator = BigFloat.from(10 ** destinationToken.decimals)
+  const rateBigFloat = BigFloat.fromBigInt(rate, 0)
+  const price = rateBigFloat.mul(numerator).div(denominator).div(BigFloat.from(1e18))
+  return [price, BigFloat.from(1).div(price)]
 }
