@@ -32,6 +32,10 @@ export type getTokenFiatBalanceByIdQueryFilters = QueryFilters<'tokenRecordId' |
 
 export type getCrossChainTotalFiatBalanceQueryFilters = QueryFilters<'walletAddress', 'chainIds'>
 
+export type getTokenFiatPriceQueryFilters = QueryFilters<'tokenRecordId'>
+
+export type getTokenByIdQueryFilters = QueryFilters<'tokenRecordId'>
+
 export interface ITokenStorage extends InitializingEntity {
   tokensUpdate$: Observable<void>
   balancesUpdate$: Observable<Address>
@@ -49,6 +53,8 @@ export interface ITokenStorage extends InitializingEntity {
   ): Promise<IBigFloat>
   getTokenBalanceById(filter: getTokenBalanceByIdQueryFilters): Promise<IBigFloat>
   getTokenFiatBalanceById(filter: getTokenFiatBalanceByIdQueryFilters): Promise<IBigFloat>
+  getTokenFiatPrice(filter: getTokenFiatPriceQueryFilters): Promise<IBigFloat>
+  getTokenById(filter: getTokenByIdQueryFilters): Promise<IToken | null>
   //
 
   getCrossChainTokenName(symbol: string): Promise<string>
@@ -59,7 +65,6 @@ export interface ITokenStorage extends InitializingEntity {
   ): Promise<TokenRecordId[]>
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
-  getTokenById(id: TokenRecordId): Promise<IToken | null>
   getTokenLogoURL(chainId: ChainId, address: Address): Promise<string | null>
   getTokenLogoURLsBySymbol(symbol: string): Promise<string[]>
   getNativeToken(chainId: ChainId): Promise<IToken | null>
