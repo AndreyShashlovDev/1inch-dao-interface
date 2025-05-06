@@ -1,3 +1,51 @@
+# [1.0.0-rc.10](https://github.com/1inch-community/interface/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2025-05-06)
+
+
+### Bug Fixes
+
+* **number-animation:** add non-breaking space before postfix symbol ([6ef9968](https://github.com/1inch-community/interface/commit/6ef99683f6ca21800f9017f895297ae42852981f))
+* **swap-form:** adjust maxHeight for selectToken scene ([0274c11](https://github.com/1inch-community/interface/commit/0274c111e578d3acfe1ec60270ba6db11277237a))
+* **token-balance:** include symbol in tooltip for balance ([f2d0c90](https://github.com/1inch-community/interface/commit/f2d0c903026b93636143eebb5dfa4249af686545))
+* **token-list:** remove leftover debugger statement ([326d1e9](https://github.com/1inch-community/interface/commit/326d1e978003cad63fffebc1b669c5ba22eac30e))
+* **token-storage:** remove leftover debugger statement ([bca76b4](https://github.com/1inch-community/interface/commit/bca76b4ff1fbcc34d95c4c71f7ef9376e644d966))
+* **wallet-manager:** disconnect wallets ([916238e](https://github.com/1inch-community/interface/commit/916238e3235bbb9307758bcddfb94c93575e83c2))
+* **wallet-manager:** don't wait finish animation when change scene ([4d9ea9c](https://github.com/1inch-community/interface/commit/4d9ea9ca41b13d9582e6fb9f82d255afc1ea8ded))
+* **wallet-manager:** merge with dev ([8412f4e](https://github.com/1inch-community/interface/commit/8412f4ebba50434cf00a14cd15af1434133be99d))
+* **wallet-manager:** qrcode ui improvements ([b450f0a](https://github.com/1inch-community/interface/commit/b450f0af20fa248c7fc2b969e85011059f9f555a))
+* **wallet-manager:** re-select active account ([fc6ce11](https://github.com/1inch-community/interface/commit/fc6ce112ac4c055b995d7cb0accede37eeb50eb7))
+* **wallet-manager:** show native wallet-connect modal on mobile ([1fab9f4](https://github.com/1inch-community/interface/commit/1fab9f48324779ccee5e9f563bd5278b1bbad9cb))
+* **wallet-manager:** support implementation by IWallet interface ([7d1c5b0](https://github.com/1inch-community/interface/commit/7d1c5b0a87c5c5e68b44d5fec7cc7a963f56abfb))
+* **wallet-manager:** ui fixes ([aad5700](https://github.com/1inch-community/interface/commit/aad57004c81832ae93f6651be55da789dfe204c0))
+* **wallet-manager:** ui improvements ([7074c67](https://github.com/1inch-community/interface/commit/7074c6746438edda68397cc964ed0a9ee85dd7d4))
+* **wallet-manager:** ui improvements. ([40851c1](https://github.com/1inch-community/interface/commit/40851c1667db24a66393c89a83718dca1efddd5e))
+
+
+### Code Refactoring
+
+* **tokens:** improve token handling and update emitter logic ([2bc263e](https://github.com/1inch-community/interface/commit/2bc263e89fe1060a0b5076a5805d5be0e30229cf))
+
+
+### Features
+
+* **balance-view:** add wallet connection check and skeleton delay ([f44ac38](https://github.com/1inch-community/interface/commit/f44ac385e9799bc44ebce1dac5db170244808e94))
+* **dapp:** add constant for Cloudflare Turnstile key in vite config ([f29c54a](https://github.com/1inch-community/interface/commit/f29c54a9e431020e75b58dd7d25581ace353b3fd))
+* **swap:** fusion plus swap strategy (WIP) ([976043b](https://github.com/1inch-community/interface/commit/976043b6f0b61af139f5e8e42e6f5787c1731054))
+* **swap:** fusion swap strategy (WIP) ([cc6972c](https://github.com/1inch-community/interface/commit/cc6972c9c2da61e286ff0959f35ce110dbc43bb3))
+* **swap:** fusion swap strategy (WIP) ([fa81ad0](https://github.com/1inch-community/interface/commit/fa81ad01c7903b6f402a8a172df5ecbbe74c25e6))
+* **swap:** fusion+/fusion code improvements. ([d584dbf](https://github.com/1inch-community/interface/commit/d584dbfe08e1eb58730394417519b0d417ea7e67))
+* **theme:** enhance scrollbar styling in scrollbar.style.ts ([4ae6383](https://github.com/1inch-community/interface/commit/4ae6383bccd17bfa7b64ba586a7a6352542535be))
+* **token-list:** add support for skeleton animation delay by index ([a319adc](https://github.com/1inch-community/interface/commit/a319adc9246ed3c48aa5f714ce93767d7f961bf9))
+* **tooltip:** add hover check to openTooltip for better control ([55bcd42](https://github.com/1inch-community/interface/commit/55bcd42af479191ce71dce294a03513a0ed07108))
+* **wallet-manager:** custom qr-code page ([c428ec1](https://github.com/1inch-community/interface/commit/c428ec144fc1eef9e4ed60a56842f79e848b3fd2))
+* **wallet-manager:** disconnect view ([a2a204c](https://github.com/1inch-community/interface/commit/a2a204c55dbec5a0a177419bd262d6619c93ea44))
+* **wallet-manager:** disconnect view (WIP) ([dbd9ce2](https://github.com/1inch-community/interface/commit/dbd9ce2efe721aafbc9040d137cdae3a3373399b))
+* **wallet-manager:** redesign (WIP) ([f0c8174](https://github.com/1inch-community/interface/commit/f0c817460a40d98677e961bc95de85f0251f529f))
+
+
+### BREAKING CHANGES
+
+* **tokens:** Update emitters no longer include the `crossChainTokensBinding` key. Ensure your code aligns with the updated type definitions.
+
 # [1.0.0-rc.9](https://github.com/1inch-community/interface/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2025-04-25)
 
 
