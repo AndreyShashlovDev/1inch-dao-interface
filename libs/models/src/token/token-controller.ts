@@ -3,7 +3,7 @@ import type { Address } from 'viem'
 import type { InitializingEntity } from '../base'
 import type { IBigFloat } from '../big-float'
 import type { ChainId } from '../chain'
-import type { IBalancesTokenRecord, TokenRecordId } from '../database'
+import type { TokenRecordId } from '../database'
 import type { QueryFilters } from './query-type'
 import type { IToken } from './token'
 import type { ITokenListViewData } from './token-list-view-data'
@@ -32,6 +32,16 @@ export type getTokenFiatBalanceByIdQueryFilters = QueryFilters<'tokenRecordId' |
 
 export type getCrossChainTotalFiatBalanceQueryFilters = QueryFilters<'walletAddress', 'chainIds'>
 
+export type getTokenFiatPriceQueryFilters = QueryFilters<'tokenRecordId'>
+
+export type getTokenByIdQueryFilters = QueryFilters<'tokenRecordId'>
+
+export type getCrossChainTokenNameQueryFilters = QueryFilters<'symbol'>
+
+export type getCrossChainTokenIdListWithBalanceQueryFilters = QueryFilters<
+  'chainIds' | 'symbol' | 'walletAddress'
+>
+
 export interface ITokenStorage extends InitializingEntity {
   tokensUpdate$: Observable<void>
   balancesUpdate$: Observable<Address>
@@ -49,29 +59,21 @@ export interface ITokenStorage extends InitializingEntity {
   ): Promise<IBigFloat>
   getTokenBalanceById(filter: getTokenBalanceByIdQueryFilters): Promise<IBigFloat>
   getTokenFiatBalanceById(filter: getTokenFiatBalanceByIdQueryFilters): Promise<IBigFloat>
-  //
-
-  getCrossChainTokenName(symbol: string): Promise<string>
+  getTokenFiatPrice(filter: getTokenFiatPriceQueryFilters): Promise<IBigFloat>
+  getTokenById(filter: getTokenByIdQueryFilters): Promise<IToken | null>
+  getCrossChainTokenName(filter: getCrossChainTokenNameQueryFilters): Promise<string>
   getCrossChainTokenIdListWithBalance(
-    chainIds: ChainId[],
-    symbol: string,
-    walletAddress: Address
+    filter: getCrossChainTokenIdListWithBalanceQueryFilters
   ): Promise<TokenRecordId[]>
   getTokenAddressListOrderByChainId(): Promise<Record<ChainId, Address[]>>
+  //
+
   getToken(chainId: ChainId, address: Address): Promise<IToken | null>
-  getTokenById(id: TokenRecordId): Promise<IToken | null>
   getTokenLogoURL(chainId: ChainId, address: Address): Promise<string | null>
   getTokenLogoURLsBySymbol(symbol: string): Promise<string[]>
   getNativeToken(chainId: ChainId): Promise<IToken | null>
   getTokenBySymbol(chainId: ChainId, symbol: string): Promise<IToken[]>
   getTokenList(chainId: ChainId, addresses: Address[]): Promise<IToken[]>
-  getTokenListSortedByPriority(chainId: ChainId, addresses: Address[]): Promise<IToken[]>
-  getTokenBalance(
-    chainId: ChainId,
-    tokenAddress: Address,
-    walletAddress: Address
-  ): Promise<IBalancesTokenRecord | null>
-  getTokenUSDPrice(chainId: ChainId, tokenAddress: Address): Promise<string>
   getPriorityToken(chainId: ChainId, addresses: Address[]): Promise<IToken>
   liveQuery<T>(querier: () => T | Promise<T>): Observable<T>
 

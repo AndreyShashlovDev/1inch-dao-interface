@@ -90,7 +90,6 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   private showStubView = false
 
   private readonly context = lazyConsumer(this, { context: scrollContext, subscribe: true })
-  private isLocke = false
   private globalOffsetY: number | null = null
 
   private readonly virtualizerRef = createRef<LitVirtualizer & VirtualizerHostElement>()
@@ -218,7 +217,6 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 
   private updateHeaderSize() {
-    if (this.isLocke) return
     if (this.headerRef.value) {
       const height = this.headerRef.value.clientHeight
       appendStyle(this.headerStub, {
@@ -234,7 +232,10 @@ export class ScrollViewVirtualizerConsumerElement extends LitElement {
   }
 
   private updateView() {
-    if (this.isLocke) return
+    // appendStyle(this, {
+    //   maxHeight: this.context.value.maxHeight ? `${this.context.value.maxHeight}px` : undefined,
+    //   height: this.context.value.maxHeight ? `${this.context.value.maxHeight}px` : undefined,
+    // })
     if (this.mobileMedia.matches) {
       this.updateViewMobile()
     } else {

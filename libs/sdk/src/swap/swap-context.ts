@@ -1,5 +1,7 @@
+import { BigFloat } from '@1inch-community/core/math'
 import {
   IAmountDataSource,
+  IBigFloat,
   IOnChain,
   ISwapContext,
   ISwapContextStrategy,
@@ -35,8 +37,9 @@ import {
   tap,
   withLatestFrom,
 } from 'rxjs'
-import { Hash, maxUint256 } from 'viem'
+import { Hash } from 'viem'
 import { getOneInchRouterV6ContractAddress } from '../chain'
+import { isTokensEqual } from '../tokens'
 import { PairHolder } from './pair-holder'
 
 export class SwapContext implements ISwapContext {
@@ -56,14 +59,16 @@ export class SwapContext implements ISwapContext {
   private readonly updateDataComplete$ = new Subject<void>()
 
   private readonly dataUpdateEmitter$: Observable<void> = merge(
-    this.block$,
-    this.chainId$,
+    this.onChain.crossChainEmitter,
     this.connectedWalletAddress$,
     defer(() => this.pairHolder.streamSnapshot('source')),
-    defer(() => this.pairHolder.streamSnapshot('destination')),
+    defer(() => this.pairHolder.streamSnapshot('destination')).pipe(
+      map((snapshot) => snapshot.token),
+      distinctUntilChanged(isTokensEqual)
+    ),
     this.updateData$
   ).pipe(
-    debounceTime(500),
+    debounceTime(1000),
     map(() => void 0),
     startWith(void 0),
     shareReplay({ bufferSize: 1, refCount: true })
@@ -85,10 +90,12 @@ export class SwapContext implements ISwapContext {
 
   readonly rate$ = this.dataSnapshot$.pipe(map((snapshot) => snapshot?.rate ?? null))
 
-  readonly minReceive$ = this.dataSnapshot$.pipe(map((snapshot) => snapshot?.minReceive ?? 0n))
+  readonly minReceive$ = this.dataSnapshot$.pipe(
+    map((snapshot) => snapshot?.minReceive ?? BigFloat.zero())
+  )
 
   readonly destinationTokenAmount$ = this.dataSnapshot$.pipe(
-    map((snapshot) => snapshot?.destinationTokenAmount ?? 0n)
+    map((snapshot) => snapshot?.destinationTokenAmount ?? BigFloat.zero())
   )
 
   readonly autoSlippage$ = this.dataSnapshot$.pipe(
@@ -163,7 +170,7 @@ export class SwapContext implements ISwapContext {
       sourceTokenSnapshot.token.address,
       owner,
       spender,
-      maxUint256
+      BigFloat.maxUint256()
     )
     return await this.wallet.writeContract(result)
   }
@@ -206,7 +213,6 @@ export class SwapContext implements ISwapContext {
   }
 
   destroy() {
-    this.pairHolder.destroy()
     this.subscription.unsubscribe()
   }
 
@@ -247,7 +253,7 @@ export class SwapContext implements ISwapContext {
     return await strategy.swap(swapSnapshot)
   }
 
-  async getMaxAmount(): Promise<bigint> {
+  async getMaxAmount(): Promise<IBigFloat> {
     return this.amountDataSource.getMaxAmount()
   }
 
@@ -263,7 +269,7 @@ export class SwapContext implements ISwapContext {
     )
   }
 
-  getTokenAmountByType(type: TokenType): Observable<bigint | null> {
+  getTokenAmountByType(type: TokenType): Observable<IBigFloat | null> {
     return this.pairHolder.streamSnapshot(type).pipe(
       map((snapshot) => {
         return snapshot.amount
@@ -272,22 +278,22 @@ export class SwapContext implements ISwapContext {
     )
   }
 
-  getTokenRawAmountByType(type: TokenType): Observable<bigint | null> {
+  getTokenRawAmountByType(type: TokenType): Observable<IBigFloat | null> {
     return this.pairHolder.streamSnapshot(type).pipe(
       map((snapshot) => snapshot.amount),
       distinctUntilChanged()
     )
   }
 
-  setTokenAmountByType(type: TokenType, value: bigint): void {
+  setTokenAmountByType(type: TokenType, value: IBigFloat): void {
     this.pairHolder.setAmount(type, value)
   }
 
-  public async getOrderStatus(orderHash: Hash): Promise<SwapOrderStatus> {
+  public async getOrderStatus(): Promise<SwapOrderStatus> {
     throw new Error('Not implemented yet')
   }
 
-  public cancelOrder(orderHash: Hash): Promise<Hash | null> {
+  public cancelOrder(): Promise<Hash | null> {
     throw new Error('Not implemented yet')
   }
 
@@ -315,7 +321,7 @@ export class SwapContext implements ISwapContext {
     for (const strategy of this.strategies) {
       try {
         return await strategy.getDataSnapshot({ source, destination }, amount, walletAddress)
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }

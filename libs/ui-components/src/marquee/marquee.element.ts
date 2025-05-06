@@ -51,10 +51,11 @@ export class MarqueeElement extends LitElement {
     if (!this.textRef.value) return
     const textRect = this.textRef.value?.getBoundingClientRect()
     const hostRect = this.getBoundingClientRect()
+    const width = textRect?.width ?? 0
     appendClass(this.textRef.value, {
-      marquee: (textRect?.width ?? 0) > hostRect.width,
+      marquee: width > hostRect.width,
     })
-    const offset = (textRect?.width ?? 0) - hostRect.width
+    const offset = width - hostRect.width + 8
     if (offset > 0) {
       this.style.setProperty('--offset', `-${offset}px`)
     } else {

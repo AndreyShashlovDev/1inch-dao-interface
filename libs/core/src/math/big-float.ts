@@ -6,10 +6,10 @@ const BigFloatRegExp = /^BigFloat\((-?\d+(\.\d+)?)\)$/
 export class BigFloat implements IBigFloat {
   protected static readonly FIXED_DECIMALS: number = 50
 
-  static from(value: string): BigFloat
-  static from(value: number): BigFloat
-  static from(value: bigint, decimals: number): BigFloat
-  static from(value: bigint | string | number, decimals?: number): BigFloat {
+  static from(value: string): IBigFloat
+  static from(value: number): IBigFloat
+  static from(value: bigint, decimals: number): IBigFloat
+  static from(value: bigint | string | number, decimals?: number): IBigFloat {
     if (typeof value === 'number') {
       return this.fromString(value.toString())
     }
@@ -22,7 +22,7 @@ export class BigFloat implements IBigFloat {
     throw new BigFloatError(`Invalid Big Float making: ${value.toString()}`)
   }
 
-  static fromBigInt(value: bigint, decimals: number): BigFloat {
+  static fromBigInt(value: bigint, decimals: number): IBigFloat {
     if (decimals < 0) {
       throw new BigFloatError('decimals must be greater than 0')
     }
@@ -34,7 +34,7 @@ export class BigFloat implements IBigFloat {
     return new BigFloat(normalizeValue)
   }
 
-  static fromString(value: string): BigFloat {
+  static fromString(value: string): IBigFloat {
     const trimmedInput = value.trim()
     const numberRegex = /^-?\d+(\.\d+)?$/
     if (!numberRegex.test(trimmedInput)) {
@@ -45,7 +45,7 @@ export class BigFloat implements IBigFloat {
     return this.fromBigInt(BigInt(intPart + fracPart), decimals)
   }
 
-  static parseJSON(json: string): BigFloat {
+  static parseJSON(json: string): IBigFloat {
     const match = BigFloatRegExp.exec(json)
     if (!match) {
       throw new BigFloatError(`Invalid BigFloat JSON format: "${json}"`)
@@ -63,7 +63,11 @@ export class BigFloat implements IBigFloat {
     return new BigFloat(0n)
   }
 
-  protected constructor(protected readonly value: bigint) {}
+  static maxUint256() {
+    return new BigFloat(2n ** 256n - 1n)
+  }
+
+  protected constructor(readonly value: bigint) {}
 
   toString(): string {
     const factor = BigInt(10) ** BigInt(BigFloat.FIXED_DECIMALS)
@@ -122,20 +126,20 @@ export class BigFloat implements IBigFloat {
     return smartFormatNumber(str, precision)
   }
 
-  add(other: BigFloat): BigFloat {
+  add(other: IBigFloat): IBigFloat {
     return new BigFloat(this.value + other.value)
   }
 
-  sub(other: BigFloat): BigFloat {
+  sub(other: IBigFloat): IBigFloat {
     return new BigFloat(this.value - other.value)
   }
 
-  mul(other: BigFloat): BigFloat {
+  mul(other: IBigFloat): IBigFloat {
     const resultValue = (this.value * other.value) / BigInt(10) ** BigInt(BigFloat.FIXED_DECIMALS)
     return new BigFloat(resultValue)
   }
 
-  div(other: BigFloat): BigFloat {
+  div(other: IBigFloat): IBigFloat {
     if (other.value === 0n) {
       throw new BigFloatError('Division by zero')
     }
@@ -144,11 +148,11 @@ export class BigFloat implements IBigFloat {
     return new BigFloat(resultValue)
   }
 
-  abs(): BigFloat {
+  abs(): IBigFloat {
     return new BigFloat(this.value < 0n ? -this.value : this.value)
   }
 
-  equals(other: BigFloat): boolean {
+  equals(other: IBigFloat): boolean {
     return this.value === other.value
   }
 

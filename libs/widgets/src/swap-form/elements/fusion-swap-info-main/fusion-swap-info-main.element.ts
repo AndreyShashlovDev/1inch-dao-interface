@@ -1,15 +1,15 @@
-import {
-  formatSeconds,
-  smartFormatAndShorteningNumber,
-  smartFormatNumber,
-} from '@1inch-community/core/formatters'
+import { formatSeconds } from '@1inch-community/core/formatters'
 import { lazyAppContextConsumer } from '@1inch-community/core/lazy'
 import { dispatchEvent, observe, translate } from '@1inch-community/core/lit-utils'
-import { BigMath } from '@1inch-community/core/math'
 import { ISwapContext, Rate } from '@1inch-community/models'
 import { getSymbolFromWrapToken } from '@1inch-community/sdk/chain'
 import { SwapContextToken } from '@1inch-community/sdk/swap'
-import { isRateEqual, isTokensEqual } from '@1inch-community/sdk/tokens'
+import {
+  buildTokenId,
+  buildTokenIdByToken,
+  isRateEqual,
+  isTokensEqual,
+} from '@1inch-community/sdk/tokens'
 import '@1inch-community/ui-components/button'
 import '@1inch-community/ui-components/icon'
 import { consume } from '@lit/context'
@@ -27,7 +27,6 @@ import {
   switchMap,
   withLatestFrom,
 } from 'rxjs'
-import { formatUnits, parseUnits } from 'viem'
 import { fusionSwapInfoMainStyle } from './fusion-swap-info-main.style'
 
 @customElement(FusionSwapInfoMainElement.tagName)
@@ -90,17 +89,15 @@ export class FusionSwapInfoMainElement extends LitElement {
         : sourceToken
       const isRevertedRate = isTokensEqual(primaryToken, sourceToken)
       const targetRate = isRevertedRate ? revertedRate : rate
-      const rateFormated = smartFormatNumber(formatUnits(targetRate, secondaryToken.decimals), 2)
-      const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
-        sourceToken.chainId,
-        secondaryToken.address
-      )
-      const rateUsd = parseUnits(tokenPrice, secondaryToken.decimals)
-      const rateUsdFormated = smartFormatNumber(formatUnits(rateUsd, secondaryToken.decimals), 2)
+      const rateFormated = targetRate.toFixedSmart(2)
+      const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenFiatPrice({
+        tokenRecordId: buildTokenIdByToken(secondaryToken),
+      })
+      const rateFiatFormated = tokenPrice.toFixedSmart(2)
       return html`
         <span class="rate-view"
           >1 ${getSymbolFromWrapToken(secondaryToken)} = ${rateFormated} ${primaryToken.symbol}
-          <span class="dst-token-rate-usd-price">~$${rateUsdFormated}</span></span
+          <span class="dst-token-rate-usd-price">~$${rateFiatFormated}</span></span
         >
       `
     }),
@@ -112,23 +109,15 @@ export class FusionSwapInfoMainElement extends LitElement {
     withLatestFrom(this.destinationToken$, this.chainId$),
     switchMap(async ([minReceive, dstToken, chainId]) => {
       if (!dstToken || !chainId) return html``
-      const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenUSDPrice(
-        chainId,
-        dstToken.address
-      )
-      const rateUsd = parseUnits(tokenPrice, dstToken.decimals)
-      const amountUsd = BigMath.mul(minReceive, rateUsd, dstToken.decimals, dstToken.decimals)
-      const amountUsdFormated = smartFormatAndShorteningNumber(
-        formatUnits(amountUsd, dstToken.decimals),
-        2
-      )
+      const tokenPrice = await this.applicationContext.value.tokenStorage.getTokenFiatPrice({
+        tokenRecordId: buildTokenId(chainId, dstToken.address),
+      })
+      const amountFiat = minReceive.mul(tokenPrice)
+      const amountFiatFormated = amountFiat.toFixedSmart(2)
 
       return html`
-        <span>~$${amountUsdFormated}</span>
-        <span class="min-receive"
-          >${smartFormatAndShorteningNumber(formatUnits(minReceive, dstToken.decimals), 6)}
-          ${dstToken.symbol}</span
-        >
+        <span>~$${amountFiatFormated}</span>
+        <span class="min-receive">${minReceive.toFixedSmart(6)} ${dstToken.symbol}</span>
       `
     })
   )

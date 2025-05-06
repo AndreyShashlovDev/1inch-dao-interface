@@ -72,6 +72,7 @@ export class DigitAnimationElement extends LitElement {
     return html`
       <div ${ref(this.digitListRef)} class="digit-list" style="${styleMap(style)}">
         ${map(digitList, (digit: string, index) => {
+          const style = getSizeAndOffset(digit)
           return html`<span id="${index}" class="digit" style="${styleMap({ width: style.width })}">
             ${replaceMap[digit] ?? digit}
           </span>`

@@ -1,18 +1,18 @@
+import { BigFloat } from '@1inch-community/core/math'
 import { JsonParser } from '@1inch-community/core/storage'
 import {
   IApplicationContext,
+  IBigFloat,
   IToken,
   NullableValue,
   Pair,
   TokenType,
 } from '@1inch-community/models'
-import { startWith, Subject, Subscription, switchMap } from 'rxjs'
-import { isChainId } from '../chain/is-chain-id'
-import { isTokensEqual } from '../tokens/is-tokens-equal'
+import { startWith, Subject, switchMap } from 'rxjs'
+import { isTokensEqual } from '../tokens'
 import { TokenContext } from './token-context'
 
 export class PairHolder {
-  private readonly subscription = new Subscription()
   private source = new TokenContext()
   private destination = new TokenContext()
 
@@ -20,7 +20,6 @@ export class PairHolder {
 
   constructor(private readonly applicationContext: IApplicationContext) {
     this.restorePair()
-    this.startChainTokenSync()
   }
 
   restorePair() {
@@ -59,7 +58,7 @@ export class PairHolder {
     this.setTokenInner(token, tokenType)
   }
 
-  setAmount(tokenType: TokenType, value: bigint) {
+  setAmount(tokenType: TokenType, value: IBigFloat) {
     this.getTokenContext(tokenType).setAmount(value)
     this.updateTokenStore(tokenType)
   }
@@ -73,10 +72,6 @@ export class PairHolder {
 
   getSnapshot(tokenType: TokenType) {
     return this.getTokenContext(tokenType).getSnapshot()
-  }
-
-  destroy() {
-    this.subscription.unsubscribe()
   }
 
   private setTokenInner(token: IToken | null, tokenType: TokenType) {
@@ -97,67 +92,42 @@ export class PairHolder {
   private updateTokenStore(tokenType: TokenType) {
     const tokenContext = this.getTokenContext(tokenType)
     const snapshot = tokenContext.getSnapshot()
-    const amount = snapshot.amount
-    if (amount !== null) {
-      this.applicationContext.storage.set(
-        this.tokenStoreKey(tokenType) + '_amount',
-        amount.toString()
-      )
-    }
     if (snapshot.token !== null) {
       const { symbol, address, chainId, name, decimals } = snapshot.token
+      const amount = snapshot.amount
+      const jsonAmount = amount?.toJSON()
       this.applicationContext.storage.set(this.tokenStoreKey(tokenType), {
         symbol,
         address,
         chainId,
         name,
         decimals,
+        amount: jsonAmount,
       })
     }
   }
 
   private restoreToken(tokenType: TokenType) {
     const tokenContext = this.getTokenContext(tokenType)
-    const amount = this.applicationContext.storage.get<string>(
-      this.tokenStoreKey(tokenType) + '_amount',
-      String
-    )
-    const token = this.applicationContext.storage.get<IToken>(
+    const token = this.applicationContext.storage.get<IToken & { amount: string }>(
       this.tokenStoreKey(tokenType),
       JsonParser
     )
 
     if (token !== null) {
+      const amount = BigFloat.isBigFloat(token.amount)
+        ? BigFloat.parseJSON(token.amount)
+        : BigFloat.zero()
       tokenContext.setToken(token)
+      tokenContext.setAmount(amount)
     }
 
-    if (amount !== null) {
-      tokenContext.setAmount(BigInt(amount))
-    }
+    // if (amount !== null) {
+    //   tokenContext.setAmount(BigInt())
+    // }
   }
 
   private tokenStoreKey(tokenType: TokenType) {
-    return `token_${tokenType}`
-  }
-
-  private startChainTokenSync() {
-    this.subscription.add(
-      this.applicationContext.wallet.data.chainId$
-        .pipe(
-          switchMap(async (chainId) => {
-            if (!chainId || !isChainId(chainId)) return
-            const sourceTokenSnap = this.source.getSnapshot()
-            const destinationTokenSnap = this.destination.getSnapshot()
-            if (sourceTokenSnap.token && sourceTokenSnap.token.chainId !== chainId) {
-              const token = await this.applicationContext.tokenStorage.getNativeToken(chainId)
-              this.setTokenInner(token, 'source')
-            }
-            if (destinationTokenSnap.token && destinationTokenSnap.token.chainId !== chainId) {
-              this.setTokenInner(null, 'destination')
-            }
-          })
-        )
-        .subscribe()
-    )
+    return `token_${tokenType}_v2`
   }
 }

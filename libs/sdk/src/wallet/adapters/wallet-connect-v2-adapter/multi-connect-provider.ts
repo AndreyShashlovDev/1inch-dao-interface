@@ -78,12 +78,12 @@ export class MultiConnectProvider implements EIP1193Provider {
     for (const data of persistData) {
       try {
         const provider = await makeProvider(data.persistStorePrefix)
-        const subscription = this.listenEvents(provider)
         const address = provider.accounts[0] as Address
-        if (address !== data.address) {
+        if (!isAddressEqual(address, data.address as Address)) {
           await dropStorage(data.persistStorePrefix)
           continue
         }
+        const subscription = this.listenEvents(provider)
         this.storage.set(address, {
           provider: provider,
           uri: data.uri,

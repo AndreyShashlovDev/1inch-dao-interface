@@ -45,13 +45,13 @@ export class TokenItemCrossChainAccordionElement extends LitElement {
       if (!crossChainTokensBindingRecord || !showChainIds) throw new Error('')
       const { symbol } = crossChainTokensBindingRecord
       const [tokenName, tokenIdListWithBalance] = await Promise.all([
-        this.applicationContext.value.tokenStorage.getCrossChainTokenName(symbol),
+        this.applicationContext.value.tokenStorage.getCrossChainTokenName({ symbol }),
         walletAddress
-          ? this.applicationContext.value.tokenStorage.getCrossChainTokenIdListWithBalance(
-              showChainIds ?? [],
+          ? this.applicationContext.value.tokenStorage.getCrossChainTokenIdListWithBalance({
+              chainIds: showChainIds ?? [],
+              walletAddress,
               symbol,
-              walletAddress
-            )
+            })
           : null,
       ])
       const tokenIdWithBalanceSet = new Set(tokenIdListWithBalance ?? [])

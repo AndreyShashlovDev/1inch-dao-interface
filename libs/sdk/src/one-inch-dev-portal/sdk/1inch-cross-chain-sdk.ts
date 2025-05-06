@@ -10,7 +10,7 @@ export class OneInchCrossChainSDK {
   async getInstance(): Promise<SDK> {
     if (!OneInchCrossChainSDK.instance) {
       OneInchCrossChainSDK.instance = await buildFusionPlusSDK(
-        this.appContext.isEmbedded ? '/' : '/proxy/direct/',
+        this.appContext.isEmbedded ? '/' : '/proxy/direct/fusion-plus',
         this.appContext.wallet,
         this.appContext.api.getProxyClient()
       )

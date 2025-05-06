@@ -1,3 +1,4 @@
+import { BigFloat } from '@1inch-community/core/math'
 import {
   ISwapFormEmbeddedController,
   TokenType,
@@ -5,7 +6,6 @@ import {
 } from '@1inch-community/models'
 import EventEmitter from 'eventemitter3'
 import { firstValueFrom } from 'rxjs'
-import { parseUnits } from 'viem'
 import { BaseEmbeddedController } from './base-embedded-controller'
 import { safeContextMap } from './safe-context'
 
@@ -43,7 +43,7 @@ export class SwapFormEmbeddedController
     if (!swapContext) return
     const token = await firstValueFrom(swapContext.getTokenByType('source'))
     if (!token) return
-    const amount = parseUnits(tokenAmount, token.decimals)
+    const amount = BigFloat.fromBigInt(BigInt(tokenAmount), token.decimals)
     swapContext.setTokenAmountByType('source', amount, true)
   }
 }

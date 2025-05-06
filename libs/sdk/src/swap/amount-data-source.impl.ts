@@ -1,11 +1,14 @@
+import { BigFloat } from '@1inch-community/core/math'
 import {
   IAmountDataSource,
+  IBigFloat,
   ICryptoAssetDataProvider,
   IOnChain,
   ITokenStorage,
   IWallet,
 } from '@1inch-community/models'
 import { isNativeToken } from '../chain'
+import { buildTokenIdByToken } from '../tokens'
 import { PairHolder } from './pair-holder'
 
 export class AmountDataSourceImpl implements IAmountDataSource {
@@ -17,30 +20,29 @@ export class AmountDataSourceImpl implements IAmountDataSource {
     private readonly onChain: IOnChain
   ) {}
 
-  public async getMaxAmount(): Promise<bigint> {
+  public async getMaxAmount(): Promise<IBigFloat> {
     const snapshot = this.pairHolder.getSnapshot('source')
     const sourceToken = snapshot.token
     const connectedWalletAddress = await this.wallet.data.getActiveAddress()
-    if (!sourceToken || !connectedWalletAddress) return 0n
-    const balance = await this.tokenStorage.getTokenBalance(
-      sourceToken.chainId,
-      sourceToken.address,
-      connectedWalletAddress
-    )
-    let amount = BigInt(balance?.amount ?? 0)
+    if (!sourceToken || !connectedWalletAddress) return BigFloat.zero()
+    let amount = await this.tokenStorage.getTokenBalanceById({
+      tokenRecordId: buildTokenIdByToken(sourceToken),
+      walletAddress: connectedWalletAddress,
+    })
     if (isNativeToken(sourceToken.address)) {
-      const chainId = await this.wallet.data.getChainId()
-      if (!chainId) return 0n
+      const chainId = sourceToken.chainId
       const [gasUnits, gasPriceDTO] = await Promise.all([
         this.onChain.estimateWrapNativeToken(chainId, amount),
         this.oneInchApiAdapter.getGasPrice(chainId),
       ])
-      if (!gasPriceDTO) return 0n
+      if (!gasPriceDTO) return BigFloat.zero()
       const gasPrice = gasPriceDTO.high
-      const fee = gasUnits * (BigInt(gasPrice.maxFeePerGas) + BigInt(gasPrice.maxPriorityFeePerGas))
-      amount = amount - fee
-      if (amount < 0n) {
-        amount = 0n
+      const fee = gasUnits.mul(
+        BigFloat.from(gasPrice.maxFeePerGas).add(BigFloat.from(gasPrice.maxPriorityFeePerGas))
+      )
+      amount = amount.sub(fee)
+      if (amount.isNegative()) {
+        amount = BigFloat.zero()
       }
     }
     return amount

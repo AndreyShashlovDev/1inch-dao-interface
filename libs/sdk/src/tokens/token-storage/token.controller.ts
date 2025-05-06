@@ -3,10 +3,14 @@ import { lazyAppContext } from '@1inch-community/core/lazy'
 import { BigFloat } from '@1inch-community/core/math'
 import {
   ChainId,
+  getCrossChainTokenIdListWithBalanceQueryFilters,
+  getCrossChainTokenNameQueryFilters,
   getCrossChainTotalFiatBalanceQueryFilters,
   getSymbolDataQueryFilters,
   getTokenBalanceByIdQueryFilters,
+  getTokenByIdQueryFilters,
   getTokenFiatBalanceByIdQueryFilters,
+  getTokenFiatPriceQueryFilters,
   getTokenIdListQueryFilters,
   getTotalTokenBalanceBySymbolQueryFilters,
   getTotalTokenFiatBalanceBySymbolQueryFilters,
@@ -340,9 +344,9 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getCrossChainTokenName(symbol: string) {
-    const targetToken = await this.getCrossChainTokenByPriority(symbol)
-    return targetToken ? targetToken.name : symbol
+  async getCrossChainTokenName(filter: getCrossChainTokenNameQueryFilters) {
+    const targetToken = await this.getCrossChainTokenByPriority(filter.symbol)
+    return targetToken ? targetToken.name : filter.symbol
   }
 
   @CacheActivePromise()
@@ -367,10 +371,9 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   async getCrossChainTokenIdListWithBalance(
-    chainIds: ChainId[],
-    symbol: string,
-    walletAddress: Address
+    filter: getCrossChainTokenIdListWithBalanceQueryFilters
   ): Promise<TokenRecordId[]> {
+    const { chainIds, walletAddress, symbol } = filter
     const { balances, crossChainTokensBinding } = this.schema
     const chainIdSet = new Set(chainIds)
     const crossChainTokensBindingRecord = await crossChainTokensBinding
@@ -499,9 +502,10 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getTokenById(id: TokenRecordId): Promise<IToken | null> {
+  async getTokenById(filter: getTokenByIdQueryFilters): Promise<IToken | null> {
     await this.updateTokenDatabase()
-    const token = await this.schema.tokens.get(id)
+    const { tokenRecordId } = filter
+    const token = await this.schema.tokens.get(tokenRecordId)
     return token ?? null
   }
 
@@ -510,7 +514,7 @@ export class TokenController implements ITokenStorage {
     const { tokenRecordId, walletAddress } = filter
     await this.updateDatabase(walletAddress)
     const { balances } = this.schema
-    const token = await this.getTokenById(tokenRecordId)
+    const token = await this.getTokenById({ tokenRecordId })
     if (!token) return BigFloat.zero()
     const balanceRecord = await balances
       .where('tokenRecordId')
@@ -532,6 +536,16 @@ export class TokenController implements ITokenStorage {
     return balance.mul(BigFloat.fromString(tokenPriceRecord.price))
   }
 
+  @CacheActivePromise()
+  async getTokenFiatPrice(filter: getTokenFiatPriceQueryFilters): Promise<IBigFloat> {
+    await this.updateDatabase()
+    const { tokenRecordId } = filter
+    const { tokenPrice } = this.schema
+    const record = await tokenPrice.where('tokenRecordId').equals(tokenRecordId).first()
+    if (!record) return BigFloat.zero()
+    return BigFloat.fromString(record.price)
+  }
+
   async getNativeToken(chainId: ChainId) {
     return this.getToken(chainId, nativeTokenAddress)
   }
@@ -549,22 +563,6 @@ export class TokenController implements ITokenStorage {
     return this.schema.tokens
       .filter((record) => record.chainId === chainId && addressesSet.has(record.address))
       .toArray()
-  }
-
-  async getTokenListSortedByPriority(chainId: ChainId, addresses: Address[]) {
-    const tokens = await this.getTokenList(chainId, addresses)
-    return tokens.sort((token1, token2) => token2.priority - token1.priority)
-  }
-
-  async getTokenBalance(chainId: ChainId, tokenAddress: Address, walletAddress: Address) {
-    await this.updateDatabase(walletAddress)
-    const recordId = buildBalanceId(chainId, walletAddress, tokenAddress)
-    const records = await this.schema.balances.where('id').equals(recordId).toArray()
-    return records[0] ?? null
-  }
-
-  async getTokenUSDPrice() {
-    return 'TODO Write me'
   }
 
   async getTokenLogoURL(chainId: ChainId, tokenAddress: Address) {

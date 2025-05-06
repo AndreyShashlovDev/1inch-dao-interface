@@ -1,10 +1,10 @@
 import { asyncFrame, asyncTimeout } from '@1inch-community/core/async'
-import { debounceTime } from '@1inch-community/core/decorators'
-import { appendClass } from '@1inch-community/core/lit-utils'
+import { appendClass, subscribe } from '@1inch-community/core/lit-utils'
 import { css, html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
-import { map } from 'lit/directives/map.js'
+import { repeat } from 'lit/directives/repeat.js'
 import { when } from 'lit/directives/when.js'
+import { debounceTime, Subject, switchMap } from 'rxjs'
 import './digit-animation.element'
 
 @customElement(NumberAnimationElement.tagName)
@@ -44,20 +44,40 @@ export class NumberAnimationElement extends LitElement {
 
   @property({ type: String, attribute: false })
   set value(value: string) {
+    if (this.renderValue === value) return
     if (this.renderValue.length === 0) {
       this.renderValue = value
       return
     }
-    this.transition(value)
+    this.transition$.next(value)
   }
 
   @state() renderValue = ''
+
+  private transition$ = new Subject<string>()
+
+  connectedCallback() {
+    super.connectedCallback()
+    subscribe(
+      this,
+      [
+        this.transition$.pipe(
+          debounceTime(300),
+          switchMap((value) => this.transition(value))
+        ),
+      ],
+      { requestUpdate: false }
+    )
+  }
 
   render() {
     const list = this.renderValue.split('')
     return html`
       ${when(this.prefixSymbol, () => html`<span class="symbol">${this.prefixSymbol}</span>`)}
-      ${map(list, (digit) => html`<inch-digit-animation digit="${digit}"></inch-digit-animation>`)}
+      ${repeat(
+        list,
+        (digit) => html`<inch-digit-animation digit="${digit}"></inch-digit-animation>`
+      )}
       ${when(
         this.postfixSymbol,
         () => html`<span class="symbol">&nbsp;${this.postfixSymbol}</span>`
@@ -65,7 +85,6 @@ export class NumberAnimationElement extends LitElement {
     `
   }
 
-  @debounceTime(300)
   private async transition(value: string) {
     const renderValueNumber = parseFloat(this.renderValue.replace(' ', ''))
     const nextValueNumber = parseFloat(value.replace(' ', ''))

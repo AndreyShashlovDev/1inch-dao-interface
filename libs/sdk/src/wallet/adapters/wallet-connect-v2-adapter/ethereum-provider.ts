@@ -100,6 +100,8 @@ export class EthereumProvider extends WcEthereumProvider {
 }
 
 export class WalletConnectStorage {
+  private static instances: Map<string, WalletConnectStorage> = new Map()
+
   static async dropStorage(persistStorePrefix: string) {
     const storage = await WalletConnectStorage.init(persistStorePrefix)
     await storage.dropStorage()
@@ -115,9 +117,12 @@ export class WalletConnectStorage {
   }
 
   static async init(persistStorePrefix: string) {
-    const instance = new WalletConnectStorage()
-    await instance.init(WalletConnectStorage.getDatabaseName(persistStorePrefix))
-    return instance
+    if (!this.instances.has(persistStorePrefix)) {
+      const instance = new WalletConnectStorage()
+      await instance.init(WalletConnectStorage.getDatabaseName(persistStorePrefix))
+      this.instances.set(persistStorePrefix, instance)
+    }
+    return this.instances.get(persistStorePrefix)!
   }
 
   private data!: Table<{ key: string; value: unknown }, string>
