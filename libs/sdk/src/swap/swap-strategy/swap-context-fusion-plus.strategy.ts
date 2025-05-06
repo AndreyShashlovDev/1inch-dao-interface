@@ -128,7 +128,7 @@ export class SwapContextFusionPlusStrategy
       dstChainId: dstChainId.valueOf(),
       srcTokenAddress: srcToken.address,
       dstTokenAddress: dstToken.address,
-      amount: srcTokenAmount.toString(),
+      amount: srcTokenAmount.toBigInt(srcToken.decimals).toString(),
       enableEstimate: true,
       walletAddress: walletAddress.toString(),
     }

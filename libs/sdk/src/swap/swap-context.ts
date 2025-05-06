@@ -37,9 +37,9 @@ import {
   tap,
   withLatestFrom,
 } from 'rxjs'
-import { isTokensEqual } from 'tokens'
 import { Hash } from 'viem'
 import { getOneInchRouterV6ContractAddress } from '../chain'
+import { isTokensEqual } from '../tokens'
 import { PairHolder } from './pair-holder'
 
 export class SwapContext implements ISwapContext {

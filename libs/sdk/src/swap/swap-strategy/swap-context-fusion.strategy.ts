@@ -124,7 +124,7 @@ export class SwapContextFusionStrategy
       walletAddress: walletAddress.toString(),
       fromTokenAddress: sourceToken.address,
       toTokenAddress: destinationToken.address,
-      amount: sourceTokenAmount.toString(),
+      amount: sourceTokenAmount.toBigInt(sourceToken.decimals).toString(),
     }
 
     const quote = await sdk.getQuote(orderParams)
