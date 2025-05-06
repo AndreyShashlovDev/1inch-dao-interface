@@ -289,11 +289,11 @@ export class SwapContext implements ISwapContext {
     this.pairHolder.setAmount(type, value)
   }
 
-  public async getOrderStatus(orderHash: Hash): Promise<SwapOrderStatus> {
+  public async getOrderStatus(): Promise<SwapOrderStatus> {
     throw new Error('Not implemented yet')
   }
 
-  public cancelOrder(orderHash: Hash): Promise<Hash | null> {
+  public cancelOrder(): Promise<Hash | null> {
     throw new Error('Not implemented yet')
   }
 
@@ -321,7 +321,7 @@ export class SwapContext implements ISwapContext {
     for (const strategy of this.strategies) {
       try {
         return await strategy.getDataSnapshot({ source, destination }, amount, walletAddress)
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }

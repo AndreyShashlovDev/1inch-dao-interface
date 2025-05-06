@@ -51,7 +51,7 @@ export class UniversalBrowserExtensionAdapter implements IWalletAdapter {
     return state
   }
 
-  async disconnect(address?: Address | null): Promise<boolean> {
+  async disconnect(): Promise<boolean> {
     this.client = null
     this.data.setProvider(null)
     this.setActiveAddress(null)

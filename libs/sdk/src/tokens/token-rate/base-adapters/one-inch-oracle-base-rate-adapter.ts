@@ -42,12 +42,6 @@ export class OneInchOracleBaseRateAdapter implements ITokenRateSourceAdapter {
       functionName: 'getRate',
       args: [sourceToken.address, destinationToken.address, false],
     })
-    const gas = await client.estimateContractGas({
-      abi,
-      address: contractAddress,
-      functionName: 'getRate',
-      args: [sourceToken.address, destinationToken.address, false],
-    })
     const [rate, revertedRate] = normalizeRate(rateRaw, sourceToken, destinationToken)
     return {
       sourceToken,

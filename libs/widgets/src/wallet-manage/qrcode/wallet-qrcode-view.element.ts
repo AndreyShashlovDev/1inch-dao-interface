@@ -67,7 +67,7 @@ export class WalletDisconnectViewElement extends LitElement {
 
         method(this.data, { showQrModal: showAlternativeConnection }).catch((e) => console.warn(e))
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
