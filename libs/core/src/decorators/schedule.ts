@@ -1,35 +1,44 @@
-type ScheduleMethod = (...args: unknown[]) => void
-type Accumulator<T extends unknown[]> = (accumulator: T | null, currentValue: T) => T
+type ScheduleMethod<Args extends any[], Result> = (...args: Args) => Promise<Result>
+type Accumulator<T extends any[]> = (accumulator: T | null, currentValue: T) => T
 
-export function Schedule<Ctx extends object, Method extends ScheduleMethod>(
+export function Schedule<Ctx extends object, Args extends any[], Result>(
   debounceTime: number,
-  accumulator: Accumulator<Parameters<Method>>
+  accumulator: Accumulator<Args>
 ) {
   return function (
-    ctx: { constructor: { name: string } },
+    target: Ctx,
     fieldName: string,
-    propertyDescriptor: TypedPropertyDescriptor<Method>
+    descriptor: TypedPropertyDescriptor<ScheduleMethod<Args, Result>>
   ) {
-    const method: Method | undefined = propertyDescriptor.value
-    let accumulatorArgs: Parameters<Method> | null = null
+    const originalMethod = descriptor.value
+    let accumulatorArgs: Args | null = null
     let timer: ReturnType<typeof setTimeout> | null = null
+    let pending: Promise<Result> | null = null
 
-    if (method === undefined) {
-      throw new Error(`Method ${fieldName} is undefined.`)
-    }
+    if (!originalMethod) throw new Error(`${fieldName} is undefined.`)
 
-    if (typeof method !== 'function') {
-      throw new Error(`${fieldName} is not a function`)
-    }
-
-    propertyDescriptor.value = function (this: Ctx, ...args: Parameters<Method>): void {
+    descriptor.value = function (this: Ctx, ...args: Args): Promise<Result> {
       accumulatorArgs = accumulator(accumulatorArgs, args)
-      if (timer) clearTimeout(timer)
-      timer = setTimeout(() => {
-        method.apply(this, accumulatorArgs!)
-        accumulatorArgs = null
-        timer = null
-      }, debounceTime)
-    } as Method
+      if (pending) return pending as Promise<Result>
+
+      pending = new Promise<Result>((resolve, reject) => {
+        if (timer) clearTimeout(timer)
+        timer = setTimeout(() => {
+          originalMethod
+            .apply(this, accumulatorArgs!)
+            .then((result) => {
+              resolve(result)
+            })
+            .catch((error) => {
+              reject(error)
+            })
+          accumulatorArgs = null
+          timer = null
+          pending = null
+        }, debounceTime)
+      })
+
+      return pending
+    }
   }
 }
