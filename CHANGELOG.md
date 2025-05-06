@@ -1,3 +1,49 @@
+# [1.0.0-rc.11](https://github.com/1inch-community/interface/compare/v1.0.0-rc.10...v1.0.0-rc.11) (2025-05-06)
+
+
+### Bug Fixes
+
+* **scene-wrapper:** set height to 100% instead of fit-content ([7dd3ce8](https://github.com/1inch-community/interface/commit/7dd3ce8d210eb9b9018a9131ea314cfb1f323ede))
+* **ui-components:** adjust marquee offset calculation ([c7ee078](https://github.com/1inch-community/interface/commit/c7ee078f05642b97b70d4bb1e9b8ee6a48c50d03))
+* **workflows:** add GH_TOKEN to dev-pipeline.yml Release step ([a1c09e8](https://github.com/1inch-community/interface/commit/a1c09e863dd2feb5b28685a93fe924721a1dec96))
+* **workflows:** update token configuration in dev-pipeline.yml ([b878349](https://github.com/1inch-community/interface/commit/b87834998aabd6cba6113284802fe802c52d747b))
+
+
+### Code Refactoring
+
+* **api:** remove CrossChainSDKFacade dependency from adapters ([916d176](https://github.com/1inch-community/interface/commit/916d176412ec98a9e34ea5fcb87e333ce4882b33))
+* **math:** remove BigMath utility and update BigFloat interface ([4a7baeb](https://github.com/1inch-community/interface/commit/4a7baeb92c4a1d102d8650453e8f5b3670eabd18))
+* **number-animation:** enhance performance with rxjs & lit updates ([5825e18](https://github.com/1inch-community/interface/commit/5825e1847f3349d14f77669dd717045888b20c0e))
+* **swap-form:** remove outdated balance components and optimize logic ([59c9cac](https://github.com/1inch-community/interface/commit/59c9cac16693907b7d0a13d620a85c7f646729f3))
+* **swap:** migrate to BigFloat for token operations ([60c3dab](https://github.com/1inch-community/interface/commit/60c3dabd7fa7a348cb712ab3625ab43170dfda9c))
+
+
+### Features
+
+* **balance-view:** add `value` property to token balance elements ([4eddb6b](https://github.com/1inch-community/interface/commit/4eddb6bd3c40351aa654eef8570ae1bc59a89210))
+* **button:** replace vibrate with dispatchUiFallback on click ([f6526ab](https://github.com/1inch-community/interface/commit/f6526ab542aee37ed10f70617b28385b811ffc4c))
+* **core:** add dispatchUiFallback utility to dom.utils ([72a18a9](https://github.com/1inch-community/interface/commit/72a18a9fc8ba2f974e3c28ecda1ae9ba22fa2f65))
+* **decorators:** add `schedule` decorator and improve `debounce-time` ([022ef65](https://github.com/1inch-community/interface/commit/022ef65a052fcaf33973ec6ec15018d4a1e86350))
+* **models:** add `value` property to IBigFloat interface ([a9f0790](https://github.com/1inch-community/interface/commit/a9f07907ed9883c6ac2adf1859463a30be99edae))
+* **models:** add FusionPlusQuoteReceiveDto and related types ([4ce1013](https://github.com/1inch-community/interface/commit/4ce10130b118bc0ee833192866d5776183535b5e))
+* **models:** update token interfaces and add new query filters ([2860d92](https://github.com/1inch-community/interface/commit/2860d92acb31d18bbd9ddda241c1d5ae93575168))
+* **schedule:** enhance `Schedule` decorator with async support ([1d9ee6e](https://github.com/1inch-community/interface/commit/1d9ee6e439abf76ac920e11b7c909af19743bf53))
+* **sdk:** enhance proxy handling and introduce scheduling logic ([5ed2381](https://github.com/1inch-community/interface/commit/5ed2381374bb54e62dd2f847f193791df9de1337))
+* **ui-components, widgets:** add reusable components for animation and inputs ([18ca2f2](https://github.com/1inch-community/interface/commit/18ca2f29821401fb1ebc683a1492a5aafdab2463))
+* **ui-components:** add LoaderSkeletonMaskElement component ([0713f3f](https://github.com/1inch-community/interface/commit/0713f3fe3fd7f338f2cec7163db42678d0b84bcf))
+* **ui-components:** add scroll-view-paginator-consumer component ([89b6a38](https://github.com/1inch-community/interface/commit/89b6a3810905459783b85750a9bc3f34b5773742))
+
+
+### BREAKING CHANGES
+
+* **swap-form:** Removed `balance` and `fiat-balance` components, replaced by unified balance calculation logic. Update usage accordingly.
+* **number-animation:** This refactor introduces a new reactive data flow, potentially impacting custom implementations depending on the old structure.
+* **button:** The `button` component now utilizes `dispatchUiFallback` instead of `vibrate`. Consumers relying on the `vibrate` behavior should update their implementations accordingly.
+* **math:** BigMath utility has been removed; migrate to BigFloat or other alternatives.
+* **swap:** The migration to `BigFloat` changes the type of token amount-related methods and values, which might break compatibility with existing implementations relying on `bigint`.
+* **api:** This change modifies the `getQuote` and related methods,
+potentially affecting current integrations.
+
 # [1.0.0-rc.10](https://github.com/1inch-community/interface/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2025-05-06)
 
 
