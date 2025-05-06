@@ -3,6 +3,8 @@ import { lazyAppContext } from '@1inch-community/core/lazy'
 import { BigFloat } from '@1inch-community/core/math'
 import {
   ChainId,
+  getCrossChainTokenIdListWithBalanceQueryFilters,
+  getCrossChainTokenNameQueryFilters,
   getCrossChainTotalFiatBalanceQueryFilters,
   getSymbolDataQueryFilters,
   getTokenBalanceByIdQueryFilters,
@@ -342,9 +344,9 @@ export class TokenController implements ITokenStorage {
   }
 
   @CacheActivePromise()
-  async getCrossChainTokenName(symbol: string) {
-    const targetToken = await this.getCrossChainTokenByPriority(symbol)
-    return targetToken ? targetToken.name : symbol
+  async getCrossChainTokenName(filter: getCrossChainTokenNameQueryFilters) {
+    const targetToken = await this.getCrossChainTokenByPriority(filter.symbol)
+    return targetToken ? targetToken.name : filter.symbol
   }
 
   @CacheActivePromise()
@@ -369,10 +371,9 @@ export class TokenController implements ITokenStorage {
 
   @CacheActivePromise()
   async getCrossChainTokenIdListWithBalance(
-    chainIds: ChainId[],
-    symbol: string,
-    walletAddress: Address
+    filter: getCrossChainTokenIdListWithBalanceQueryFilters
   ): Promise<TokenRecordId[]> {
+    const { chainIds, walletAddress, symbol } = filter
     const { balances, crossChainTokensBinding } = this.schema
     const chainIdSet = new Set(chainIds)
     const crossChainTokensBindingRecord = await crossChainTokensBinding
@@ -562,22 +563,6 @@ export class TokenController implements ITokenStorage {
     return this.schema.tokens
       .filter((record) => record.chainId === chainId && addressesSet.has(record.address))
       .toArray()
-  }
-
-  async getTokenListSortedByPriority(chainId: ChainId, addresses: Address[]) {
-    const tokens = await this.getTokenList(chainId, addresses)
-    return tokens.sort((token1, token2) => token2.priority - token1.priority)
-  }
-
-  async getTokenBalance(chainId: ChainId, tokenAddress: Address, walletAddress: Address) {
-    await this.updateDatabase(walletAddress)
-    const recordId = buildBalanceId(chainId, walletAddress, tokenAddress)
-    const records = await this.schema.balances.where('id').equals(recordId).toArray()
-    return records[0] ?? null
-  }
-
-  async getTokenUSDPrice() {
-    return 'TODO Write me'
   }
 
   async getTokenLogoURL(chainId: ChainId, tokenAddress: Address) {
