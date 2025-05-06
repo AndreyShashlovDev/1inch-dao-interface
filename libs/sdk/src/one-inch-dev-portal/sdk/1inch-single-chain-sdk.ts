@@ -19,7 +19,7 @@ export class OneInchSingleChainSDK {
 
     if (!sdk) {
       sdk = await buildFusionSDK(
-        this.appContext.isEmbedded ? '/' : '/proxy/direct/',
+        this.appContext.isEmbedded ? '/' : '/proxy/direct/fusion',
         chain,
         this.appContext.wallet,
         this.appContext.onChain,

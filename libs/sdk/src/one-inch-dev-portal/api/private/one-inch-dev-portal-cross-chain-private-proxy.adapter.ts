@@ -1,4 +1,4 @@
-import { CacheActivePromise } from '@1inch-community/core/decorators'
+import { CacheActivePromise, Schedule } from '@1inch-community/core/decorators'
 import { lazyAppContext } from '@1inch-community/core/lazy'
 import {
   ChainId,
@@ -14,6 +14,15 @@ import { Address } from 'viem'
 import { OneInchDevPortalCrossChainOnChainAdapter } from '../onchain'
 import { PrivateProxyClient } from './private-proxy-client'
 
+function ScheduleAccumulator<A extends [ChainId[], Address[]]>(acc: A | null, value: A) {
+  const chainIds = value[0]
+  const accWalletAddresses = acc?.[1] ?? []
+  const walletAddresses: Address[] = new Set([...accWalletAddresses, ...value[1]])
+    .values()
+    .toArray()
+  return [chainIds, walletAddresses] as A
+}
+
 export class OneInchDevPortalCrossChainPrivateProxyAdapter implements ICryptoAssetDataProvider {
   private readonly context = lazyAppContext('OneInchDevPortalCrossChainPublicProxyAdapter')
   private readonly client = new PrivateProxyClient()
@@ -25,6 +34,7 @@ export class OneInchDevPortalCrossChainPrivateProxyAdapter implements ICryptoAss
   }
 
   @CacheActivePromise()
+  @Schedule(50, ScheduleAccumulator)
   async getBalances(chainIds: ChainId[], walletAddresses: Address[]): Promise<ProxyResultBalance> {
     return await this.client.post<ProxyResultBalance>('/proxy/balance', {
       chain_ids: chainIds.map((chainId) => chainId.toString()),
