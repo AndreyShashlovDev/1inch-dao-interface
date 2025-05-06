@@ -33,7 +33,9 @@ export class TokenItemCrossChainFlatElement extends LitElement {
     this,
     async ([tokenId]) => {
       if (!tokenId) throw new Error('')
-      return await this.applicationContext.value.tokenStorage.getTokenById(tokenId)
+      return await this.applicationContext.value.tokenStorage.getTokenById({
+        tokenRecordId: tokenId,
+      })
     },
     () => [this.tokenId, this.walletAddress] as const
   )

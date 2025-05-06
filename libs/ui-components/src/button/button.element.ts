@@ -1,4 +1,4 @@
-import { vibrate } from '@1inch-community/core/lit-utils'
+import { dispatchUiFallback } from '@1inch-community/core/lit-utils'
 import { html, LitElement } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { classMap } from 'lit/directives/class-map.js'
@@ -49,7 +49,11 @@ export class ButtonElement extends LitElement {
     }
 
     return html`
-      <button class="${classMap(classes)}" @click="${() => vibrate()}" ?disabled="${this.disabled}">
+      <button
+        class="${classMap(classes)}"
+        @click="${(event: UIEvent) => dispatchUiFallback(this, event)}"
+        ?disabled="${this.disabled}"
+      >
         <slot
           style="${this.disabledSlotPointerEvent ? 'pointer-events: none;' : ''}"
           @slotchange="${this.handleSlotChange}"

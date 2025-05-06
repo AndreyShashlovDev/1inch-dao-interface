@@ -1,5 +1,5 @@
-import { BigMath } from '@1inch-community/core/math'
 import {
+  IBigFloat,
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
   ITokenRateProvider,
@@ -14,7 +14,7 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
     throw new Error('OnChain strategy not support swap')
   }
 
-  async supportSwap(pair: Pair, address: Address | null): Promise<boolean> {
+  async supportSwap(pair: Pair): Promise<boolean> {
     if (pair.source.chainId !== pair.destination.chainId) {
       return false
     }
@@ -24,12 +24,12 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
       pair.destination
     )
 
-    return rate !== null && rate.rate > 0n
+    return rate !== null && !rate.rate.isZero() && !rate.rate.isNegative()
   }
 
   async getDataSnapshot(
     pair: Pair,
-    amount: bigint,
+    amount: IBigFloat,
     walletAddress: Address | null
   ): Promise<ISwapContextStrategyDataSnapshot> {
     const sourceToken = pair.source
@@ -37,7 +37,7 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
     const destinationToken = pair.destination
     const chainId = pair.source.chainId
 
-    if (sourceTokenAmount === 0n) {
+    if (sourceTokenAmount.isZero()) {
       throw new Error('')
     }
 
@@ -47,23 +47,11 @@ export class SwapContextOnChainStrategy implements ISwapContextStrategy<unknown>
       throw new Error('')
     }
 
-    let destinationTokenAmount: bigint
+    let destinationTokenAmount: IBigFloat
     if (rate.isReverted) {
-      destinationTokenAmount = BigMath.div(
-        sourceTokenAmount,
-        rate.revertedRate,
-        sourceToken.decimals,
-        sourceToken.decimals,
-        destinationToken.decimals
-      )
+      destinationTokenAmount = sourceTokenAmount.div(rate.revertedRate)
     } else {
-      destinationTokenAmount = BigMath.mul(
-        sourceTokenAmount,
-        rate.rate,
-        sourceToken.decimals,
-        destinationToken.decimals,
-        destinationToken.decimals
-      )
+      destinationTokenAmount = sourceTokenAmount.mul(rate.rate)
     }
 
     return {

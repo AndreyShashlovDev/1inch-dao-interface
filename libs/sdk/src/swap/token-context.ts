@@ -1,4 +1,5 @@
-import { IToken, NullableValue, TokenSnapshot } from '@1inch-community/models'
+import { BigFloat } from '@1inch-community/core/math'
+import { IBigFloat, IToken, NullableValue, TokenSnapshot } from '@1inch-community/models'
 import { distinctUntilChanged, map, Observable, shareReplay, startWith, Subject } from 'rxjs'
 import { isTokensEqual } from '../tokens'
 
@@ -11,13 +12,13 @@ export class TokenContext {
     if (tokenFromSnap && token && isTokensEqual(tokenFromSnap, token)) {
       return
     }
-    this.lastSnapshot = { ...this.lastSnapshot, token, amount: 0n }
+    this.lastSnapshot = { ...this.lastSnapshot, token, amount: BigFloat.zero() }
     this.signalChange$.next()
   }
 
-  setAmount(amount: bigint) {
+  setAmount(amount: IBigFloat) {
     const { amount: amountFromSnap } = this.lastSnapshot
-    if (amountFromSnap === amount) {
+    if (amountFromSnap?.equals(amount)) {
       return
     }
     this.lastSnapshot = { ...this.lastSnapshot, amount }
@@ -32,8 +33,20 @@ export class TokenContext {
     return this.signalChange$.pipe(
       map(() => this.lastSnapshot),
       startWith(this.lastSnapshot),
-      distinctUntilChanged(),
+      distinctUntilChanged(tokenSnapshotEquals),
       shareReplay({ bufferSize: 1, refCount: true })
     )
   }
+}
+
+function tokenSnapshotEquals(
+  s1: NullableValue<TokenSnapshot>,
+  s2: NullableValue<TokenSnapshot>
+): boolean {
+  const { token: token1, amount: amount1 } = s1
+  const { token: token2, amount: amount2 } = s2
+  if (token1 === null || token2 === null || amount1 === null || amount2 === null) {
+    return false
+  }
+  return amount1.equals(amount2) && isTokensEqual(token1, token2)
 }

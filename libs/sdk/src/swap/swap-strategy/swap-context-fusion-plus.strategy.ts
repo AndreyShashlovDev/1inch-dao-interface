@@ -1,7 +1,8 @@
-import { BigMath } from '@1inch-community/core/math'
+import { BigFloat } from '@1inch-community/core/math'
 import {
   FusionPlusQuoteReceiveDto,
   IAmountDataSource,
+  IBigFloat,
   ISwapContextStrategy,
   ISwapContextStrategyDataSnapshot,
   Pair,
@@ -83,7 +84,7 @@ export class SwapContextFusionPlusStrategy
 
   async getDataSnapshot(
     pair: Pair,
-    amount: bigint,
+    amount: IBigFloat,
     walletAddress: Address | null
   ): Promise<ISwapContextStrategyDataSnapshot<FusionPlusQuoteReceiveDto>> {
     const sdk = await this.crossChainSDK.getInstance()
@@ -94,7 +95,7 @@ export class SwapContextFusionPlusStrategy
     const srcChainId = srcToken?.chainId
     const dstChainId = dstToken?.chainId
 
-    if (walletAddress === null || srcTokenAmount === 0n) {
+    if (walletAddress === null || srcTokenAmount.isZero()) {
       throw new Error('')
     }
 
@@ -114,7 +115,7 @@ export class SwapContextFusionPlusStrategy
 
     const balance = await this.amountDataSource.getMaxAmount()
 
-    if (balance < srcTokenAmount) {
+    if (srcTokenAmount.div(balance).isNegative()) {
       throw new Error('')
     }
 
@@ -127,7 +128,7 @@ export class SwapContextFusionPlusStrategy
       dstChainId: dstChainId.valueOf(),
       srcTokenAddress: srcToken.address,
       dstTokenAddress: dstToken.address,
-      amount: srcTokenAmount.toString(),
+      amount: srcTokenAmount.toBigInt(srcToken.decimals).toString(),
       enableEstimate: true,
       walletAddress: walletAddress.toString(),
     }
@@ -136,15 +137,10 @@ export class SwapContextFusionPlusStrategy
     const preset = quote.recommendedPreset
     const presetConfig = quote.getPreset(preset)
 
-    const marketPrice = quote.dstTokenAmount
+    const marketPrice = BigFloat.fromBigInt(quote.dstTokenAmount, dstToken.decimals)
 
-    const rate = BigMath.div(marketPrice, srcTokenAmount, dstToken.decimals, srcToken.decimals)
-    const revertedRate = BigMath.div(
-      srcTokenAmount,
-      marketPrice,
-      srcToken.decimals,
-      dstToken.decimals
-    )
+    const rate = marketPrice.div(srcTokenAmount)
+    const revertedRate = srcTokenAmount.div(marketPrice)
 
     const rateData: Rate = {
       rate,
@@ -155,11 +151,11 @@ export class SwapContextFusionPlusStrategy
     }
 
     const slippageSettings = this.settings.slippage
-    let minReceive = BigInt(presetConfig.auctionEndAmount)
+    let minReceive = BigFloat.fromBigInt(presetConfig.auctionEndAmount, dstToken.decimals)
     if (slippageSettings.value !== null) {
       const [slippage] = slippageSettings.value
-      const percentAmount = BigMath.calculatePercentage(marketPrice, slippage)
-      minReceive = marketPrice - percentAmount
+      const percentAmount = BigFloat.from(slippage).mul(marketPrice).div(BigFloat.from(100))
+      minReceive = marketPrice.sub(percentAmount)
     }
 
     return {

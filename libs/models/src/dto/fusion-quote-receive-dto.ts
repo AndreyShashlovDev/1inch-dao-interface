@@ -56,6 +56,7 @@ export interface RawQuoterResponse {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface QuoterRequestParams {
   fromTokenAddress: string
   toTokenAddress: string

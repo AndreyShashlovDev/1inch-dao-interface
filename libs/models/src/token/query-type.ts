@@ -4,6 +4,7 @@ import type { TokenRecordId } from '../database'
 
 export type BaseQueryFilters = {
   symbol: string
+  chainId: ChainId
   chainIds: ChainId[]
   tokenRecordId: TokenRecordId
   tokenNameSymbolAddressMatches: string

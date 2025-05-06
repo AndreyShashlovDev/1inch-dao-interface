@@ -11,11 +11,15 @@ import { styleMap } from 'lit/directives/style-map.js'
 import { tap } from 'rxjs'
 import type { Address } from 'viem'
 import { tooltip } from '../../tooltip'
+import { tokenBalanceStyle } from '../style/token-balance.style'
 
 @customElement(TokenBalanceElement.tagName)
 export class TokenBalanceElement extends LitElement {
   static tagName = 'inch-token-balance' as const
 
+  static override styles = tokenBalanceStyle
+
+  @property({ type: String, attribute: false }) value?: IBigFloat
   @property({ type: String, attribute: false }) tokenId?: TokenRecordId
   @property({ type: String, attribute: false }) symbol?: string
   @property({ type: String, attribute: false }) chainIds?: ChainId[]
@@ -31,6 +35,9 @@ export class TokenBalanceElement extends LitElement {
   private readonly task = new Task(
     this,
     async ([tokenId, symbol, chainIds, walletAddress]) => {
+      if (this.value) {
+        return this.value
+      }
       if (!this.isConnectedWallet) {
         return BigFloat.zero()
       }
@@ -53,6 +60,9 @@ export class TokenBalanceElement extends LitElement {
   )
 
   protected firstUpdated() {
+    if (this.value) {
+      return
+    }
     subscribe(
       this,
       [

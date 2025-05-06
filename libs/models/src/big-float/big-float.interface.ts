@@ -1,4 +1,5 @@
 export interface IBigFloat {
+  readonly value: bigint
   isZero(): boolean
   isNegative(): boolean
   equals(other: IBigFloat): boolean

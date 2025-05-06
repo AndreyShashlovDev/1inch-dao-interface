@@ -34,6 +34,10 @@ export function dispatchEvent<V>(ctx: HTMLElement, type: string, value: V, event
   ctx.dispatchEvent(buildEvent(type, value, event))
 }
 
+export function dispatchUiFallback(ctx: HTMLElement, event: Event) {
+  dispatchEvent(ctx, 'ui-fallback', ctx, event)
+}
+
 export function vibrate(pattern: VibratePattern = 40) {
   try {
     navigator.vibrate(pattern)

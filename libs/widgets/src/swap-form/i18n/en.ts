@@ -14,6 +14,7 @@ export default {
   'widgets.swap-form.swap-button.approve-and-swap': 'Approve and Swap',
   'widgets.swap-form.swap-button.permit-and-swap': 'Permit and Swap',
   'widgets.swap-form.swap-button.connect-wallet': 'Connect wallet',
+  'widgets.swap-form.swap-button.select-token': 'Select token',
   'widgets.swap-form.swap-button.select-source-token': 'Select source token',
   'widgets.swap-form.swap-button.select-destination-token': 'Select destination token',
   'widgets.swap-form.swap-button.enter-amount-to-swap': 'Enter amount to swap',
