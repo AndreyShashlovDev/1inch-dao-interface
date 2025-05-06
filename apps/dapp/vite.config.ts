@@ -26,10 +26,12 @@ export default defineConfig(({ mode }) => {
 
   const baseHref = process.env['BASE_HREF'] ?? (electronBundle ? './' : '/')
   const ngrokToken = process.env['NGROK_AUTH_TOKEN_IN_HERE']
+  const cloudFlareTurnstileKey = JSON.stringify(process.env.CLOUDFLARE_TURNSTILE_SITE_KEY)
 
   console.log('mode is ', isProduction ? 'production' : 'development')
   console.log('dApp version ', version)
   console.log('baseHref', baseHref)
+  console.log('CLOUDFLARE_TURNSTILE_SITE_KEY', cloudFlareTurnstileKey)
   if (electronBundle) {
     console.log('Build Electron bundle')
   }
@@ -46,7 +48,7 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(version),
       __DEV_PORTAL_HOST__: JSON.stringify(process.env.ONE_INCH_DEV_PORTAL_HOST),
       __WALLET_CONNECT_PROJECT_ID__: JSON.stringify(process.env.WALLET_CONNECT_PROJECT_ID),
-      __CLOUDFLARE_TURNSTILE_SITE_KEY__: JSON.stringify(process.env.CLOUDFLARE_TURNSTILE_SITE_KEY),
+      __CLOUDFLARE_TURNSTILE_SITE_KEY__: cloudFlareTurnstileKey,
     },
 
     resolve: {
